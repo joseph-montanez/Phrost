@@ -221,6 +221,15 @@ var targets: [Target] = [
     ),
 
     .target(
+        name: "PhrostEngineLib",
+        dependencies: [
+            "PhrostEngineCore",
+            "SwiftSDL",
+        ],
+        exclude: ["main.swift"]
+    ),
+
+    .target(
         name: "SwiftPHPExtension",
         dependencies: [
             "PHPCore",
@@ -332,6 +341,7 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v13)],
     products: [
         .library(name: "php_phrostengine", type: .dynamic, targets: ["SwiftPHPExtension"]),
+        .library(name: "PhrostShared", type: .static, targets: ["PhrostEngineLib"]),
         .executable(name: "PhrostIPC", targets: ["PhrostIPC"]),
         .executable(name: "Phrost", targets: ["PhrostBinary"]),
     ],
