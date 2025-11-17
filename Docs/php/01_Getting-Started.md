@@ -4,33 +4,32 @@
 
 Phrost has pre-built releases for Windows available on [GitHub](https://github.com/joseph-montanez/Phrost/releases).
 
-### Run `PhrostBinary`
+### Run `Phrost`
 
-There will be several files in the release folder. The `PhrostBinary` file is the executable that you will run to start the game. `PhrostIPC` is the game engine's IPC version you do not run this, as `PhrostBinary` will.
+There will be several files in the release folder. The `Phrost` file is the executable that you will run to start the game. 
 
 ### Folder Structure
 
 ```
 Release/
-└── PhrostBinary (Runs the game and PHP runtime)
-└── PhrostIPC (Runs the game and manages the IPC)
-├── assets/
-│   ├── images-audio...
-│   ├── client.php
+└── Phrost (Runs the game and PHP runtime)
+├── game/
+│   ├── assets
+│   ├── main.php
+│   ├── game-logic.php
 │   └── src/
-│       └── composer.php
-│       └── game-logic.php
+│       └── Warrior.php
 ├── runtime/
 │   ├── php.exe
 ```
 
 ### PHP Source Location
 
-Edit your PHP source files in the `assets/src` directory.
+Edit your PHP source files in the `game` directory.
 
 ### What Files To Edit?
 
-`assets/src/game/game-logic.php` will be your main file to work with, however `assets/client.php` will be your main entry point.
+`game/game-logic.php` will be your main file to work with, however `assets/main.php` will be your main entry point.
 
 ### Required Functions
 
@@ -40,7 +39,7 @@ Phrost expects three functions in PHP to be declared:
  - function Phrost_Sleep(): string
  - function Phrost_Wake(string $data): void
 
-`assets/src/game/game-logic.php` already has these functions defined, you can start editing them to implement your game logic.
+`game/game-logic.php` already has these functions defined, you can start editing them to implement your game logic.
 
 
 ### The ID System (UUIDs)
