@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Stop script on error
+set -e
+
 SCRIPT_DIR=$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")
 
 export SDL3_INCLUDE="$SCRIPT_DIR/../../deps/SDL/include"
@@ -19,56 +22,17 @@ export PHP_BIN="$SCRIPT_DIR/../../deps/buildroot/bin/php"
 
 export CLIENT_TYPE=php
 
-# --- Add this section to print paths ---
+# --- Debug Paths ---
 echo "========================================="
 echo "Checking paths from: $(pwd)"
 echo "========================================="
-
-echo "SDL3_INCLUDE"
-echo "  Literal: $SDL3_INCLUDE"
-echo "  Real:    $(realpath "$SDL3_INCLUDE")"
-echo
-
-echo "SDL3_LIB"
-echo "  Literal: $SDL3_LIB"
-echo "  Real:    $(realpath "$SDL3_LIB")"
-echo
-
-echo "SDL3_IMAGE_INCLUDE"
-echo "  Literal: $SDL3_IMAGE_INCLUDE"
-echo "  Real:    $(realpath "$SDL3_IMAGE_INCLUDE")"
-echo
-
-echo "SDL3_IMAGE_LIB"
-echo "  Literal: $SDL3_IMAGE_LIB"
-echo "  Real:    $(realpath "$SDL3_IMAGE_LIB")"
-echo
-
-echo "SDL3_MIXER_INCLUDE"
-echo "  Literal: $SDL3_MIXER_INCLUDE"
-echo "  Real:    $(realpath "$SDL3_MIXER_INCLUDE")"
-echo
-
-echo "SDL3_MIXER_LIB"
-echo "  Literal: $SDL3_MIXER_LIB"
-echo "  Real:    $(realpath "$SDL3_MIXER_LIB")"
-echo
-
-echo "SDL3_TTF_INCLUDE"
-echo "  Literal: $SDL3_TTF_INCLUDE"
-echo "  Real:    $(realpath "$SDL3_TTF_INCLUDE")"
-echo
-
-echo "SDL3_TTF_LIB"
-echo "  Literal: $SDL3_TTF_LIB"
-echo "  Real:    $(realpath "$SDL3_TTF_LIB")"
-echo
+echo "SDL3_INCLUDE:    $(realpath "$SDL3_INCLUDE")"
+echo "SDL3_LIB:        $(realpath "$SDL3_LIB")"
 echo "========================================="
 echo "Continuing with build..."
-# -------------------------------------------
 
-swift build -vv \
-    --configuration release \
+# --- Swift Build ---
+swift build --configuration release \
     -Xcc -U__SSE2__ \
     -Xcc -I$PHP_SRC_ROOT \
     -Xcc -I$PHP_SRC_ROOT/main \
@@ -79,53 +43,88 @@ swift build -vv \
     -Xcc -I${SDL3_MIXER_INCLUDE} \
     -Xcc -I${SDL3_IMAGE_INCLUDE}
 
-export PHROST_RELEASE_DIR=$SCRIPT_DIR/../../../Release
-export PHROST_RUNTIME_DIR=$SCRIPT_DIR/../../../Runtime
-export PHROST_ASSETS_DIR="$PHROST_RELEASE_DIR/assets"
+# --- Define Output Paths ---
+# Matches Windows structure
+export PHROST_RELEASE_DIR="$SCRIPT_DIR/../../../Release"
+export PHROST_ENGINE_DIR="$PHROST_RELEASE_DIR/engine"
+export PHROST_GAME_DIR="$PHROST_RELEASE_DIR/game"
+export PHROST_RUNTIME_DIR="$SCRIPT_DIR/../../../Runtime"
 
-# Create the release
-mkdir -p $PHROST_RELEASE_DIR
-mkdir -p $PHROST_RELEASE_DIR/runtime
+echo "Release Dir: $PHROST_RELEASE_DIR"
+echo "Engine Dir:  $PHROST_ENGINE_DIR"
+echo "Game Dir:    $PHROST_GAME_DIR"
 
-# Copy static PHP
-cp $PHP_BIN $PHROST_RELEASE_DIR/runtime/
+# --- Create Directories ---
+mkdir -p "$PHROST_RELEASE_DIR"
+mkdir -p "$PHROST_RELEASE_DIR/runtime"
+mkdir -p "$PHROST_ENGINE_DIR"
+mkdir -p "$PHROST_GAME_DIR"
 
-# Setup PHP Composer
-$PHROST_RELEASE_DIR/runtime/php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-$PHROST_RELEASE_DIR/runtime/php -r "if (hash_file('sha384', 'composer-setup.php') === 'c8b085408188070d5f52bcfe4ecfbee5f727afa458b2573b8eaaf77b3419b0bf2768dc67c86944da1544f06fa544fd47') { echo 'Installer verified'.PHP_EOL; } else { echo 'Installer corrupt'.PHP_EOL; unlink('composer-setup.php'); exit(1); }"
-$PHROST_RELEASE_DIR/runtime/php composer-setup.php
-$PHROST_RELEASE_DIR/runtime/php -r "unlink('composer-setup.php');"
+# --- Copy PHP Runtime ---
+echo "-> Copying PHP binary..."
+cp "$PHP_BIN" "$PHROST_RELEASE_DIR/runtime/"
 
-# Copy Phrost runtime
-cp $SCRIPT_DIR/../.build/release/PhrostBinary $PHROST_RELEASE_DIR/
-cp $SCRIPT_DIR/../.build/release/PhrostIPC $PHROST_RELEASE_DIR/
+# --- Setup PHP Composer ---
+echo "-> Setting up Composer..."
+"$PHROST_RELEASE_DIR/runtime/php" -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+"$PHROST_RELEASE_DIR/runtime/php" -r "if (hash_file('sha384', 'composer-setup.php') === 'c8b085408188070d5f52bcfe4ecfbee5f727afa458b2573b8eaaf77b3419b0bf2768dc67c86944da1544f06fa544fd47') { echo 'Installer verified'.PHP_EOL; } else { echo 'Installer corrupt'.PHP_EOL; unlink('composer-setup.php'); exit(1); }"
+"$PHROST_RELEASE_DIR/runtime/php" composer-setup.php
+"$PHROST_RELEASE_DIR/runtime/php" -r "unlink('composer-setup.php');"
 
-# --- NEW: Copy the settings.json file ---
-echo "-> Copying runtime configuration..."
-cp "$PHROST_RUNTIME_DIR/php/settings.json" "$PHROST_RELEASE_DIR/settings.json"
+# --- Copy Phrost Binaries ---
+echo "-> Copying Engine binaries..."
 
-# Check if the assets directory does NOT exist
-if [ ! -d "$PHROST_ASSETS_DIR" ]; then
-	echo "-> Assets directory not found. Creating and copying from runtime..."
-
-    # 1. Create the directory with sample files
-	cp -Ra $PHROST_RUNTIME_DIR/assets $PHROST_RELEASE_DIR/
-
-    # 2. Copy the *contents* of the php directory into the new assets directory
-    # Using /." is a safe and robust way to copy all files and folders
-    # (including hidden ones) from inside the 'php' dir.
-	cp -r "$PHROST_RUNTIME_DIR/php/." "$PHROST_ASSETS_DIR/"
-
-	echo "-> Assets copied."
+# 1. Phrost Main Executable (Goes to Root)
+# FIX: The source file is named 'Phrost' (Product Name), not 'PhrostBinary' (Target Name)
+if [ -f "$SCRIPT_DIR/../.build/release/Phrost" ]; then
+    cp "$SCRIPT_DIR/../.build/release/Phrost" "$PHROST_RELEASE_DIR/Phrost"
 else
-	echo "-> Assets directory already exists. Skipping."
+    echo "ERROR: Phrost binary not found at $SCRIPT_DIR/../.build/release/Phrost"
+    exit 1
 fi
 
-# && php84 -dmemory_limit=-1 -dextension=/Users/josephmontanez/Documents/dev/Phrost2/Engine/PhrostEngineV2/.build/arm64-apple-macosx/release/libPhrostEngine.dylib assets/main.php
+# 2. PhrostIPC (Goes to Engine folder)
+if [ -f "$SCRIPT_DIR/../.build/release/PhrostIPC" ]; then
+    cp "$SCRIPT_DIR/../.build/release/PhrostIPC" "$PHROST_ENGINE_DIR/"
+else
+    echo "ERROR: PhrostIPC binary not found at $SCRIPT_DIR/../.build/release/PhrostIPC"
+    exit 1
+fi
 
-# Install runtime packages
-mv $SCRIPT_DIR/../composer.phar $PHROST_ASSETS_DIR/src/
-cd $PHROST_RELEASE_DIR/assets/src
-ls -la
-$PHROST_RELEASE_DIR/runtime/php composer.phar install
-cd $SCRIPT_DIR/..
+# --- Copy Settings ---
+echo "-> Copying runtime configuration..."
+# Windows script moves settings.json to root
+if [ -f "$PHROST_RUNTIME_DIR/php/settings.json" ]; then
+    cp "$PHROST_RUNTIME_DIR/php/settings.json" "$PHROST_RELEASE_DIR/settings.json"
+fi
+
+# --- Copy Assets & PHP Files ---
+echo "-> Building Game Directory..."
+
+# 1. Copy 'assets' folder into 'game' (creates game/assets)
+if [ -d "$PHROST_RUNTIME_DIR/assets" ]; then
+    cp -Ra "$PHROST_RUNTIME_DIR/assets" "$PHROST_GAME_DIR/"
+fi
+
+# 2. Copy contents of 'php' folder into 'game' root
+# This matches Windows: Join-Path $PHROST_RUNTIME_DIR "php\*"
+if [ -d "$PHROST_RUNTIME_DIR/php" ]; then
+    cp -R "$PHROST_RUNTIME_DIR/php/." "$PHROST_GAME_DIR/"
+fi
+
+echo "-> Assets and PHP scripts copied to $PHROST_GAME_DIR"
+
+# --- Install Composer Packages ---
+echo "-> Installing Composer dependencies..."
+
+# Move composer.phar to the game directory (where composer.json should be now)
+if [ -f "composer.phar" ]; then
+    mv "composer.phar" "$PHROST_GAME_DIR/"
+fi
+
+# Switch to game dir to run install
+pushd "$PHROST_GAME_DIR" > /dev/null
+    ../runtime/php composer.phar install
+popd > /dev/null
+
+echo "### Build and Deployment Complete ###"

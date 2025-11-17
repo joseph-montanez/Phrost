@@ -131,13 +131,8 @@ If you need the x86/arm64 download Swift for that platform in a custom folder us
     cd ../../
 
     cp ../craft.yml ./
-
-    # macOS aarch64 (Apple)
     curl -fsSL -o spc https://dl.static-php.dev/static-php-cli/spc-bin/nightly/spc-macos-aarch64 # OR FOR INTEL (curl -fsSL -o spc https://dl.static-php.dev/static-php-cli/spc-bin/nightly/spc-macos-x86_64)
-
-    # Add execute perm
     chmod +x ./spc
-
     ./spc craft
 
 **Code Signing**

@@ -18,7 +18,6 @@ var clientDefines: [SwiftSetting] = []
 
 print("--- Building PhrostBinary for \(clientType.uppercased()) ---")
 
-// Use a switch statement for clarity and extensibility
 switch clientType.lowercased() {
 case "php":
     clientDefines.append(.define("USE_PHP"))
@@ -35,36 +34,33 @@ case "bun":
 case "deno":
     clientDefines.append(.define("USE_DENO"))
 default:
-    // Default to PHP if CLIENT_TYPE is unset or an unknown value
     print("--- WARNING: Unknown CLIENT_TYPE '\(clientType)'. Defaulting to PHP. ---")
     clientDefines.append(.define("USE_PHP"))
 }
 
 // --- PHP Paths ---
-#if os(macOS) || os(iOS)
-    // Apple platforms use the XCFramework
-    let includePHPXCFramework = true
-    let phpSrc = "build/php-src"
-    let phpLib = ""
+#if os(macOS)
+    // UPDATED: macOS now uses the buildroot source, just like Windows/Linux
+    let includePHPXCFramework = false
+    let phpSrc = env["PHP_SRC_ROOT"] ?? "../deps/buildroot/include/php"
+    let phpLib = ""  // macOS links via bundle loader or dynamic lookup
     let excludeFiles: [String] = []
 #elseif os(Windows)
-    // Windows has its own logic
     let includePHPXCFramework = false
     let phpSrc = env["PHP_SRC_ROOT"] ?? "D:/dev/php-src"
     let phpLib = env["PHP_LIB_ROOT"] ?? "D:/dev/php-src/libs"
     let excludeFiles: [String] = []
 #else
-    // All other platforms (like Linux)
+    // Linux etc.
     let includePHPXCFramework = false
-    let phpSrc = env["PHP_SRC_ROOT"] ?? "../deps/source/php-src"  // Use the env var
-    let phpLib = ""  // You'll link this a different way
+    let phpSrc = env["PHP_SRC_ROOT"] ?? "../deps/source/php-src"
+    let phpLib = ""
     let excludeFiles: [String] = []
 #endif
 
 var sdlIncludeFlags: [String] = []
 var sdlLinkerFlags: [LinkerSetting] = []
 
-// --- THIS BLOCK IS NOW CORRECTED TO INCLUDE os(linux) ---
 #if os(Windows) || os(linux)
     if let includePath = env["CHIPMUNK2D_INCLUDE"] {
         sdlIncludeFlags.append(contentsOf: ["-Xcc", "-I", "-Xcc", includePath])
@@ -117,26 +113,19 @@ var targets: [Target] = [
             .define("WIN32", .when(platforms: [.windows])),
             .define("_WIN32", .when(platforms: [.windows])),
             .define("_WINDOWS", .when(platforms: [.windows])),
-            .define("NTS_SWIFT", .when(platforms: [.windows, .macOS, .iOS])),
+            .define("NTS_SWIFT", .when(platforms: [.windows, .macOS])),
         ],
         swiftSettings: [
             .unsafeFlags(["-Xcc", "-UHAVE_BUILTIN_CONSTANT_P"], .when(configuration: .release)),
             .define("NDEBUG", .when(configuration: .release)),
-            .define("NTS_SWIFT", .when(platforms: [.windows, .macOS, .iOS])),
+            .define("NTS_SWIFT", .when(platforms: [.windows, .macOS])),
             .unsafeFlags(
                 [
-                    "-Xcc", "-I", "-Xcc", "PHP.xcframework/macos-arm64/Headers",
-                    "-Xcc", "-I", "-Xcc", "PHP.xcframework/macos-arm64/Headers/main",
-                    "-Xcc", "-I", "-Xcc", "PHP.xcframework/macos-arm64/Headers/Zend",
-                    "-Xcc", "-I", "-Xcc", "PHP.xcframework/macos-arm64/Headers/TSRM",
+                    "-Xcc", "-I", "-Xcc", "\(phpSrc)",
+                    "-Xcc", "-I", "-Xcc", "\(phpSrc)/main",
+                    "-Xcc", "-I", "-Xcc", "\(phpSrc)/Zend",
+                    "-Xcc", "-I", "-Xcc", "\(phpSrc)/TSRM",
                 ], .when(platforms: [.macOS])),
-            .unsafeFlags(
-                [
-                    "-Xcc", "-I", "-Xcc", "PHP.xcframework/ios-arm64/Headers",
-                    "-Xcc", "-I", "-Xcc", "PHP.xcframework/ios-arm64/Headers/main",
-                    "-Xcc", "-I", "-Xcc", "PHP.xcframework/ios-arm64/Headers/Zend",
-                    "-Xcc", "-I", "-Xcc", "PHP.xcframework/ios-arm64/Headers/TSRM",
-                ], .when(platforms: [.iOS])),
             .unsafeFlags(
                 [
                     "-Xcc", "-include", "-Xcc", "intrin.h",
@@ -156,20 +145,14 @@ var targets: [Target] = [
         cSettings: [
             .unsafeFlags(["-UHAVE_BUILTIN_CONSTANT_P"], .when(configuration: .release)),
             .define("NDEBUG", .when(configuration: .release)),
+            // UPDATED: Use phpSrc logic for macOS now
             .unsafeFlags(
                 [
-                    "-I", "PHP.xcframework/macos-arm64/Headers",
-                    "-I", "PHP.xcframework/macos-arm64/Headers/main",
-                    "-I", "PHP.xcframework/macos-arm64/Headers/Zend",
-                    "-I", "PHP.xcframework/macos-arm64/Headers/TSRM",
+                    "-I", phpSrc,
+                    "-I", "\(phpSrc)/main",
+                    "-I", "\(phpSrc)/Zend",
+                    "-I", "\(phpSrc)/TSRM",
                 ], .when(platforms: [.macOS])),
-            .unsafeFlags(
-                [
-                    "-I", "PHP.xcframework/ios-arm64/Headers",
-                    "-I", "PHP.xcframework/ios-arm64/Headers/main",
-                    "-I", "PHP.xcframework/ios-arm64/Headers/Zend",
-                    "-I", "PHP.xcframework/ios-arm64/Headers/TSRM",
-                ], .when(platforms: [.iOS])),
             .unsafeFlags(
                 [
                     "-I", phpSrc,
@@ -198,6 +181,17 @@ var targets: [Target] = [
             .unsafeFlags(["-Xcc", "-UHAVE_BUILTIN_CONSTANT_P"], .when(configuration: .release)),
             .define("NDEBUG", .when(configuration: .release)),
             .define("NTS_SWIFT", .when(platforms: [.windows, .macOS, .iOS])),
+            .define("ZEND_WIN32", .when(platforms: [.windows])),
+            .define("PHP_WIN32", .when(platforms: [.windows])),
+            .define("WIN32", .when(platforms: [.windows])),
+            // UPDATED: Use phpSrc logic for macOS now
+            .unsafeFlags(
+                [
+                    "-Xcc", "-I", "-Xcc", "\(phpSrc)",
+                    "-Xcc", "-I", "-Xcc", "\(phpSrc)/main",
+                    "-Xcc", "-I", "-Xcc", "\(phpSrc)/Zend",
+                    "-Xcc", "-I", "-Xcc", "\(phpSrc)/TSRM",
+                ], .when(platforms: [.macOS])),
             .unsafeFlags(
                 [
                     "-Xcc", "-include", "-Xcc", "intrin.h",
@@ -221,7 +215,6 @@ var targets: [Target] = [
         ],
         path: "Sources/PhrostEngineCore",
         swiftSettings: [
-            // --- THIS LINE IS NOW CORRECTED to include .linux ---
             .unsafeFlags(sdlIncludeFlags, .when(platforms: [.windows, .linux]))
         ],
         linkerSettings: sdlLinkerFlags
@@ -261,12 +254,13 @@ var targets: [Target] = [
             .define("ZEND_WIN32", .when(platforms: [.windows])),
             .define("PHP_WIN32", .when(platforms: [.windows])),
             .define("WIN32", .when(platforms: [.windows])),
+            // UPDATED: Use phpSrc logic for macOS now
             .unsafeFlags(
                 [
-                    "-Xcc", "-I", "-Xcc", "PHP.xcframework/macos-arm64/Headers",
-                    "-Xcc", "-I", "-Xcc", "PHP.xcframework/macos-arm64/Headers/main",
-                    "-Xcc", "-I", "-Xcc", "PHP.xcframework/macos-arm64/Headers/Zend",
-                    "-Xcc", "-I", "-Xcc", "PHP.xcframework/macos-arm64/Headers/TSRM",
+                    "-Xcc", "-I", "-Xcc", "\(phpSrc)",
+                    "-Xcc", "-I", "-Xcc", "\(phpSrc)/main",
+                    "-Xcc", "-I", "-Xcc", "\(phpSrc)/Zend",
+                    "-Xcc", "-I", "-Xcc", "\(phpSrc)/TSRM",
                 ], .when(platforms: [.macOS])),
             .unsafeFlags(
                 [
