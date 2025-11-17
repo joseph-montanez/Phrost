@@ -1,0 +1,5 @@
+module CSDL_mixer [system][extern_c] {
+    header "sdl3_mixer.h"
+    link "SDL3_mixer"
+    export *
+}

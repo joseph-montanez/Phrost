@@ -1,0 +1,1580 @@
+{
+  "structs": [
+    {
+      "name": "PackedSpriteAddEvent",
+      "eventId": 0,
+      "enumName": "SPRITE_ADD",
+      "isDynamic": false,
+      "comment": "Payload for adding a new sprite to the scene.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary identifier (e.g., entity ID)."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary identifier (e.g., component ID)."
+        },
+        {
+          "name": "positionX",
+          "type": "f64",
+          "comment": "Initial X position."
+        },
+        {
+          "name": "positionY",
+          "type": "f64",
+          "comment": "Initial Y position."
+        },
+        {
+          "name": "positionZ",
+          "type": "f64",
+          "comment": "Initial Z position (depth)."
+        },
+        { "name": "scaleX", "type": "f64", "comment": "Initial X scale." },
+        { "name": "scaleY", "type": "f64", "comment": "Initial Y scale." },
+        { "name": "scaleZ", "type": "f64", "comment": "Initial Z scale." },
+        { "name": "sizeW", "type": "f64", "comment": "Initial width." },
+        { "name": "sizeH", "type": "f64", "comment": "Initial height." },
+        {
+          "name": "rotationX",
+          "type": "f64",
+          "comment": "Initial X rotation (in radians)."
+        },
+        {
+          "name": "rotationY",
+          "type": "f64",
+          "comment": "Initial Y rotation (in radians)."
+        },
+        {
+          "name": "rotationZ",
+          "type": "f64",
+          "comment": "Initial Z rotation (in radians)."
+        },
+        {
+          "name": "r",
+          "type": "u8",
+          "comment": "Red color component (0-255)."
+        },
+        {
+          "name": "g",
+          "type": "u8",
+          "comment": "Green color component (0-255)."
+        },
+        {
+          "name": "b",
+          "type": "u8",
+          "comment": "Blue color component (0-255)."
+        },
+        {
+          "name": "a",
+          "type": "u8",
+          "comment": "Alpha color component (0-255)."
+        },
+        {
+          "name": "_padding",
+          "type": "u32",
+          "comment": "Ensures 8-byte alignment for speeds."
+        },
+        { "name": "speedX", "type": "f64", "comment": "Initial X speed." },
+        { "name": "speedY", "type": "f64", "comment": "Initial Y speed." }
+      ]
+    },
+    {
+      "name": "PackedSpriteRemoveEvent",
+      "eventId": 1,
+      "enumName": "SPRITE_REMOVE",
+      "isDynamic": false,
+      "comment": "Payload for removing a sprite from the scene.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of sprite to remove."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of sprite to remove."
+        }
+      ]
+    },
+    {
+      "name": "PackedSpriteMoveEvent",
+      "eventId": 2,
+      "enumName": "SPRITE_MOVE",
+      "isDynamic": false,
+      "comment": "Payload to move a sprite to an absolute position.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the sprite."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the sprite."
+        },
+        { "name": "positionX", "type": "f64", "comment": "New X position." },
+        { "name": "positionY", "type": "f64", "comment": "New Y position." },
+        {
+          "name": "positionZ",
+          "type": "f64",
+          "comment": "New Z position (depth)."
+        }
+      ]
+    },
+    {
+      "name": "PackedSpriteScaleEvent",
+      "eventId": 3,
+      "enumName": "SPRITE_SCALE",
+      "isDynamic": false,
+      "comment": "Payload to set a sprite's scale.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the sprite."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the sprite."
+        },
+        { "name": "scaleX", "type": "f64", "comment": "New X scale." },
+        { "name": "scaleY", "type": "f64", "comment": "New Y scale." },
+        { "name": "scaleZ", "type": "f64", "comment": "New Z scale." }
+      ]
+    },
+    {
+      "name": "PackedSpriteResizeEvent",
+      "eventId": 4,
+      "enumName": "SPRITE_RESIZE",
+      "isDynamic": false,
+      "comment": "Payload to set a sprite's size (width/height).",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the sprite."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the sprite."
+        },
+        { "name": "sizeW", "type": "f64", "comment": "New width." },
+        { "name": "sizeH", "type": "f64", "comment": "New height." }
+      ]
+    },
+    {
+      "name": "PackedSpriteRotateEvent",
+      "eventId": 5,
+      "enumName": "SPRITE_ROTATE",
+      "isDynamic": false,
+      "comment": "Payload to set a sprite's rotation.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the sprite."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the sprite."
+        },
+        {
+          "name": "rotationX",
+          "type": "f64",
+          "comment": "New X rotation (in radians)."
+        },
+        {
+          "name": "rotationY",
+          "type": "f64",
+          "comment": "New Y rotation (in radians)."
+        },
+        {
+          "name": "rotationZ",
+          "type": "f64",
+          "comment": "New Z rotation (in radians)."
+        }
+      ]
+    },
+    {
+      "name": "PackedSpriteColorEvent",
+      "eventId": 6,
+      "enumName": "SPRITE_COLOR",
+      "isDynamic": false,
+      "comment": "Payload to set a sprite's color modulation.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the sprite."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the sprite."
+        },
+        { "name": "r", "type": "u8", "comment": "New red component (0-255)." },
+        {
+          "name": "g",
+          "type": "u8",
+          "comment": "New green component (0-255)."
+        },
+        { "name": "b", "type": "u8", "comment": "New blue component (0-255)." },
+        {
+          "name": "a",
+          "type": "u8",
+          "comment": "New alpha component (0-255)."
+        },
+        {
+          "name": "_padding",
+          "type": "u32",
+          "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
+      "name": "PackedSpriteSpeedEvent",
+      "eventId": 7,
+      "enumName": "SPRITE_SPEED",
+      "isDynamic": false,
+      "comment": "Payload to set a sprite's speed.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the sprite."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the sprite."
+        },
+        { "name": "speedX", "type": "f64", "comment": "New X speed." },
+        { "name": "speedY", "type": "f64", "comment": "New Y speed." }
+      ]
+    },
+    {
+      "name": "PackedTextureLoadHeaderEvent",
+      "eventId": 8,
+      "enumName": "SPRITE_TEXTURE_LOAD",
+      "isDynamic": true,
+      "comment": "Header for loading a texture. Variable data (filename string) follows.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "ID of the sprite this texture is for."
+        },
+        { "name": "id2", "type": "i64", "comment": "Secondary ID." },
+        {
+          "name": "filenameLength",
+          "type": "u32",
+          "comment": "Length of the texture filename that follows this header."
+        },
+        {
+          "name": "_padding",
+          "type": "u32",
+          "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
+      "name": "PackedSpriteTextureSetEvent",
+      "eventId": 9,
+      "enumName": "SPRITE_TEXTURE_SET",
+      "isDynamic": false,
+      "comment": "Payload to set a sprite's texture to an already loaded one.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the sprite."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the sprite."
+        },
+        {
+          "name": "textureId",
+          "type": "u64",
+          "comment": "The ID of the loaded texture to set."
+        }
+      ]
+    },
+    {
+      "name": "PackedSpriteSetSourceRectEvent",
+      "eventId": 10,
+      "enumName": "SPRITE_SET_SOURCE_RECT",
+      "isDynamic": false,
+      "comment": "Sets the source rectangle (spritesheet clipping) for a sprite.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the sprite."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the sprite."
+        },
+        { "name": "x", "type": "f32", "comment": "Source rect X coordinate." },
+        { "name": "y", "type": "f32", "comment": "Source rect Y coordinate." },
+        { "name": "w", "type": "f32", "comment": "Source rect Width." },
+        { "name": "h", "type": "f32", "comment": "Source rect Height." }
+      ]
+    },
+    {
+      "name": "PackedGeomAddPointEvent",
+      "eventId": 50,
+      "enumName": "GEOM_ADD_POINT",
+      "isDynamic": false,
+      "comment": "Payload for adding a single geometry point.",
+      "members": [
+        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
+        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
+        { "name": "z", "type": "f64", "comment": "Z position (depth)." },
+        {
+          "name": "r",
+          "type": "u8",
+          "comment": "Red color component (0-255)."
+        },
+        {
+          "name": "g",
+          "type": "u8",
+          "comment": "Green color component (0-255)."
+        },
+        {
+          "name": "b",
+          "type": "u8",
+          "comment": "Blue color component (0-255)."
+        },
+        {
+          "name": "a",
+          "type": "u8",
+          "comment": "Alpha color component (0-255)."
+        },
+        {
+          "name": "isScreenSpace",
+          "type": "u8",
+          "comment": "If the geometry is unaffected by the camera."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "comment": "Padding for alignment.",
+          "count": 3
+        },
+        { "name": "x", "type": "f32", "comment": "X coordinate." },
+        { "name": "y", "type": "f32", "comment": "Y coordinate." }
+      ]
+    },
+    {
+      "name": "PackedGeomAddLineEvent",
+      "eventId": 51,
+      "enumName": "GEOM_ADD_LINE",
+      "isDynamic": false,
+      "comment": "Payload for adding a single geometry line.",
+      "members": [
+        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
+        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
+        { "name": "z", "type": "f64", "comment": "Z position (depth)." },
+        {
+          "name": "r",
+          "type": "u8",
+          "comment": "Red color component (0-255)."
+        },
+        {
+          "name": "g",
+          "type": "u8",
+          "comment": "Green color component (0-255)."
+        },
+        {
+          "name": "b",
+          "type": "u8",
+          "comment": "Blue color component (0-255)."
+        },
+        {
+          "name": "a",
+          "type": "u8",
+          "comment": "Alpha color component (0-255)."
+        },
+        {
+          "name": "isScreenSpace",
+          "type": "u8",
+          "comment": "If the geometry is unaffected by the camera."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "comment": "Padding for alignment.",
+          "count": 3
+        },
+        { "name": "x1", "type": "f32", "comment": "Start X coordinate." },
+        { "name": "y1", "type": "f32", "comment": "Start Y coordinate." },
+        { "name": "x2", "type": "f32", "comment": "End X coordinate." },
+        { "name": "y2", "type": "f32", "comment": "End Y coordinate." }
+      ]
+    },
+    {
+      "name": "PackedGeomAddRectEvent",
+      "eventId": 52,
+      "enumName": "GEOM_ADD_RECT",
+      "isDynamic": false,
+      "comment": "Payload for adding a geometry rectangle (outline).",
+      "members": [
+        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
+        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
+        { "name": "z", "type": "f64", "comment": "Z position (depth)." },
+        {
+          "name": "r",
+          "type": "u8",
+          "comment": "Red color component (0-255)."
+        },
+        {
+          "name": "g",
+          "type": "u8",
+          "comment": "Green color component (0-255)."
+        },
+        {
+          "name": "b",
+          "type": "u8",
+          "comment": "Blue color component (0-255)."
+        },
+        {
+          "name": "a",
+          "type": "u8",
+          "comment": "Alpha color component (0-255)."
+        },
+        {
+          "name": "isScreenSpace",
+          "type": "u8",
+          "comment": "If the geometry is unaffected by the camera."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "comment": "Padding for alignment.",
+          "count": 3
+        },
+        { "name": "x", "type": "f32", "comment": "Top-left X coordinate." },
+        { "name": "y", "type": "f32", "comment": "Top-left Y coordinate." },
+        { "name": "w", "type": "f32", "comment": "Width." },
+        { "name": "h", "type": "f32", "comment": "Height." }
+      ]
+    },
+    {
+      "name": "PackedGeomAddRectEvent",
+      "eventId": 53,
+      "enumName": "GEOM_ADD_FILL_RECT",
+      "isDynamic": false,
+      "comment": "Payload for adding a filled geometry rectangle. Reuses PackedGeomAddRectEvent.",
+      "members": [
+        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
+        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
+        { "name": "z", "type": "f64", "comment": "Z position (depth)." },
+        {
+          "name": "r",
+          "type": "u8",
+          "comment": "Red color component (0-255)."
+        },
+        {
+          "name": "g",
+          "type": "u8",
+          "comment": "Green color component (0-255)."
+        },
+        {
+          "name": "b",
+          "type": "u8",
+          "comment": "Blue color component (0-255)."
+        },
+        {
+          "name": "a",
+          "type": "u8",
+          "comment": "Alpha color component (0-255)."
+        },
+        {
+          "name": "isScreenSpace",
+          "type": "u8",
+          "comment": "If the geometry is unaffected by the camera."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "comment": "Padding for alignment.",
+          "count": 3
+        },
+        { "name": "x", "type": "f32", "comment": "Top-left X coordinate." },
+        { "name": "y", "type": "f32", "comment": "Top-left Y coordinate." },
+        { "name": "w", "type": "f32", "comment": "Width." },
+        { "name": "h", "type": "f32", "comment": "Height." }
+      ]
+    },
+    {
+      "name": "PackedGeomAddPackedHeaderEvent",
+      "eventId": 54,
+      "enumName": "GEOM_ADD_PACKED",
+      "isDynamic": true,
+      "comment": "Header for adding a batch of geometry primitives. Variable data (array of points/rects) follows.",
+      "members": [
+        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
+        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
+        { "name": "z", "type": "f64", "comment": "Z position (depth)." },
+        {
+          "name": "r",
+          "type": "u8",
+          "comment": "Red color component (0-255)."
+        },
+        {
+          "name": "g",
+          "type": "u8",
+          "comment": "Green color component (0-255)."
+        },
+        {
+          "name": "b",
+          "type": "u8",
+          "comment": "Blue color component (0-255)."
+        },
+        {
+          "name": "a",
+          "type": "u8",
+          "comment": "Alpha color component (0-255)."
+        },
+        {
+          "name": "isScreenSpace",
+          "type": "u8",
+          "comment": "If the geometry is unaffected by the camera."
+        },
+        {
+          "name": "_padding",
+          "type": "u16",
+          "comment": "Padding for alignment."
+        },
+        {
+          "name": "primitiveType",
+          "type": "u32",
+          "comment": "Raw value from PrimitiveType enum (point, line, rect)."
+        },
+        {
+          "name": "count",
+          "type": "u32",
+          "comment": "Number of primitives that follow this header."
+        }
+      ]
+    },
+    {
+      "name": "PackedGeomRemoveEvent",
+      "eventId": 55,
+      "enumName": "GEOM_REMOVE",
+      "isDynamic": false,
+      "comment": "Payload for removing a geometry entity.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of geometry to remove."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of geometry to remove."
+        }
+      ]
+    },
+    {
+      "name": "PackedGeomSetColorEvent",
+      "eventId": 56,
+      "enumName": "GEOM_SET_COLOR",
+      "isDynamic": false,
+      "comment": "Payload to set a geometry entity's color.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the geometry entity."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the geometry entity."
+        },
+        { "name": "r", "type": "u8", "comment": "New red component (0-255)." },
+        {
+          "name": "g",
+          "type": "u8",
+          "comment": "New green component (0-255)."
+        },
+        { "name": "b", "type": "u8", "comment": "New blue component (0-255)." },
+        {
+          "name": "a",
+          "type": "u8",
+          "comment": "New alpha component (0-255)."
+        },
+        {
+          "name": "_padding",
+          "type": "u32",
+          "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
+      "name": "PackedKeyEvent",
+      "eventId": 100,
+      "enumName": "INPUT_KEYUP",
+      "isDynamic": false,
+      "comment": "Payload for a key release event.",
+      "members": [
+        {
+          "name": "scancode",
+          "type": "i32",
+          "comment": "Physical key scancode."
+        },
+        {
+          "name": "keycode",
+          "type": "u32",
+          "comment": "Keycode (e.g., Keycode.A)."
+        },
+        {
+          "name": "mod",
+          "type": "u16",
+          "comment": "Key modifiers (Shift, Ctrl, etc.)."
+        },
+        {
+          "name": "isRepeat",
+          "type": "u8",
+          "comment": "1 if this is a key repeat, 0 otherwise."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
+      "name": "PackedKeyEvent",
+      "eventId": 101,
+      "enumName": "INPUT_KEYDOWN",
+      "isDynamic": false,
+      "comment": "Payload for a key press event. Reuses PackedKeyEvent.",
+      "members": [
+        {
+          "name": "scancode",
+          "type": "i32",
+          "comment": "Physical key scancode."
+        },
+        {
+          "name": "keycode",
+          "type": "u32",
+          "comment": "Keycode (e.g., Keycode.A)."
+        },
+        {
+          "name": "mod",
+          "type": "u16",
+          "comment": "Key modifiers (Shift, Ctrl, etc.)."
+        },
+        {
+          "name": "isRepeat",
+          "type": "u8",
+          "comment": "1 if this is a key repeat, 0 otherwise."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
+      "name": "PackedMouseButtonEvent",
+      "eventId": 102,
+      "enumName": "INPUT_MOUSEUP",
+      "isDynamic": false,
+      "comment": "Payload for a mouse button release event.",
+      "members": [
+        { "name": "x", "type": "f32", "comment": "X coordinate of the mouse." },
+        { "name": "y", "type": "f32", "comment": "Y coordinate of the mouse." },
+        { "name": "button", "type": "u8", "comment": "Mouse button index." },
+        {
+          "name": "clicks",
+          "type": "u8",
+          "comment": "Number of clicks (1 for single, 2 for double)."
+        },
+        {
+          "name": "_padding",
+          "type": "u16",
+          "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
+      "name": "PackedMouseButtonEvent",
+      "eventId": 103,
+      "enumName": "INPUT_MOUSEDOWN",
+      "isDynamic": false,
+      "comment": "Payload for a mouse button press event. Reuses PackedMouseButtonEvent.",
+      "members": [
+        { "name": "x", "type": "f32", "comment": "X coordinate of the mouse." },
+        { "name": "y", "type": "f32", "comment": "Y coordinate of the mouse." },
+        { "name": "button", "type": "u8", "comment": "Mouse button index." },
+        {
+          "name": "clicks",
+          "type": "u8",
+          "comment": "Number of clicks (1 for single, 2 for double)."
+        },
+        {
+          "name": "_padding",
+          "type": "u16",
+          "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
+      "name": "PackedMouseMotionEvent",
+      "eventId": 104,
+      "enumName": "INPUT_MOUSEMOTION",
+      "isDynamic": false,
+      "comment": "Payload for a mouse motion event.",
+      "members": [
+        { "name": "x", "type": "f32", "comment": "Absolute X coordinate." },
+        { "name": "y", "type": "f32", "comment": "Absolute Y coordinate." },
+        { "name": "xrel", "type": "f32", "comment": "Relative X motion." },
+        { "name": "yrel", "type": "f32", "comment": "Relative Y motion." }
+      ]
+    },
+    {
+      "name": "PackedWindowTitleEvent",
+      "eventId": 200,
+      "enumName": "WINDOW_TITLE",
+      "isDynamic": false,
+      "comment": "Payload for setting the window title.",
+      "members": [
+        {
+          "name": "title",
+          "type": "char[256]",
+          "comment": "A fixed-size 256-byte NUL-padded string for the title."
+        }
+      ]
+    },
+    {
+      "name": "PackedWindowResizeEvent",
+      "eventId": 201,
+      "enumName": "WINDOW_RESIZE",
+      "isDynamic": false,
+      "comment": "Payload for a window resize event.",
+      "members": [
+        { "name": "w", "type": "i32", "comment": "New window width." },
+        { "name": "h", "type": "i32", "comment": "New window height." }
+      ]
+    },
+    {
+      "name": "PackedWindowFlagsEvent",
+      "eventId": 202,
+      "enumName": "WINDOW_FLAGS",
+      "isDynamic": false,
+      "comment": "Payload for setting window flags (e.g., fullscreen, borderless).",
+      "members": [
+        {
+          "name": "flags",
+          "type": "u64",
+          "comment": "Bitmask of window flags."
+        }
+      ]
+    },
+    {
+      "name": "PackedTextAddEvent",
+      "eventId": 300,
+      "enumName": "TEXT_ADD",
+      "isDynamic": true,
+      "comment": "Header for adding new text. Variable data (font path, text string) follows.",
+      "members": [
+        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
+        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
+        {
+          "name": "positionX",
+          "type": "f64",
+          "comment": "Initial X position."
+        },
+        {
+          "name": "positionY",
+          "type": "f64",
+          "comment": "Initial Y position."
+        },
+        {
+          "name": "positionZ",
+          "type": "f64",
+          "comment": "Initial Z position (depth)."
+        },
+        {
+          "name": "r",
+          "type": "u8",
+          "comment": "Red color component (0-255)."
+        },
+        {
+          "name": "g",
+          "type": "u8",
+          "comment": "Green color component (0-255)."
+        },
+        {
+          "name": "b",
+          "type": "u8",
+          "comment": "Blue color component (0-255)."
+        },
+        {
+          "name": "a",
+          "type": "u8",
+          "comment": "Alpha color component (0-255)."
+        },
+        {
+          "name": "_padding1",
+          "type": "u32",
+          "comment": "Padding for alignment."
+        },
+        { "name": "fontSize", "type": "f32", "comment": "Font size." },
+        {
+          "name": "fontPathLength",
+          "type": "u32",
+          "comment": "Length of the font path string that follows."
+        },
+        {
+          "name": "textLength",
+          "type": "u32",
+          "comment": "Length of the initial text string that follows."
+        },
+        { "name": "_padding2", "type": "u32", "comment": "Padding." }
+      ]
+    },
+    {
+      "name": "PackedTextSetStringEvent",
+      "eventId": 301,
+      "enumName": "TEXT_SET_STRING",
+      "isDynamic": true,
+      "comment": "Header for setting a text entity's string. Variable data (text string) follows.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the text entity."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the text entity."
+        },
+        {
+          "name": "textLength",
+          "type": "u32",
+          "comment": "Length of the new text string that follows this header."
+        },
+        {
+          "name": "_padding",
+          "type": "u32",
+          "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
+      "name": "PackedAudioLoadEvent",
+      "eventId": 400,
+      "enumName": "AUDIO_LOAD",
+      "isDynamic": true,
+      "comment": "Header for loading an audio file. Variable data (path string) follows.",
+      "members": [
+        {
+          "name": "pathLength",
+          "type": "u32",
+          "comment": "Length of the audio file path that follows."
+        }
+      ]
+    },
+    {
+      "name": "PackedAudioLoadedEvent",
+      "eventId": 401,
+      "enumName": "AUDIO_LOADED",
+      "isDynamic": false,
+      "comment": "Payload sent *from* engine *to* client when audio is loaded.",
+      "members": [
+        {
+          "name": "audioId",
+          "type": "u64",
+          "comment": "The ID assigned to the loaded audio."
+        }
+      ]
+    },
+    {
+      "name": "PackedAudioPlayEvent",
+      "eventId": 402,
+      "enumName": "AUDIO_PLAY",
+      "isDynamic": false,
+      "comment": "Payload to play a loaded audio file.",
+      "members": [
+        {
+          "name": "audioId",
+          "type": "u64",
+          "comment": "The ID of the audio to play."
+        }
+      ]
+    },
+    {
+      "name": "PackedAudioStopAllEvent",
+      "eventId": 403,
+      "enumName": "AUDIO_STOP_ALL",
+      "isDynamic": false,
+      "comment": "Stops all playing audio. This event has no payload.",
+      "members": []
+    },
+    {
+      "name": "PackedAudioSetMasterVolumeEvent",
+      "eventId": 404,
+      "enumName": "AUDIO_SET_MASTER_VOLUME",
+      "isDynamic": false,
+      "comment": "Payload to set the global master volume.",
+      "members": [
+        {
+          "name": "volume",
+          "type": "f32",
+          "comment": "Volume level (e.g., 0.0 to 1.0)."
+        }
+      ]
+    },
+    {
+      "name": "PackedAudioPauseEvent",
+      "eventId": 405,
+      "enumName": "AUDIO_PAUSE",
+      "isDynamic": false,
+      "comment": "Payload to pause a specific, playing audio sound.",
+      "members": [
+        {
+          "name": "audioId",
+          "type": "u64",
+          "comment": "The ID of the audio to pause."
+        }
+      ]
+    },
+    {
+      "name": "PackedAudioStopEvent",
+      "eventId": 406,
+      "enumName": "AUDIO_STOP",
+      "isDynamic": false,
+      "comment": "Payload to stop and rewind a specific audio sound.",
+      "members": [
+        {
+          "name": "audioId",
+          "type": "u64",
+          "comment": "The ID of the audio to stop."
+        }
+      ]
+    },
+    {
+      "name": "PackedAudioUnloadEvent",
+      "eventId": 407,
+      "enumName": "AUDIO_UNLOAD",
+      "isDynamic": false,
+      "comment": "Payload to unload a specific audio sound, freeing memory.",
+      "members": [
+        {
+          "name": "audioId",
+          "type": "u64",
+          "comment": "The ID of the audio to unload."
+        }
+      ]
+    },
+    {
+      "name": "PackedAudioSetVolumeEvent",
+      "eventId": 408,
+      "enumName": "AUDIO_SET_VOLUME",
+      "isDynamic": false,
+      "comment": "Payload to set the volume of a specific audio sound.",
+      "members": [
+        {
+          "name": "audioId",
+          "type": "u64",
+          "comment": "The ID of the audio to modify."
+        },
+        {
+          "name": "volume",
+          "type": "f32",
+          "comment": "Volume level (0.0 to 1.0)."
+        },
+        {
+          "name": "_padding",
+          "type": "u32",
+          "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
+      "name": "PackedPhysicsAddBodyEvent",
+      "eventId": 500,
+      "enumName": "PHYSICS_ADD_BODY",
+      "isDynamic": false,
+      "comment": "Payload for adding a new physics body to the world.",
+      "members": [
+        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
+        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
+        {
+          "name": "positionX",
+          "type": "f64",
+          "comment": "Initial X position."
+        },
+        {
+          "name": "positionY",
+          "type": "f64",
+          "comment": "Initial Y position."
+        },
+        {
+          "name": "bodyType",
+          "type": "u8",
+          "comment": "Body type (static, kinematic, dynamic)."
+        },
+        {
+          "name": "shapeType",
+          "type": "u8",
+          "comment": "Shape type (box, circle)."
+        },
+        {
+          "name": "lockRotation",
+          "type": "u8",
+          "comment": "Rotation lock (0 = unlocked, 1 = locked). Prevent bodies from falling over."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "count": 5,
+          "comment": "Padding for 8-byte alignment."
+        },
+        { "name": "mass", "type": "f64", "comment": "Mass of the body." },
+        {
+          "name": "friction",
+          "type": "f64",
+          "comment": "Friction coefficient."
+        },
+        {
+          "name": "elasticity",
+          "type": "f64",
+          "comment": "Elasticity (bounciness)."
+        },
+        {
+          "name": "width",
+          "type": "f64",
+          "comment": "Width of the shape (or radius)."
+        },
+        {
+          "name": "height",
+          "type": "f64",
+          "comment": "Height of the shape (unused if circle)."
+        }
+      ]
+    },
+    {
+      "name": "PackedPhysicsRemoveBodyEvent",
+      "eventId": 501,
+      "enumName": "PHYSICS_REMOVE_BODY",
+      "isDynamic": false,
+      "comment": "Payload for removing a physics body.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of body to remove."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of body to remove."
+        }
+      ]
+    },
+    {
+      "name": "PackedPhysicsApplyForceEvent",
+      "eventId": 502,
+      "enumName": "PHYSICS_APPLY_FORCE",
+      "isDynamic": false,
+      "comment": "Payload to apply a continuous force to a body.",
+      "members": [
+        { "name": "id1", "type": "i64", "comment": "Primary ID of the body." },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the body."
+        },
+        {
+          "name": "forceX",
+          "type": "f64",
+          "comment": "Force vector X component."
+        },
+        {
+          "name": "forceY",
+          "type": "f64",
+          "comment": "Force vector Y component."
+        }
+      ]
+    },
+    {
+      "name": "PackedPhysicsApplyImpulseEvent",
+      "eventId": 503,
+      "enumName": "PHYSICS_APPLY_IMPULSE",
+      "isDynamic": false,
+      "comment": "Payload to apply an instant impulse to a body.",
+      "members": [
+        { "name": "id1", "type": "i64", "comment": "Primary ID of the body." },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the body."
+        },
+        {
+          "name": "impulseX",
+          "type": "f64",
+          "comment": "Impulse vector X component."
+        },
+        {
+          "name": "impulseY",
+          "type": "f64",
+          "comment": "Impulse vector Y component."
+        }
+      ]
+    },
+    {
+      "name": "PackedPhysicsSetVelocityEvent",
+      "eventId": 504,
+      "enumName": "PHYSICS_SET_VELOCITY",
+      "isDynamic": false,
+      "comment": "Payload to set a body's linear velocity.",
+      "members": [
+        { "name": "id1", "type": "i64", "comment": "Primary ID of the body." },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the body."
+        },
+        { "name": "velocityX", "type": "f64", "comment": "New X velocity." },
+        { "name": "velocityY", "type": "f64", "comment": "New Y velocity." }
+      ]
+    },
+    {
+      "name": "PackedPhysicsSetPositionEvent",
+      "eventId": 505,
+      "enumName": "PHYSICS_SET_POSITION",
+      "isDynamic": false,
+      "comment": "Payload to teleport a body to a new position.",
+      "members": [
+        { "name": "id1", "type": "i64", "comment": "Primary ID of the body." },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the body."
+        },
+        { "name": "positionX", "type": "f64", "comment": "New X position." },
+        { "name": "positionY", "type": "f64", "comment": "New Y position." }
+      ]
+    },
+    {
+      "name": "PackedPhysicsSetRotationEvent",
+      "eventId": 506,
+      "enumName": "PHYSICS_SET_ROTATION",
+      "isDynamic": false,
+      "comment": "Payload to set a body's rotation.",
+      "members": [
+        { "name": "id1", "type": "i64", "comment": "Primary ID of the body." },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the body."
+        },
+        {
+          "name": "angleInRadians",
+          "type": "f64",
+          "comment": "New angle in radians."
+        }
+      ]
+    },
+    {
+      "name": "PackedPhysicsCollisionEvent",
+      "eventId": 550,
+      "enumName": "PHYSICS_COLLISION_BEGIN",
+      "isDynamic": false,
+      "comment": "Payload sent *from* engine when two bodies begin colliding.",
+      "members": [
+        {
+          "name": "id1_A",
+          "type": "i64",
+          "comment": "Primary ID of the first body."
+        },
+        {
+          "name": "id2_A",
+          "type": "i64",
+          "comment": "Secondary ID of the first body."
+        },
+        {
+          "name": "id1_B",
+          "type": "i64",
+          "comment": "Primary ID of the second body."
+        },
+        {
+          "name": "id2_B",
+          "type": "i64",
+          "comment": "Secondary ID of the second body."
+        }
+      ]
+    },
+    {
+      "name": "PackedPhysicsCollisionEvent",
+      "eventId": 551,
+      "enumName": "PHYSICS_COLLISION_SEPARATE",
+      "isDynamic": false,
+      "comment": "Payload sent *from* engine when two bodies stop colliding. Reuses PackedPhysicsCollisionEvent.",
+      "members": [
+        {
+          "name": "id1_A",
+          "type": "i64",
+          "comment": "Primary ID of the first body."
+        },
+        {
+          "name": "id2_A",
+          "type": "i64",
+          "comment": "Secondary ID of the first body."
+        },
+        {
+          "name": "id1_B",
+          "type": "i64",
+          "comment": "Primary ID of the second body."
+        },
+        {
+          "name": "id2_B",
+          "type": "i64",
+          "comment": "Secondary ID of the second body."
+        }
+      ]
+    },
+    {
+      "name": "PackedPhysicsSyncTransformEvent",
+      "eventId": 552,
+      "enumName": "PHYSICS_SYNC_TRANSFORM",
+      "isDynamic": false,
+      "comment": "Payload sent *from* engine to sync 2D physics state back to client.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the body."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the body."
+        },
+        {
+          "name": "positionX",
+          "type": "f64",
+          "comment": "Current X position."
+        },
+        {
+          "name": "positionY",
+          "type": "f64",
+          "comment": "Current Y position."
+        },
+        {
+          "name": "angle",
+          "type": "f64",
+          "comment": "Current rotation (in radians)."
+        },
+        {
+          "name": "velocityX",
+          "type": "f64",
+          "comment": "Current X velocity."
+        },
+        {
+          "name": "velocityY",
+          "type": "f64",
+          "comment": "Current Y velocity."
+        },
+        {
+          "name": "angularVelocity",
+          "type": "f64",
+          "comment": "Current angular velocity (spin speed) in radians/sec."
+        },
+        {
+          "name": "isSleeping",
+          "type": "u8",
+          "comment": "1 if the body is sleeping, 0 if active."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "count": 7,
+          "comment": "Aligns struct to 64-bit boundary."
+        }
+      ]
+    },
+    {
+      "name": "PackedPluginOnEvent",
+      "eventId": 1000,
+      "enumName": "PLUGIN",
+      "isDynamic": false,
+      "comment": "Payload for a generic plugin 'on' event.",
+      "members": [
+        {
+          "name": "eventId",
+          "type": "u8",
+          "comment": "A custom event ID for the plugin."
+        }
+      ]
+    },
+    {
+      "name": "PackedPluginLoadHeaderEvent",
+      "eventId": 1001,
+      "enumName": "PLUGIN_LOAD",
+      "isDynamic": true,
+      "comment": "Header for loading a plugin. Variable data (path string) follows.",
+      "members": [
+        {
+          "name": "channelNo",
+          "type": "u32",
+          "comment": "Initial Channel number to receive events from. Look at channel subscription event to listen to more than one channel."
+        },
+        {
+          "name": "pathLength",
+          "type": "u32",
+          "comment": "Length of the plugin file path that follows."
+        }
+      ]
+    },
+    {
+      "name": "PackedPluginUnloadEvent",
+      "eventId": 1002,
+      "enumName": "PLUGIN_UNLOAD",
+      "isDynamic": false,
+      "comment": "Payload to unload a plugin.",
+      "members": [
+        {
+          "name": "pluginId",
+          "type": "u8",
+          "comment": "ID of the plugin to unload."
+        }
+      ]
+    },
+    {
+      "name": "PackedPluginSetEvent",
+      "eventId": 1003,
+      "enumName": "PLUGIN_SET",
+      "isDynamic": false,
+      "comment": "Payload to set the active plugin.",
+      "members": [
+        {
+          "name": "pluginId",
+          "type": "u8",
+          "comment": "ID of the plugin to set as active."
+        }
+      ]
+    },
+    {
+      "name": "PackedPluginEventStackingEvent",
+      "eventId": 1004,
+      "enumName": "PLUGIN_EVENT_STACKING",
+      "isDynamic": false,
+      "comment": "Payload to enable or disable plugin event stacking.",
+      "members": [
+        {
+          "name": "eventId",
+          "type": "u8",
+          "comment": "1 to enable stacking, 0 to disable."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
+      "name": "PackedPluginSubscribeEvent",
+      "eventId": 1005,
+      "enumName": "PLUGIN_SUBSCRIBE_EVENT",
+      "isDynamic": false,
+      "comment": "Have events from a channel forward to this plugin",
+      "members": [
+        {
+          "name": "pluginId",
+          "type": "u8",
+          "comment": "ID of the plugin."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "count": 3,
+          "comment": "Padding for alignment."
+        },
+        {
+          "name": "channelNo",
+          "type": "u32",
+          "comment": "Channel number to receive events from."
+        }
+      ]
+    },
+    {
+      "name": "PackedPluginUnsubscribeEvent",
+      "eventId": 1006,
+      "enumName": "PLUGIN_UNSUBSCRIBE_EVENT",
+      "isDynamic": false,
+      "comment": "Have events from a channel forward to this plugin",
+      "members": [
+        {
+          "name": "pluginId",
+          "type": "u8",
+          "comment": "ID of the plugin."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "count": 3,
+          "comment": "Padding for alignment."
+        },
+        {
+          "name": "channelNo",
+          "type": "u32",
+          "comment": "Channel number to stop receiving events from."
+        }
+      ]
+    },
+    {
+      "name": "PackedCameraSetPositionEvent",
+      "eventId": 2000,
+      "enumName": "CAMERA_SET_POSITION",
+      "isDynamic": false,
+      "comment": "Payload to set the 2D camera's absolute world position.",
+      "members": [
+        {
+          "name": "positionX",
+          "type": "f64",
+          "comment": "New X position for the camera's top-left corner."
+        },
+        {
+          "name": "positionY",
+          "type": "f64",
+          "comment": "New Y position for the camera's top-left corner."
+        }
+      ]
+    },
+    {
+      "name": "PackedCameraMoveEvent",
+      "eventId": 2001,
+      "enumName": "CAMERA_MOVE",
+      "isDynamic": false,
+      "comment": "Payload to move the 2D camera by a relative delta.",
+      "members": [
+        {
+          "name": "deltaX",
+          "type": "f64",
+          "comment": "Amount to move the camera on the X axis."
+        },
+        {
+          "name": "deltaY",
+          "type": "f64",
+          "comment": "Amount to move the camera on the Y axis."
+        }
+      ]
+    },
+    {
+      "name": "PackedCameraSetZoomEvent",
+      "eventId": 2002,
+      "enumName": "CAMERA_SET_ZOOM",
+      "isDynamic": false,
+      "comment": "Payload to set the 2D camera's zoom level.",
+      "members": [
+        {
+          "name": "zoom",
+          "type": "f64",
+          "comment": "New zoom level. 1.0 is default, 2.0 is zoomed in."
+        }
+      ]
+    },
+    {
+      "name": "PackedCameraSetRotationEvent",
+      "eventId": 2003,
+      "enumName": "CAMERA_SET_ROTATION",
+      "isDynamic": false,
+      "comment": "Payload to set the 2D camera's rotation.",
+      "members": [
+        {
+          "name": "angleInRadians",
+          "type": "f64",
+          "comment": "New camera rotation in radians."
+        }
+      ]
+    },
+    {
+      "name": "PackedCameraFollowEntityEvent",
+      "eventId": 2004,
+      "enumName": "CAMERA_FOLLOW_ENTITY",
+      "isDynamic": false,
+      "comment": "Tells the camera to start following a specific entity.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the entity to follow."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID of the entity to follow."
+        }
+      ]
+    },
+    {
+      "name": "PackedCameraStopFollowingEvent",
+      "eventId": 2005,
+      "enumName": "CAMERA_STOP_FOLLOWING",
+      "isDynamic": false,
+      "comment": "Tells the camera to stop following any entity.",
+      "members": []
+    },
+    {
+      "name": "PackedScriptSubscribeEvent",
+      "eventId": 3000,
+      "enumName": "SCRIPT_SUBSCRIBE",
+      "isDynamic": false,
+      "comment": "Tells the engine to subscribe the main script (PHP) to a channel.",
+      "members": [
+        {
+          "name": "channelNo",
+          "type": "u32",
+          "comment": "Channel number to start receiving events from."
+        },
+        {
+          "name": "_padding",
+          "type": "u32",
+          "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
+      "name": "PackedScriptUnsubscribeEvent",
+      "eventId": 3001,
+      "enumName": "SCRIPT_UNSUBSCRIBE",
+      "isDynamic": false,
+      "comment": "Tells the engine to unsubscribe the main script (PHP) from a channel.",
+      "members": [
+        {
+          "name": "channelNo",
+          "type": "u32",
+          "comment": "Channel number to stop receiving events from."
+        },
+        {
+          "name": "_padding",
+          "type": "u32",
+          "comment": "Padding for alignment."
+        }
+      ]
+    }
+  ]
+}

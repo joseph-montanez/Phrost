@@ -1,0 +1,5 @@
+php-version: 8.4
+extensions: bcmath,posix,phar,zlib,openssl,curl,fileinfo,tokenizer,filter,iconv,mbstring,ctype,sockets,simplexml
+sapi:
+  - cli
+  - embed

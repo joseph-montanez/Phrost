@@ -1,0 +1,10 @@
+xcuserdata/
+
+.DS_Store
+.build
+Package.resolved
+Packages
+build
+Dependencies/SDL3/
+
+.swiftpm

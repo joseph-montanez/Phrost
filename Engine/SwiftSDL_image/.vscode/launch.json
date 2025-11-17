@@ -1,0 +1,40 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:SwiftSDL}",
+            "name": "Debug sdl",
+            "program": "${workspaceFolder:SwiftSDL}/.build/debug/sdl",
+            "preLaunchTask": "swift: Build Debug sdl"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:SwiftSDL}",
+            "name": "Release sdl",
+            "program": "${workspaceFolder:SwiftSDL}/.build/release/sdl",
+            "preLaunchTask": "swift: Build Release sdl"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:SwiftSDL_image}",
+            "name": "Debug sdl_image",
+            "program": "${workspaceFolder:SwiftSDL_image}/.build/debug/sdl_image",
+            "preLaunchTask": "swift: Build Debug sdl_image"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:SwiftSDL_image}",
+            "name": "Release sdl_image",
+            "program": "${workspaceFolder:SwiftSDL_image}/.build/release/sdl_image",
+            "preLaunchTask": "swift: Build Release sdl_image"
+        }
+    ]
+}

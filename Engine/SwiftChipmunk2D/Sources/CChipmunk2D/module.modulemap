@@ -1,0 +1,6 @@
+module CChipmunk2D [system] [extern_c] {
+    umbrella header "shims.h"
+    header "chipmunk_wrapper.h"
+    link "chipmunk" // Correct library name for linking
+    export *
+}

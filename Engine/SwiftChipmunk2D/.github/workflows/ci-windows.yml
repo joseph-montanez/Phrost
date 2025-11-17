@@ -1,0 +1,61 @@
+name: Windows
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  windows-test-build-release:
+    runs-on: windows-latest
+    steps:
+      - uses: compnerd/gha-setup-swift@main
+        with:
+          branch: swift-5.8-release
+          tag: 5.8-RELEASE
+
+      - name: Checkout
+        uses: actions/checkout@v3.5.3
+
+      - name: Cache vcpkg
+        uses: actions/cache@v3.3.1
+        with:
+          key: windows-x64-vcpkg
+          path: C:\vcpkg\installed\x64-windows
+
+      - name: Build & Test
+        shell: pwsh
+        run: |
+          vcpkg integrate powershell
+
+          # install dependencies
+          vcpkg install sdl2[core,vulkan] --recurse --triplet x64-windows --no-print-usage
+          vcpkg install pkgconf --triplet x64-windows --no-print-usage
+          
+          # setup pkgconf environment
+          $env:Path += ";C:\vcpkg\installed\x64-windows\tools\pkgconf\"
+          $env:PKG_CONFIG_PATH = "C:\vcpkg\installed\x64-windows\lib\pkgconfig\"
+
+          # generate windows header
+          $includedir = (pkgconf --variable includedir sdl2).Trim()
+          Write-Output ('#include "' + $includedir + '/SDL2/SDL.h"') > Sources/CSDL2/windows_generated.h
+          Write-Output ('#include "' + $includedir + '/SDL2/SDL_vulkan.h"') >> Sources/CSDL2/windows_generated.h
+
+          # build
+          swift build
+
+          # copy SDL libraries
+          $bindir = ((pkgconf --variable exec_prefix sdl2).Trim() + "/bin")
+          $libdir = (pkgconf --variable libdir sdl2).Trim()
+          foreach ($config in "debug", "release") {
+              $path = ".build/$config"
+              if (Test-Path -Path $path) {
+                  Copy-Item ($bindir + '/SDL2.dll') $path
+                  Copy-Item ($libdir + '/SDL2.lib') $path
+              }
+          }
+
+          # test
+          swift test

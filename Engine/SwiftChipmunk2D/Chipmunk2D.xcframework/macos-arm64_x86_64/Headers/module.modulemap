@@ -1,0 +1,7 @@
+module Chipmunk2D {
+    header "chipmunk.h"
+    export *
+    link "Chipmunk2D"
+    link framework "CoreGraphics"
+    link framework "Foundation"
+}

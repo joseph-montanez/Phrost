@@ -1,0 +1,22 @@
+{
+  "name": "phrost/engine",
+  "autoload": {
+    "psr-4": {
+      "Phrost\\": "libs/Phrost",
+      "Game\\": "src"
+    },
+    "files": [
+      "game-logic.php"
+    ]
+  },
+  "authors": [
+    {
+      "name": "Joseph Montanez",
+      "email": "sutabi@gmail.com"
+    }
+  ],
+  "require": {},
+  "scripts": {
+    "run-engine": "../PhrostBinary"
+  }
+}

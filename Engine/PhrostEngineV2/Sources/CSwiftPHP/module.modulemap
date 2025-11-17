@@ -1,0 +1,4 @@
+module CSwiftPHP {
+    header "c_helpers.h"
+    export *
+}

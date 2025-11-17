@@ -1,0 +1,13 @@
+services:
+  php-swift-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: php-swift-dev
+    tty: true
+    working_dir: /work
+    volumes:
+      - ./:/work
+    environment:
+      - DEBIAN_FRONTEND=noninteractive
+    command: bash
