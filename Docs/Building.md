@@ -134,6 +134,11 @@ If you need the x86/arm64 download Swift for that platform in a custom folder us
     curl -fsSL -o spc https://dl.static-php.dev/static-php-cli/spc-bin/nightly/spc-macos-aarch64 # OR FOR INTEL (curl -fsSL -o spc https://dl.static-php.dev/static-php-cli/spc-bin/nightly/spc-macos-x86_64)
     chmod +x ./spc
     ./spc craft
+    cd ../
+    
+    cd PhrostEngineV2
+    chmod +x ./Scripts/macos_ext.sh
+    ./Scripts/macos_ext.sh
 
 **Code Signing**
 
