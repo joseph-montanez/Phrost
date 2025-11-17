@@ -7,24 +7,13 @@ This is not required to use the game engine. Everything is provided in the relea
 
 Download the redist - https://aka.ms/vs/17/release/vc_redist.x64.exe
 
+**Visual Studio Community 2022**
+
+Download the Visual Studio Community 2022 installer from the Microsoft website. Once downloaded, run it and select the Desktop development with C++ workload.
+
 **Install Swift 6.2**
 
 Project is designed with Swift 6.2 strict concurrency. https://www.swift.org/install/windows/
-
-**Visual Studio Community 2022**
-
-Download the Visual Studio Community 2022 installer from the Microsoft website. Once downloaded, run it and select the Desktop development with C++ workload. Then, select the following in the Individual Components tab (ensure that the versions match):
-
-    .NET 9.0 Runtime
-    MSVC v143 - VS 2022 C++ ARM build tools (v14.42-17.12)
-    MSVC v143 - VS 2022 C++ ARM Spectre-mitigated libs (v14.42-17.12)
-    MSVC v143 - VS 2022 C++ ARM64/ARM64EC build tools (v14.42-17.12)
-    MSVC v143 - VS 2022 C++ x64/x86 build tools (v14.42-17.12)
-    MSVC v143 - VS 2022 C++ x64/x86 Spectre-mitigated libs (v14.42-17.12)
-    C++ v14.42 (17.12) ATL for v143 build tools (ARM)
-    C++ v14.42 (17.12) ATL for v143 build tools (ARM64)
-    C++ v14.42 (17.12) ATL for v143 build tools (x86 & x64)
-    Windows 11 SDK (10.0.22621.0) If another version is installed, uninstall it
 
 **Download SDL3 Headers and Libraries**
 
