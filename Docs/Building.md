@@ -67,25 +67,6 @@ You may need to allow powershell execution `Set-ExecutionPolicy -ExecutionPolicy
     ./Scripts/win_ext_arm64.ps1
     ./Scripts/win_ext_x64.ps1
 
-**Distrubuting**
-
-Change the name of `PhrostBinary.exe` and you are set. Below are some notes if you want to customize the executable.
-
-One major issue with cross compiling Swift on Windows for x64 and Arm64 is that there are DLLs that must be distributed with your game. To resolve this I pass in `--static-swift-stdlib` however if you really want the DLLs is the list.
-
-Your platform specific version is located in the `%LOCALAPPDATA%\Programs\Swift\Runtimes\6.2.1\usr\bin` directory.
-
- - Foundation.dll
- - FoundationEssentials.dll
- - swiftDispatch.dll
- - BlocksRuntime.dll
- - swift_Concurrency.dll
- - swiftWinSDK.dll
- - swiftCore.dll
- - swiftCRT.dll
-
-If you need the x86/arm64 download Swift for that platform in a custom folder using the `options` button in the installer and install it into the custom folder, then pull those DLLs for cross platform distribution.
-
 ## Compile Game Engine For macOS
 
     xcode-select --install
