@@ -14,7 +14,7 @@ jobs:
 
     defaults:
       run:
-        shell: inputs.shell || powershell
+        shell: powershell
 
     steps:
       # 1. Checkout code into a subdirectory 'Phrost'
@@ -31,7 +31,7 @@ jobs:
           echo "REPO_DIR=$($ROOT_DIR)\Phrost" >> $env:GITHUB_ENV
 
       # 3. Install Swift
-      - name: Install Swift 6.0 (Arm64)
+      - name: Install Swift 6.0.2 (Arm64)
         run: |
           $ProgressPreference = 'SilentlyContinue'
           Write-Host "Downloading Swift installer..."
@@ -101,9 +101,7 @@ jobs:
       # 6. Run Build Script
       - name: Run Build Script
         run: |
-          # Path to your script inside the repo
           $ScriptPath = Join-Path $env:REPO_DIR "Engine\PhrostEngineV2\scripts\build.ps1"
-
           Write-Host "Running build script at: $ScriptPath"
           & $ScriptPath
 
