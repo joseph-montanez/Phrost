@@ -1,0 +1,134 @@
+name: Build Phrost Engine (Windows x64)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  build:
+    name: Build on Windows 11 x64
+    # Use standard GitHub-hosted runner for x64
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: powershell
+
+    steps:
+      # 1. Checkout Code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          path: Phrost
+
+      # 2. Setup Directory Vars
+      - name: Set Directory Vars
+        run: |
+          $ROOT_DIR = Get-Location
+          $REPO_DIR = "$ROOT_DIR\Phrost"
+
+          echo "DEPS_DIR=$REPO_DIR\Engine\deps" >> $env:GITHUB_ENV
+          echo "REPO_DIR=$REPO_DIR" >> $env:GITHUB_ENV
+
+      # 3. Setup Swift (x64)
+      - name: Setup Swift
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "6.0.2"
+
+      # 4. Cache Dependencies
+      - name: Cache Deps
+        id: cache-deps
+        uses: actions/cache@v3
+        with:
+          path: Phrost/Engine/deps
+          key: ${{ runner.os }}-x64-deps-v1
+
+      # 5. Setup Dependencies
+      - name: Download and Setup Dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          New-Item -ItemType Directory -Path $env:DEPS_DIR -Force | Out-Null
+          Set-Location $env:DEPS_DIR
+
+          # --- A. PHP SDK (x64) ---
+          # Official builds split the binaries and the SDK (devel-pack)
+          $PHP_FOLDER_NAME = "php-8.4.14-nts-Win32-vs17-x64"
+          $PhpBinUrl = "https://windows.php.net/downloads/releases/php-8.4.14-nts-Win32-vs17-x64.zip"
+          $PhpSdkUrl = "https://windows.php.net/downloads/releases/php-devel-pack-8.4.14-nts-Win32-vs17-x64.zip"
+
+          Write-Host "Downloading PHP x64 Binaries..."
+          curl.exe -L -o "php-x64.zip" $PhpBinUrl
+          Write-Host "Downloading PHP x64 SDK..."
+          curl.exe -L -o "php-x64-sdk.zip" $PhpSdkUrl
+
+          # Create structure
+          New-Item -ItemType Directory -Path $PHP_FOLDER_NAME -Force | Out-Null
+          New-Item -ItemType Directory -Path "$PHP_FOLDER_NAME\sdk" -Force | Out-Null
+
+          # Extract Binaries
+          tar -xf php-x64.zip -C $PHP_FOLDER_NAME
+
+          # Extract SDK
+          tar -xf php-x64-sdk.zip -C "$PHP_FOLDER_NAME\sdk"
+
+          # Fix SDK nesting (The zip contains a versioned folder inside)
+          # Your docs: move .\php-8.4.14-...\sdk\php-8.4.14-devel-vs17-x64\* .\php-8.4.14-...\sdk\
+          $SdkRoot = Join-Path $env:DEPS_DIR "$PHP_FOLDER_NAME\sdk"
+          $InnerSdk = Get-ChildItem -Path $SdkRoot -Directory | Select-Object -First 1
+          if ($InnerSdk) {
+              Write-Host "Flattening SDK folder from $($InnerSdk.Name)..."
+              Move-Item -Path "$($InnerSdk.FullName)\*" -Destination $SdkRoot -Force
+              Remove-Item $InnerSdk.FullName -Recurse -Force
+          }
+
+          # --- B. SDL3 (x64) ---
+          Write-Host "Downloading SDL3 x64..."
+          $SdlUrl = "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-09/SDL3-x64-2025-11-09.zip"
+          curl.exe -L -o "SDL3-x64.zip" $SdlUrl
+
+          # Extract to temp, rename to 'SDL3-x64'
+          Expand-Archive -Path "SDL3-x64.zip" -DestinationPath "sdl_temp" -Force
+          $InnerFolder = Get-ChildItem -Path "sdl_temp" -Directory | Select-Object -First 1
+          Move-Item -Path $InnerFolder.FullName -Destination "SDL3-x64" -Force
+          Remove-Item "sdl_temp" -Recurse -Force
+
+          # --- C. Chipmunk2D (x64) ---
+          # *** ACTION: You should upload 'chipmunk_x64-windows.zip' to your release v0.01 ***
+          # If you haven't yet, you can swap this back to vcpkg, but the zip is much faster.
+          Write-Host "Downloading Chipmunk2D x64..."
+          # Assuming you upload the x64 zip just like the arm64 one
+          $ChipmunkUrl = "https://github.com/joseph-montanez/Phrost/releases/download/v0.01/chipmunk_x64-windows.zip"
+
+          $VcpkgPackagesDir = Join-Path $env:DEPS_DIR "vcpkg\packages"
+          New-Item -ItemType Directory -Path $VcpkgPackagesDir -Force | Out-Null
+
+          curl.exe -L -o "chipmunk.zip" $ChipmunkUrl
+          # This zip should extract to 'chipmunk_x64-windows'
+          Expand-Archive -Path "chipmunk.zip" -DestinationPath $VcpkgPackagesDir -Force
+
+          Write-Host "Dependencies setup complete."
+
+      # 6. Run Build Script
+      - name: Run Build Script
+        run: |
+          swift --version
+
+          $ProjectRoot = Join-Path $env:REPO_DIR "Engine\PhrostEngineV2"
+          Set-Location $ProjectRoot
+
+          # Pointing to your x64 script
+          $ScriptPath = Join-Path $ProjectRoot "scripts\win_ext_x64.ps1"
+          Write-Host "Invoking script: $ScriptPath"
+
+          & $ScriptPath
+
+      # 7. Upload Artifacts
+      - name: Upload Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: Phrost-Windows-x64
+          path: Phrost/Release
