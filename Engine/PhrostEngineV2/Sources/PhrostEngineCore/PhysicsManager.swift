@@ -69,13 +69,13 @@ public final class PhysicsManager: @unchecked Sendable {
 
                 // Trigger
                 queueSyncEvent(
-                            id: id,
-                            pos: pos,
-                            vel: vel,
-                            angle: angle,
-                            angularVelocity: angularVel,
-                            isSleeping: sleeping
-                        )
+                    id: id,
+                    pos: pos,
+                    vel: vel,
+                    angle: angle,
+                    angularVelocity: angularVel,
+                    isSleeping: sleeping
+                )
             }
         }
     }
@@ -178,7 +178,6 @@ public final class PhysicsManager: @unchecked Sendable {
 
     public func applyImpulse(id: SpriteID, impulse: cpVect) {
         guard let link = physicsLinks[id] else { return }
-        print("Applying Impulse")
         cpBodyApplyImpulseAtLocalPoint(OpaquePointer(link.body), impulse, cpVect(x: 0, y: 0))
     }
 
