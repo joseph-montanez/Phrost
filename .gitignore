@@ -40,3 +40,6 @@ Engine/deps/php-8.4.10-nts-Win32-vs17-arm64-experimental/save.dat
 /Release
 /Engine/deps
 /Engine/deps
+/Runtime/c/embed/game
+Runtime/c/embed/php_errors.log
+/Runtime/c/embed/Phrost.app
