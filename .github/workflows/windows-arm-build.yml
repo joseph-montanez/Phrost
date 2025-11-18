@@ -27,30 +27,21 @@ jobs:
       - name: Set Directory Vars
         run: |
           $ROOT_DIR = Get-Location
-          echo "DEPS_DIR=$($ROOT_DIR)\deps" >> $env:GITHUB_ENV
-          echo "REPO_DIR=$($ROOT_DIR)\Phrost" >> $env:GITHUB_ENV
+          $REPO_DIR = "$ROOT_DIR\Phrost"
 
-      # 3. Install Swift 6.0 (Arm64) - FIXED URL
-      - name: Install Swift 6.0 (Arm64)
+          # DEPS_DIR is set to 'Engine\deps' inside the repo to match your build script
+          echo "DEPS_DIR=$REPO_DIR\Engine\deps" >> $env:GITHUB_ENV
+          echo "REPO_DIR=$REPO_DIR" >> $env:GITHUB_ENV
+
+      # 3. Install Swift 6.0.2 (Arm64)
+      - name: Install Swift 6.0.2 (Arm64)
         run: |
-          # --- FIXED URL HERE ---
-          # Note the 'windows10-arm64' folder and 'arm64.exe' suffix
           $SwiftUrl = "https://download.swift.org/swift-6.0.2-release/windows10-arm64/swift-6.0.2-RELEASE/swift-6.0.2-RELEASE-windows10-arm64.exe"
-
-          Write-Host "Downloading Swift installer from: $SwiftUrl"
-
-          # Download with curl
+          Write-Host "Downloading Swift installer..."
           curl.exe -L -o "swift-installer.exe" $SwiftUrl
-
-          # Check file size to ensure it's not a 404 text file (should be > 400MB)
-          $size = (Get-Item "swift-installer.exe").Length
-          Write-Host "Downloaded file size: $size bytes"
-          if ($size -lt 1000000) { throw "Download failed! File is too small, likely a 404 error." }
 
           Write-Host "Installing Swift..."
           Start-Process -FilePath ".\swift-installer.exe" -ArgumentList "/quiet /norestart" -Wait
-
-          # Add Swift to Path
           echo "$env:SystemDrive\Library\Developer\Toolchains\unknown-Asserts-development.xctoolchain\usr\bin" >> $env:GITHUB_PATH
 
       # 4. Cache Dependencies
@@ -58,8 +49,8 @@ jobs:
         id: cache-deps
         uses: actions/cache@v3
         with:
-          path: deps
-          key: ${{ runner.os }}-arm64-deps-v3 # Incremented to v3
+          path: Phrost/Engine/deps
+          key: ${{ runner.os }}-arm64-deps-v6
 
       # 5. Setup Dependencies
       - name: Download and Setup Dependencies
@@ -68,22 +59,24 @@ jobs:
           New-Item -ItemType Directory -Path $env:DEPS_DIR -Force | Out-Null
           Set-Location $env:DEPS_DIR
 
-          # --- A. PHP SDK ---
+          # --- A. PHP SDK (Experimental Arm64) ---
           $PHP_FOLDER_NAME = "php-8.4.10-nts-Win32-vs17-arm64"
-          Write-Host "Downloading PHP SDK..."
-          curl.exe -L -o "php.zip" "https://windows.php.net/downloads/qa/$PHP_FOLDER_NAME.zip"
+          $PhpUrl = "https://github.com/hyh19962008/php-windows-arm64/releases/download/8.4.10/php-8.4.10-nts-Win32-vs17-arm64-experimental.7z"
 
-          Expand-Archive -Path "php.zip" -DestinationPath "php_temp" -Force
+          Write-Host "Downloading Experimental PHP Arm64..."
+          curl.exe -L -o "php-arm64.7z" $PhpUrl
 
-          $PHP_FINAL_DIR = Join-Path $env:DEPS_DIR $PHP_FOLDER_NAME
-          New-Item -ItemType Directory -Path (Join-Path $PHP_FINAL_DIR "SDK") -Force | Out-Null
-          Move-Item -Path "php_temp\*" -Destination (Join-Path $PHP_FINAL_DIR "SDK") -Force
-          Remove-Item "php_temp" -Recurse -Force
+          # Create the folder and extract.
+          # Since the SDK folder is already in the zip, this puts it at:
+          # .../deps/php-8.4.10-nts-Win32-vs17-arm64/SDK/
+          New-Item -ItemType Directory -Path $PHP_FOLDER_NAME -Force | Out-Null
+          tar -xf php-arm64.7z -C $PHP_FOLDER_NAME
 
-          # --- B. SDL3 ---
+          # --- B. SDL3 (mmozeiko build) ---
           Write-Host "Downloading SDL3..."
-          curl.exe -L -o "sdl3.zip" "https://github.com/libsdl-org/SDL/releases/download/preview-3.1.3/SDL3-3.1.3-win32-arm64.zip"
-          Expand-Archive -Path "sdl3.zip" -DestinationPath "SDL3-arm64" -Force
+          $SdlUrl = "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-09/SDL3-arm64-2025-11-09.zip"
+          curl.exe -L -o "SDL3-arm64.zip" $SdlUrl
+          Expand-Archive -Path "SDL3-arm64.zip" -DestinationPath "SDL3-arm64" -Force
 
           # --- C. Chipmunk2D ---
           Write-Host "Downloading Chipmunk2D..."
@@ -100,7 +93,7 @@ jobs:
       # 6. Run Build Script
       - name: Run Build Script
         run: |
-          $ScriptPath = Join-Path $env:REPO_DIR "Engine\PhrostEngineV2\scripts\build.ps1"
+          $ScriptPath = Join-Path $env:REPO_DIR "Engine\PhrostEngineV2\scripts\win_ext_arm64.ps1"
           Write-Host "Running build script at: $ScriptPath"
           & $ScriptPath
 
