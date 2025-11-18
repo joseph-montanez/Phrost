@@ -17,27 +17,35 @@ jobs:
         shell: powershell
 
     steps:
-      # 1. Checkout code into a subdirectory 'Phrost'
+      # 1. Checkout Code
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           path: Phrost
 
-      # 2. Setup Directory Variables
+      # 2. Setup Directory Vars
       - name: Set Directory Vars
         run: |
           $ROOT_DIR = Get-Location
           echo "DEPS_DIR=$($ROOT_DIR)\deps" >> $env:GITHUB_ENV
           echo "REPO_DIR=$($ROOT_DIR)\Phrost" >> $env:GITHUB_ENV
 
-      # 3. Install Swift 6.0 (Arm64)
+      # 3. Install Swift 6.0 (Arm64) - FIXED URL
       - name: Install Swift 6.0 (Arm64)
         run: |
-          $SwiftUrl = "https://download.swift.org/swift-6.0.2-release/windows10/swift-6.0.2-RELEASE/swift-6.0.2-RELEASE-windows10-aarch64.exe"
-          Write-Host "Downloading Swift installer from $SwiftUrl ..."
+          # --- FIXED URL HERE ---
+          # Note the 'windows10-arm64' folder and 'arm64.exe' suffix
+          $SwiftUrl = "https://download.swift.org/swift-6.0.2-release/windows10-arm64/swift-6.0.2-RELEASE/swift-6.0.2-RELEASE-windows10-arm64.exe"
 
-          # Use curl.exe (-L handles redirects, -o specifies output file)
+          Write-Host "Downloading Swift installer from: $SwiftUrl"
+
+          # Download with curl
           curl.exe -L -o "swift-installer.exe" $SwiftUrl
+
+          # Check file size to ensure it's not a 404 text file (should be > 400MB)
+          $size = (Get-Item "swift-installer.exe").Length
+          Write-Host "Downloaded file size: $size bytes"
+          if ($size -lt 1000000) { throw "Download failed! File is too small, likely a 404 error." }
 
           Write-Host "Installing Swift..."
           Start-Process -FilePath ".\swift-installer.exe" -ArgumentList "/quiet /norestart" -Wait
@@ -51,51 +59,40 @@ jobs:
         uses: actions/cache@v3
         with:
           path: deps
-          key: ${{ runner.os }}-arm64-deps-v2 # Incremented key to v2
+          key: ${{ runner.os }}-arm64-deps-v3 # Incremented to v3
 
-      # 5. Setup Dependencies (Updated)
+      # 5. Setup Dependencies
       - name: Download and Setup Dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          # Ensure main deps folder exists
           New-Item -ItemType Directory -Path $env:DEPS_DIR -Force | Out-Null
           Set-Location $env:DEPS_DIR
 
-          # --- A. PHP SDK (Placeholder - Adjust URL/Version as needed) ---
+          # --- A. PHP SDK ---
           $PHP_FOLDER_NAME = "php-8.4.10-nts-Win32-vs17-arm64"
           Write-Host "Downloading PHP SDK..."
-          # NOTE: Using a generic QA link as placeholder. Ensure this matches your version.
-          Invoke-WebRequest -Uri "https://windows.php.net/downloads/qa/$PHP_FOLDER_NAME.zip" -OutFile "php.zip"
+          curl.exe -L -o "php.zip" "https://windows.php.net/downloads/qa/$PHP_FOLDER_NAME.zip"
 
-          # Extract to a temp folder first to organize it like your script expects (SDK folder)
           Expand-Archive -Path "php.zip" -DestinationPath "php_temp" -Force
 
-          # Structure adjustment: Create the specific folder name your script looks for
           $PHP_FINAL_DIR = Join-Path $env:DEPS_DIR $PHP_FOLDER_NAME
           New-Item -ItemType Directory -Path (Join-Path $PHP_FINAL_DIR "SDK") -Force | Out-Null
-
-          # Move contents to SDK (standard PHP zips are flat, your script expects 'SDK\include')
           Move-Item -Path "php_temp\*" -Destination (Join-Path $PHP_FINAL_DIR "SDK") -Force
           Remove-Item "php_temp" -Recurse -Force
 
           # --- B. SDL3 ---
           Write-Host "Downloading SDL3..."
-          Invoke-WebRequest -Uri "https://github.com/libsdl-org/SDL/releases/download/preview-3.1.3/SDL3-3.1.3-win32-arm64.zip" -OutFile "sdl3.zip"
+          curl.exe -L -o "sdl3.zip" "https://github.com/libsdl-org/SDL/releases/download/preview-3.1.3/SDL3-3.1.3-win32-arm64.zip"
           Expand-Archive -Path "sdl3.zip" -DestinationPath "SDL3-arm64" -Force
 
-          # --- C. Chipmunk2D (UPDATED) ---
+          # --- C. Chipmunk2D ---
           Write-Host "Downloading Chipmunk2D..."
           $ChipmunkUrl = "https://github.com/joseph-montanez/Phrost/releases/download/v0.01/chipmunk_arm64-windows.zip"
 
-          # Your script looks in: ..\..\deps\vcpkg\packages\chipmunk_arm64-windows
-          # So we must create the parent folders first
           $VcpkgPackagesDir = Join-Path $env:DEPS_DIR "vcpkg\packages"
           New-Item -ItemType Directory -Path $VcpkgPackagesDir -Force | Out-Null
 
-          Invoke-WebRequest -Uri $ChipmunkUrl -OutFile "chipmunk.zip"
-
-          # Extract into 'packages'.
-          # Because the zip ROOT is 'chipmunk_arm64-windows', it will create the correct directory structure automatically.
+          curl.exe -L -o "chipmunk.zip" $ChipmunkUrl
           Expand-Archive -Path "chipmunk.zip" -DestinationPath $VcpkgPackagesDir -Force
 
           Write-Host "Dependencies setup complete."
