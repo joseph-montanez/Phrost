@@ -90,11 +90,19 @@ jobs:
       # 6. Run Build Script
       - name: Run Build Script
         run: |
-          # Verify swift is found before running script
           swift --version
 
-          $ScriptPath = Join-Path $env:REPO_DIR "Engine\PhrostEngineV2\scripts\win_ext_arm64.ps1"
-          Write-Host "Running build script at: $ScriptPath"
+          # Define the Project Root (where Package.swift lives)
+          $ProjectRoot = Join-Path $env:REPO_DIR "Engine\PhrostEngineV2"
+
+          # Change Directory to Project Root so 'swift build' works
+          Set-Location $ProjectRoot
+          Write-Host "Current Working Directory: $(Get-Location)"
+
+          # Run the script (it will use $PSScriptRoot to find deps, so moving CWD is safe)
+          $ScriptPath = Join-Path $ProjectRoot "scripts\win_ext_arm64.ps1"
+          Write-Host "Invoking script: $ScriptPath"
+
           & $ScriptPath
 
       # 7. Upload Artifacts
