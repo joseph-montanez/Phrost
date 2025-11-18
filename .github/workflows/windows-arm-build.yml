@@ -1,6 +1,7 @@
 name: Build Phrost Engine (Windows Arm64)
 
 on:
+  workflow_dispatch:
   push:
     branches: ["main"]
   pull_request:
