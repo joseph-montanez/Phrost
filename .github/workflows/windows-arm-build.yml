@@ -3,9 +3,9 @@ name: Build Phrost Engine (Windows Arm64)
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: ["master"]
   pull_request:
-    branches: ["main"]
+    branches: ["master"]
 
 jobs:
   build:
@@ -30,12 +30,14 @@ jobs:
           echo "DEPS_DIR=$($ROOT_DIR)\deps" >> $env:GITHUB_ENV
           echo "REPO_DIR=$($ROOT_DIR)\Phrost" >> $env:GITHUB_ENV
 
-      # 3. Install Swift
-      - name: Install Swift 6.0.2 (Arm64)
+      # 3. Install Swift 6.0 (Arm64)
+      - name: Install Swift 6.0 (Arm64)
         run: |
-          $ProgressPreference = 'SilentlyContinue'
-          Write-Host "Downloading Swift installer..."
-          Invoke-WebRequest -Uri "https://download.swift.org/swift-6.0.2-release/windows10/swift-6.0.2-RELEASE/swift-6.0.2-RELEASE-windows10-aarch64.exe" -OutFile "swift-installer.exe"
+          $SwiftUrl = "https://download.swift.org/swift-6.0.2-release/windows10/swift-6.0.2-RELEASE/swift-6.0.2-RELEASE-windows10-aarch64.exe"
+          Write-Host "Downloading Swift installer from $SwiftUrl ..."
+
+          # Use curl.exe (-L handles redirects, -o specifies output file)
+          curl.exe -L -o "swift-installer.exe" $SwiftUrl
 
           Write-Host "Installing Swift..."
           Start-Process -FilePath ".\swift-installer.exe" -ArgumentList "/quiet /norestart" -Wait
