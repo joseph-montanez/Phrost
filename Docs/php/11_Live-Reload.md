@@ -1,4 +1,4 @@
-# 🔄 Phrost\LiveReload Documentation
+# Phrost\LiveReload Documentation
 
 The `Phrost\LiveReload` class is a utility that enables hot-reloading of your PHP game logic. It allows you to save changes to your PHP files and see them reflected in the running game *without* restarting the main `PhrostBinary` executable.
 
@@ -6,7 +6,7 @@ It works by serializing your entire `$world` state, telling the engine to reload
 
 ---
 
-## 🧭 Core Concept: File-Based Polling
+## Core Concept: File-Based Polling
 
 The live reload system works by watching for a specific file: `shutdown.flag`.
 
@@ -17,7 +17,7 @@ The live reload system works by watching for a specific file: `shutdown.flag`.
 
 ---
 
-## 🚀 How to Use: A Full Workflow
+## How to Use: A Full Workflow
 
 Using the `LiveReload` class requires setup in `game-logic.php` at both initialization and in the main loop.
 
@@ -46,7 +46,7 @@ Phrost_Run($packer->finalize());
 ```
 
 
-### 2\. Polling (In `Phrost_Update`)
+### 2. Polling (In `Phrost_Update`)
 
 The **very first thing** you do inside `Phrost_Update` must be to call `poll()`.
 
