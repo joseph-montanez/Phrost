@@ -29,20 +29,14 @@ jobs:
           $ROOT_DIR = Get-Location
           $REPO_DIR = "$ROOT_DIR\Phrost"
 
-          # DEPS_DIR is set to 'Engine\deps' inside the repo to match your build script
           echo "DEPS_DIR=$REPO_DIR\Engine\deps" >> $env:GITHUB_ENV
           echo "REPO_DIR=$REPO_DIR" >> $env:GITHUB_ENV
 
-      # 3. Install Swift 6.0.2 (Arm64)
-      - name: Install Swift 6.0.2 (Arm64)
-        run: |
-          $SwiftUrl = "https://download.swift.org/swift-6.0.2-release/windows10-arm64/swift-6.0.2-RELEASE/swift-6.0.2-RELEASE-windows10-arm64.exe"
-          Write-Host "Downloading Swift installer..."
-          curl.exe -L -o "swift-installer.exe" $SwiftUrl
-
-          Write-Host "Installing Swift..."
-          Start-Process -FilePath ".\swift-installer.exe" -ArgumentList "/quiet /norestart" -Wait
-          echo "$env:SystemDrive\Library\Developer\Toolchains\unknown-Asserts-development.xctoolchain\usr\bin" >> $env:GITHUB_PATH
+      # 3. Setup Swift (Using the Action)
+      - name: Setup Swift
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "6.0.2"
 
       # 4. Cache Dependencies
       - name: Cache Deps
@@ -50,7 +44,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: Phrost/Engine/deps
-          key: ${{ runner.os }}-arm64-deps-v6
+          key: ${{ runner.os }}-arm64-deps-v7 # Bumped key to v7
 
       # 5. Setup Dependencies
       - name: Download and Setup Dependencies
@@ -59,13 +53,14 @@ jobs:
           New-Item -ItemType Directory -Path $env:DEPS_DIR -Force | Out-Null
           Set-Location $env:DEPS_DIR
 
-          # --- A. PHP SDK ---
+          # --- A. PHP SDK (Experimental Arm64) ---
           $PHP_FOLDER_NAME = "php-8.4.10-nts-Win32-vs17-arm64"
           $PhpUrl = "https://github.com/hyh19962008/php-windows-arm64/releases/download/8.4.10/php-8.4.10-nts-Win32-vs17-arm64-experimental.7z"
 
           Write-Host "Downloading Experimental PHP Arm64..."
           curl.exe -L -o "php-arm64.7z" $PhpUrl
 
+          # Create folder and extract
           New-Item -ItemType Directory -Path $PHP_FOLDER_NAME -Force | Out-Null
           tar -xf php-arm64.7z -C $PHP_FOLDER_NAME
 
@@ -74,17 +69,10 @@ jobs:
           $SdlUrl = "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-09/SDL3-arm64-2025-11-09.zip"
           curl.exe -L -o "SDL3-arm64.zip" $SdlUrl
 
-          # 1. Extract to a temporary folder first
+          # Extract to temp, find inner folder, and rename to 'SDL3-arm64'
           Expand-Archive -Path "SDL3-arm64.zip" -DestinationPath "sdl_temp" -Force
-
-          # 2. Find the actual folder inside (e.g., 'SDL3-arm64-2025-11-09')
           $InnerFolder = Get-ChildItem -Path "sdl_temp" -Directory | Select-Object -First 1
-
-          # 3. Move/Rename it to exactly 'SDL3-arm64'
-          Write-Host "Renaming extracted folder '$($InnerFolder.Name)' to 'SDL3-arm64'..."
           Move-Item -Path $InnerFolder.FullName -Destination "SDL3-arm64" -Force
-
-          # 4. Cleanup temp
           Remove-Item "sdl_temp" -Recurse -Force
 
           # --- C. Chipmunk2D ---
@@ -97,15 +85,14 @@ jobs:
           curl.exe -L -o "chipmunk.zip" $ChipmunkUrl
           Expand-Archive -Path "chipmunk.zip" -DestinationPath $VcpkgPackagesDir -Force
 
-          # --- Debugging: Verify Structure ---
-          Write-Host "FINAL DIRECTORY CHECK:"
-          Get-ChildItem -Path . -Recurse -Depth 2
-
           Write-Host "Dependencies setup complete."
 
       # 6. Run Build Script
       - name: Run Build Script
         run: |
+          # Verify swift is found before running script
+          swift --version
+
           $ScriptPath = Join-Path $env:REPO_DIR "Engine\PhrostEngineV2\scripts\win_ext_arm64.ps1"
           Write-Host "Running build script at: $ScriptPath"
           & $ScriptPath
