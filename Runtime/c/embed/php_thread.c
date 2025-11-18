@@ -4,6 +4,12 @@
 #include <stdlib.h> // For malloc/free
 #include <limits.h> // For PATH_MAX
 
+#ifdef _WIN32
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
+#endif
+
 // Store the bridge and base path globally for this thread
 static ThreadBridge* g_bridge = NULL;
 static char g_php_base_path[PATH_MAX];

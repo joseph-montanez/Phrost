@@ -2,8 +2,14 @@
 #define PHP_THREAD_H
 
 #include <stdbool.h>
-#include <pthread.h>
+#include "pthread_shim.h"
 #include "event_packer.h" // For ChannelInput
+
+#ifdef _WIN32
+// PHP requires Winsock2 to be included BEFORE windows.h
+#include <winsock2.h> 
+#include <windows.h>
+#endif
 
 // --- PHP Embed Headers ---
 // Note: We use C-style includes for a .c file

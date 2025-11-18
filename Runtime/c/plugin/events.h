@@ -6,7 +6,6 @@
 
 #include <stdint.h> // For fixed-width types like uint32_t
 #include <stdbool.h> // For bool type
-#include "events.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -124,6 +123,7 @@ typedef struct {
 
 // Stops all playing audio. This event has no payload.
 typedef struct {
+    char _unused;
 } PackedAudioStopAllEvent;
 
 // Payload to stop and rewind a specific audio sound.
@@ -166,6 +166,7 @@ typedef struct {
 
 // Tells the camera to stop following any entity.
 typedef struct {
+    char _unused;
 } PackedCameraStopFollowingEvent;
 
 // Payload for adding a single geometry line.
