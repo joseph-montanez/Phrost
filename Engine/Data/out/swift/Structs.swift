@@ -40,6 +40,7 @@ import Foundation
 }
 
 @frozen public struct PackedAudioStopAllEvent: Sendable {
+    public var _unused: UInt8
 }
 
 @frozen public struct PackedAudioStopEvent: Sendable {
@@ -74,6 +75,7 @@ import Foundation
 }
 
 @frozen public struct PackedCameraStopFollowingEvent: Sendable {
+    public var _unused: UInt8
 }
 
 @frozen public struct PackedGeomAddLineEvent: Sendable {

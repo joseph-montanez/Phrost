@@ -39,9 +39,10 @@ typedef struct {
     bool        swift_has_data;
 
     // Data from PHP -> Swift
-    char* php_command_data;
-    int32_t     php_command_len;
-    bool        php_has_data;
+    char* php_command_data;     // The Persistent Buffer
+    size_t  php_buffer_cap;       // [NEW] Actual allocated size
+    int32_t php_command_len;      // Amount of data actually used
+    bool    php_has_data;
 
     // Control flag
     bool        engine_running;

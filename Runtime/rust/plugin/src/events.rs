@@ -217,7 +217,9 @@ pub struct PackedAudioSetVolumeEvent {
 /// Stops all playing audio. This event has no payload.
 #[repr(C, packed)]
 #[derive(Debug, Copy, Clone)]
-pub struct PackedAudioStopAllEvent {}
+pub struct PackedAudioStopAllEvent {
+    pub _unused: u8, // Padding to ensure non-zero struct size (MSVC compatibility).
+}
 
 /// Payload to stop and rewind a specific audio sound.
 #[repr(C, packed)]
@@ -274,7 +276,9 @@ pub struct PackedCameraSetZoomEvent {
 /// Tells the camera to stop following any entity.
 #[repr(C, packed)]
 #[derive(Debug, Copy, Clone)]
-pub struct PackedCameraStopFollowingEvent {}
+pub struct PackedCameraStopFollowingEvent {
+    pub _unused: u8, // Padding to ensure non-zero struct size (MSVC compatibility).
+}
 
 /// Payload for adding a single geometry line.
 #[repr(C, packed)]

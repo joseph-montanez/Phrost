@@ -101,10 +101,10 @@ public final class PhrostEngine {
         Events.spriteAdd.rawValue: MemoryLayout<PackedSpriteAddEvent>.size,
         Events.spriteRemove.rawValue: MemoryLayout<PackedSpriteRemoveEvent>.size,
         Events.spriteMove.rawValue: MemoryLayout<PackedSpriteMoveEvent>.size,
-        Events.spriteScale.rawValue: MemoryLayout<PackedSpriteScaleEvent>.size,  // Added
-        Events.spriteResize.rawValue: MemoryLayout<PackedSpriteResizeEvent>.size,  // Added
-        Events.spriteRotate.rawValue: MemoryLayout<PackedSpriteRotateEvent>.size,  // Added
-        Events.spriteColor.rawValue: MemoryLayout<PackedSpriteColorEvent>.size,  // Added
+        Events.spriteScale.rawValue: MemoryLayout<PackedSpriteScaleEvent>.size,
+        Events.spriteResize.rawValue: MemoryLayout<PackedSpriteResizeEvent>.size,
+        Events.spriteRotate.rawValue: MemoryLayout<PackedSpriteRotateEvent>.size,
+        Events.spriteColor.rawValue: MemoryLayout<PackedSpriteColorEvent>.size,
         Events.spriteSpeed.rawValue: MemoryLayout<PackedSpriteSpeedEvent>.size,
         Events.spriteTextureLoad.rawValue: MemoryLayout<PackedTextureLoadHeaderEvent>.size,
         Events.spriteTextureSet.rawValue: MemoryLayout<PackedSpriteTextureSetEvent>.size,
@@ -134,7 +134,7 @@ public final class PhrostEngine {
         Events.audioLoad.rawValue: MemoryLayout<PackedAudioLoadEvent>.size,
         Events.audioLoaded.rawValue: MemoryLayout<PackedAudioLoadedEvent>.size,
         Events.audioPlay.rawValue: MemoryLayout<PackedAudioPlayEvent>.size,
-        Events.audioStopAll.rawValue: 0,
+        Events.audioStopAll.rawValue: MemoryLayout<PackedAudioStopAllEvent>.size,
         Events.audioSetMasterVolume.rawValue: MemoryLayout<PackedAudioSetMasterVolumeEvent>.size,
         Events.audioPause.rawValue: MemoryLayout<PackedAudioPauseEvent>.size,
         Events.audioStop.rawValue: MemoryLayout<PackedAudioStopEvent>.size,
@@ -157,15 +157,15 @@ public final class PhrostEngine {
         Events.pluginUnload.rawValue: MemoryLayout<PackedPluginUnloadEvent>.size,
         Events.pluginSet.rawValue: MemoryLayout<PackedPluginSetEvent>.size,
         Events.pluginEventStacking.rawValue: MemoryLayout<PackedPluginEventStackingEvent>.size,
-        Events.pluginSubscribeEvent.rawValue: MemoryLayout<PackedPluginSubscribeEvent>.size,  // Renamed
-        Events.pluginUnsubscribeEvent.rawValue: MemoryLayout<PackedPluginUnsubscribeEvent>.size,  // Renamed
+        Events.pluginSubscribeEvent.rawValue: MemoryLayout<PackedPluginSubscribeEvent>.size,
+        Events.pluginUnsubscribeEvent.rawValue: MemoryLayout<PackedPluginUnsubscribeEvent>.size,
         // --- CAMERA ---
         Events.cameraSetPosition.rawValue: MemoryLayout<PackedCameraSetPositionEvent>.size,
         Events.cameraMove.rawValue: MemoryLayout<PackedCameraMoveEvent>.size,
         Events.cameraSetZoom.rawValue: MemoryLayout<PackedCameraSetZoomEvent>.size,
         Events.cameraSetRotation.rawValue: MemoryLayout<PackedCameraSetRotationEvent>.size,
         Events.cameraFollowEntity.rawValue: MemoryLayout<PackedCameraFollowEntityEvent>.size,
-        Events.cameraStopFollowing.rawValue: 0,  // 0 size
+        Events.cameraStopFollowing.rawValue: MemoryLayout<PackedCameraStopFollowingEvent>.size,
         // --- SCRIPT ---
         Events.scriptSubscribe.rawValue: MemoryLayout<PackedScriptSubscribeEvent>.size,
         Events.scriptUnsubscribe.rawValue: MemoryLayout<PackedScriptUnsubscribeEvent>.size,
@@ -216,7 +216,7 @@ public final class PhrostEngine {
         self.ctx = ImGuiCreateContext(nil)
         self.io = ImGuiGetIO()!
         ImFontAtlas_GetTexDataAsRGBA32(
-        io.pointee.Fonts, &self.pixels, &self.width, &self.height, &self.bytesPerPixel)
+            io.pointee.Fonts, &self.pixels, &self.width, &self.height, &self.bytesPerPixel)
         self.fontTexture = SDL_CreateTexture(
             renderer,
             SDL_PIXELFORMAT_RGBA32,

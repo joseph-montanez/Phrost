@@ -103,6 +103,7 @@ pub const PackedAudioSetVolumeEvent = extern struct {
 };
 
 pub const PackedAudioStopAllEvent = extern struct {
+    _unused: u8, // Padding to ensure non-zero struct size (MSVC compatibility).
 };
 
 pub const PackedAudioStopEvent = extern struct {
@@ -137,6 +138,7 @@ pub const PackedCameraSetZoomEvent = extern struct {
 };
 
 pub const PackedCameraStopFollowingEvent = extern struct {
+    _unused: u8, // Padding to ensure non-zero struct size (MSVC compatibility).
 };
 
 pub const PackedGeomAddLineEvent = extern struct {
@@ -533,7 +535,7 @@ pub const event_payload_list = [_]KVPair{
     .{ "audioLoad", @sizeOf(PackedAudioLoadEvent) },
     .{ "audioLoaded", @sizeOf(PackedAudioLoadedEvent) },
     .{ "audioPlay", @sizeOf(PackedAudioPlayEvent) },
-    .{ "audioStopAll", 0 }, // No payload
+    .{ "audioStopAll", @sizeOf(PackedAudioStopAllEvent) },
     .{ "audioSetMasterVolume", @sizeOf(PackedAudioSetMasterVolumeEvent) },
     .{ "audioPause", @sizeOf(PackedAudioPauseEvent) },
     .{ "audioStop", @sizeOf(PackedAudioStopEvent) },
@@ -567,7 +569,7 @@ pub const event_payload_list = [_]KVPair{
     .{ "cameraSetZoom", @sizeOf(PackedCameraSetZoomEvent) },
     .{ "cameraSetRotation", @sizeOf(PackedCameraSetRotationEvent) },
     .{ "cameraFollowEntity", @sizeOf(PackedCameraFollowEntityEvent) },
-    .{ "cameraStopFollowing", 0 }, // No payload
+    .{ "cameraStopFollowing", @sizeOf(PackedCameraStopFollowingEvent) },
 
     // Script Events
     .{ "scriptSubscribe", @sizeOf(PackedScriptSubscribeEvent) },

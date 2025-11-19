@@ -929,7 +929,13 @@
       "enumName": "AUDIO_STOP_ALL",
       "isDynamic": false,
       "comment": "Stops all playing audio. This event has no payload.",
-      "members": []
+      "members": [
+        {
+          "name": "_unused",
+          "type": "u8",
+          "comment": "Padding to ensure non-zero struct size (MSVC compatibility)."
+        }
+      ]
     },
     {
       "name": "PackedAudioSetMasterVolumeEvent",
@@ -1536,7 +1542,13 @@
       "enumName": "CAMERA_STOP_FOLLOWING",
       "isDynamic": false,
       "comment": "Tells the camera to stop following any entity.",
-      "members": []
+      "members": [
+        {
+          "name": "_unused",
+          "type": "u8",
+          "comment": "Padding to ensure non-zero struct size (MSVC compatibility)."
+        }
+      ]
     },
     {
       "name": "PackedScriptSubscribeEvent",

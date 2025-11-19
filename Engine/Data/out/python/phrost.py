@@ -498,10 +498,11 @@ class AudioPackFormats:
 
     """
     Maps to Swift: `PackedAudioStopAllEvent`
+    - _unused: u8 (Padding to ensure non-zero struct size (MSVC compatibility).)
     """
-    # Format: 
-    # Size: 0 bytes
-    PACK_AUDIO_STOP_ALL: Tuple[str, int] = ("", 0)
+    # Format: <B
+    # Size: 1 bytes
+    PACK_AUDIO_STOP_ALL: Tuple[str, int] = ("<B", 1)
 
     """
     Maps to Swift: `PackedAudioSetMasterVolumeEvent`
@@ -767,10 +768,11 @@ class CameraPackFormats:
 
     """
     Maps to Swift: `PackedCameraStopFollowingEvent`
+    - _unused: u8 (Padding to ensure non-zero struct size (MSVC compatibility).)
     """
-    # Format: 
-    # Size: 0 bytes
-    PACK_CAMERA_STOP_FOLLOWING: Tuple[str, int] = ("", 0)
+    # Format: <B
+    # Size: 1 bytes
+    PACK_CAMERA_STOP_FOLLOWING: Tuple[str, int] = ("<B", 1)
 
 class ScriptPackFormats:
     """
@@ -892,7 +894,7 @@ class PackFormat:
         400: ['pathLength'],
         401: ['audioId'],
         402: ['audioId'],
-        403: [],
+        403: ['_unused'],
         404: ['volume'],
         405: ['audioId'],
         406: ['audioId'],
@@ -920,7 +922,7 @@ class PackFormat:
         2002: ['zoom'],
         2003: ['angleInRadians'],
         2004: ['id1', 'id2'],
-        2005: [],
+        2005: ['_unused'],
         3000: ['channelNo'],
         3001: ['channelNo'],
     }

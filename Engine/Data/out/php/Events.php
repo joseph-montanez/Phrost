@@ -442,8 +442,9 @@ class AudioPackFormats
 
     /**
      * Maps to Swift: `PackedAudioStopAllEvent`
+     * - _unused: u8 (Padding to ensure non-zero struct size (MSVC compatibility).)
      */
-    public const PACK_AUDIO_STOP_ALL = "";
+    public const PACK_AUDIO_STOP_ALL = "C_unused";
 
     /**
      * Maps to Swift: `PackedAudioSetMasterVolumeEvent`
@@ -663,8 +664,9 @@ class CameraPackFormats
 
     /**
      * Maps to Swift: `PackedCameraStopFollowingEvent`
+     * - _unused: u8 (Padding to ensure non-zero struct size (MSVC compatibility).)
      */
-    public const PACK_CAMERA_STOP_FOLLOWING = "";
+    public const PACK_CAMERA_STOP_FOLLOWING = "C_unused";
 }
 
 class ScriptPackFormats
@@ -701,28 +703,21 @@ class PackFormat
         Events::SPRITE_ROTATE->value => SpritePackFormats::PACK_SPRITE_ROTATE,
         Events::SPRITE_COLOR->value => SpritePackFormats::PACK_SPRITE_COLOR,
         Events::SPRITE_SPEED->value => SpritePackFormats::PACK_SPRITE_SPEED,
-        Events::SPRITE_TEXTURE_LOAD->value =>
-            SpritePackFormats::PACK_SPRITE_TEXTURE_LOAD,
-        Events::SPRITE_TEXTURE_SET->value =>
-            SpritePackFormats::PACK_SPRITE_TEXTURE_SET,
-        Events::SPRITE_SET_SOURCE_RECT->value =>
-            SpritePackFormats::PACK_SPRITE_SET_SOURCE_RECT,
+        Events::SPRITE_TEXTURE_LOAD->value => SpritePackFormats::PACK_SPRITE_TEXTURE_LOAD,
+        Events::SPRITE_TEXTURE_SET->value => SpritePackFormats::PACK_SPRITE_TEXTURE_SET,
+        Events::SPRITE_SET_SOURCE_RECT->value => SpritePackFormats::PACK_SPRITE_SET_SOURCE_RECT,
         Events::GEOM_ADD_POINT->value => SpritePackFormats::PACK_GEOM_ADD_POINT,
         Events::GEOM_ADD_LINE->value => SpritePackFormats::PACK_GEOM_ADD_LINE,
         Events::GEOM_ADD_RECT->value => SpritePackFormats::PACK_GEOM_ADD_RECT,
-        Events::GEOM_ADD_FILL_RECT->value =>
-            SpritePackFormats::PACK_GEOM_ADD_FILL_RECT,
-        Events::GEOM_ADD_PACKED->value =>
-            SpritePackFormats::PACK_GEOM_ADD_PACKED,
+        Events::GEOM_ADD_FILL_RECT->value => SpritePackFormats::PACK_GEOM_ADD_FILL_RECT,
+        Events::GEOM_ADD_PACKED->value => SpritePackFormats::PACK_GEOM_ADD_PACKED,
         Events::GEOM_REMOVE->value => SpritePackFormats::PACK_GEOM_REMOVE,
         Events::GEOM_SET_COLOR->value => SpritePackFormats::PACK_GEOM_SET_COLOR,
         Events::INPUT_KEYUP->value => InputPackFormats::PACK_INPUT_KEYUP,
         Events::INPUT_KEYDOWN->value => InputPackFormats::PACK_INPUT_KEYDOWN,
         Events::INPUT_MOUSEUP->value => InputPackFormats::PACK_INPUT_MOUSEUP,
-        Events::INPUT_MOUSEDOWN->value =>
-            InputPackFormats::PACK_INPUT_MOUSEDOWN,
-        Events::INPUT_MOUSEMOTION->value =>
-            InputPackFormats::PACK_INPUT_MOUSEMOTION,
+        Events::INPUT_MOUSEDOWN->value => InputPackFormats::PACK_INPUT_MOUSEDOWN,
+        Events::INPUT_MOUSEMOTION->value => InputPackFormats::PACK_INPUT_MOUSEMOTION,
         Events::WINDOW_TITLE->value => WindowPackFormats::PACK_WINDOW_TITLE,
         Events::WINDOW_RESIZE->value => WindowPackFormats::PACK_WINDOW_RESIZE,
         Events::WINDOW_FLAGS->value => WindowPackFormats::PACK_WINDOW_FLAGS,
@@ -732,58 +727,36 @@ class PackFormat
         Events::AUDIO_LOADED->value => AudioPackFormats::PACK_AUDIO_LOADED,
         Events::AUDIO_PLAY->value => AudioPackFormats::PACK_AUDIO_PLAY,
         Events::AUDIO_STOP_ALL->value => AudioPackFormats::PACK_AUDIO_STOP_ALL,
-        Events::AUDIO_SET_MASTER_VOLUME->value =>
-            AudioPackFormats::PACK_AUDIO_SET_MASTER_VOLUME,
+        Events::AUDIO_SET_MASTER_VOLUME->value => AudioPackFormats::PACK_AUDIO_SET_MASTER_VOLUME,
         Events::AUDIO_PAUSE->value => AudioPackFormats::PACK_AUDIO_PAUSE,
         Events::AUDIO_STOP->value => AudioPackFormats::PACK_AUDIO_STOP,
         Events::AUDIO_UNLOAD->value => AudioPackFormats::PACK_AUDIO_UNLOAD,
-        Events::AUDIO_SET_VOLUME->value =>
-            AudioPackFormats::PACK_AUDIO_SET_VOLUME,
-        Events::PHYSICS_ADD_BODY->value =>
-            PhysicsPackFormats::PACK_PHYSICS_ADD_BODY,
-        Events::PHYSICS_REMOVE_BODY->value =>
-            PhysicsPackFormats::PACK_PHYSICS_REMOVE_BODY,
-        Events::PHYSICS_APPLY_FORCE->value =>
-            PhysicsPackFormats::PACK_PHYSICS_APPLY_FORCE,
-        Events::PHYSICS_APPLY_IMPULSE->value =>
-            PhysicsPackFormats::PACK_PHYSICS_APPLY_IMPULSE,
-        Events::PHYSICS_SET_VELOCITY->value =>
-            PhysicsPackFormats::PACK_PHYSICS_SET_VELOCITY,
-        Events::PHYSICS_SET_POSITION->value =>
-            PhysicsPackFormats::PACK_PHYSICS_SET_POSITION,
-        Events::PHYSICS_SET_ROTATION->value =>
-            PhysicsPackFormats::PACK_PHYSICS_SET_ROTATION,
-        Events::PHYSICS_COLLISION_BEGIN->value =>
-            PhysicsPackFormats::UNPACK_PHYSICS_COLLISION,
-        Events::PHYSICS_COLLISION_SEPARATE->value =>
-            PhysicsPackFormats::UNPACK_PHYSICS_COLLISION,
-        Events::PHYSICS_SYNC_TRANSFORM->value =>
-            PhysicsPackFormats::UNPACK_PHYSICS_SYNC_TRANSFORM,
+        Events::AUDIO_SET_VOLUME->value => AudioPackFormats::PACK_AUDIO_SET_VOLUME,
+        Events::PHYSICS_ADD_BODY->value => PhysicsPackFormats::PACK_PHYSICS_ADD_BODY,
+        Events::PHYSICS_REMOVE_BODY->value => PhysicsPackFormats::PACK_PHYSICS_REMOVE_BODY,
+        Events::PHYSICS_APPLY_FORCE->value => PhysicsPackFormats::PACK_PHYSICS_APPLY_FORCE,
+        Events::PHYSICS_APPLY_IMPULSE->value => PhysicsPackFormats::PACK_PHYSICS_APPLY_IMPULSE,
+        Events::PHYSICS_SET_VELOCITY->value => PhysicsPackFormats::PACK_PHYSICS_SET_VELOCITY,
+        Events::PHYSICS_SET_POSITION->value => PhysicsPackFormats::PACK_PHYSICS_SET_POSITION,
+        Events::PHYSICS_SET_ROTATION->value => PhysicsPackFormats::PACK_PHYSICS_SET_ROTATION,
+        Events::PHYSICS_COLLISION_BEGIN->value => PhysicsPackFormats::UNPACK_PHYSICS_COLLISION,
+        Events::PHYSICS_COLLISION_SEPARATE->value => PhysicsPackFormats::UNPACK_PHYSICS_COLLISION,
+        Events::PHYSICS_SYNC_TRANSFORM->value => PhysicsPackFormats::UNPACK_PHYSICS_SYNC_TRANSFORM,
         Events::PLUGIN->value => PluginPackFormats::PACK_PLUGIN,
         Events::PLUGIN_LOAD->value => PluginPackFormats::PACK_PLUGIN_LOAD,
         Events::PLUGIN_UNLOAD->value => PluginPackFormats::PACK_PLUGIN_UNLOAD,
         Events::PLUGIN_SET->value => PluginPackFormats::PACK_PLUGIN_SET,
-        Events::PLUGIN_EVENT_STACKING->value =>
-            PluginPackFormats::PACK_PLUGIN_EVENT_STACKING,
-        Events::PLUGIN_SUBSCRIBE_EVENT->value =>
-            PluginPackFormats::PACK_PLUGIN_SUBSCRIBE_EVENT,
-        Events::PLUGIN_UNSUBSCRIBE_EVENT->value =>
-            PluginPackFormats::PACK_PLUGIN_UNSUBSCRIBE_EVENT,
-        Events::CAMERA_SET_POSITION->value =>
-            CameraPackFormats::PACK_CAMERA_SET_POSITION,
+        Events::PLUGIN_EVENT_STACKING->value => PluginPackFormats::PACK_PLUGIN_EVENT_STACKING,
+        Events::PLUGIN_SUBSCRIBE_EVENT->value => PluginPackFormats::PACK_PLUGIN_SUBSCRIBE_EVENT,
+        Events::PLUGIN_UNSUBSCRIBE_EVENT->value => PluginPackFormats::PACK_PLUGIN_UNSUBSCRIBE_EVENT,
+        Events::CAMERA_SET_POSITION->value => CameraPackFormats::PACK_CAMERA_SET_POSITION,
         Events::CAMERA_MOVE->value => CameraPackFormats::PACK_CAMERA_MOVE,
-        Events::CAMERA_SET_ZOOM->value =>
-            CameraPackFormats::PACK_CAMERA_SET_ZOOM,
-        Events::CAMERA_SET_ROTATION->value =>
-            CameraPackFormats::PACK_CAMERA_SET_ROTATION,
-        Events::CAMERA_FOLLOW_ENTITY->value =>
-            CameraPackFormats::PACK_CAMERA_FOLLOW_ENTITY,
-        Events::CAMERA_STOP_FOLLOWING->value =>
-            CameraPackFormats::PACK_CAMERA_STOP_FOLLOWING,
-        Events::SCRIPT_SUBSCRIBE->value =>
-            ScriptPackFormats::PACK_SCRIPT_SUBSCRIBE,
-        Events::SCRIPT_UNSUBSCRIBE->value =>
-            ScriptPackFormats::PACK_SCRIPT_UNSUBSCRIBE,
+        Events::CAMERA_SET_ZOOM->value => CameraPackFormats::PACK_CAMERA_SET_ZOOM,
+        Events::CAMERA_SET_ROTATION->value => CameraPackFormats::PACK_CAMERA_SET_ROTATION,
+        Events::CAMERA_FOLLOW_ENTITY->value => CameraPackFormats::PACK_CAMERA_FOLLOW_ENTITY,
+        Events::CAMERA_STOP_FOLLOWING->value => CameraPackFormats::PACK_CAMERA_STOP_FOLLOWING,
+        Events::SCRIPT_SUBSCRIBE->value => ScriptPackFormats::PACK_SCRIPT_SUBSCRIBE,
+        Events::SCRIPT_UNSUBSCRIBE->value => ScriptPackFormats::PACK_SCRIPT_UNSUBSCRIBE,
     ];
 
     /**
@@ -803,36 +776,11 @@ class PackFormat
 
         // --- Reverted Size Calculation Logic ---
         static $sizeMap = [
-            "a" => 1,
-            "A" => 1,
-            "Z" => 1,
-            "h" => 0.5,
-            "H" => 0.5,
-            "c" => 1,
-            "C" => 1,
-            "s" => 2,
-            "S" => 2,
-            "n" => 2,
-            "v" => 2,
-            "l" => 4,
-            "L" => 4,
-            "N" => 4,
-            "V" => 4,
-            "i" => 4,
-            "I" => 4,
-            "f" => 4,
-            "g" => 4,
-            "G" => 4,
-            "q" => 8,
-            "Q" => 8,
-            "J" => 8,
-            "P" => 8,
-            "d" => 8,
-            "e" => 8,
-            "E" => 8,
-            "x" => 1,
-            "X" => -1,
-            "@" => 0,
+            "a" => 1, "A" => 1, "Z" => 1, "h" => 0.5, "H" => 0.5, "c" => 1,
+            "C" => 1, "s" => 2, "S" => 2, "n" => 2, "v" => 2, "l" => 4,
+            "L" => 4, "N" => 4, "V" => 4, "i" => 4, "I" => 4, "f" => 4,
+            "g" => 4, "G" => 4, "q" => 8, "Q" => 8, "J" => 8, "P" => 8,
+            "d" => 8, "e" => 8, "E" => 8, "x" => 1, "X" => -1, "@" => 0,
         ];
 
         $totalSize = 0;
@@ -852,27 +800,26 @@ class PackFormat
                         Events::TEXT_ADD->value,
                         Events::TEXT_SET_STRING->value,
                         Events::AUDIO_LOAD->value,
-                        Events::GEOM_ADD_PACKED->value,
+                        Events::GEOM_ADD_PACKED->value
                     ];
 
                     if (in_array($eventTypeValue, $dynamicEvents)) {
                         break;
                     } else {
                         error_log(
-                            "PackFormat::getInfo: Unexpected '*' in format '{$descriptiveFormat}' for event {$eventTypeValue}. Size calculation might be wrong.",
+                            "PackFormat::getInfo: Unexpected '*' in format '{$descriptiveFormat}' for event {$eventTypeValue}. Size calculation might be wrong."
                         );
                         break; // Stop calculation
                     }
                 }
 
-                $count =
-                    $repeater === "" || !ctype_digit($repeater)
-                        ? 1
-                        : (int) $repeater;
+                $count = $repeater === "" || !ctype_digit($repeater)
+                            ? 1
+                            : (int) $repeater;
                 $size = $sizeMap[$code] ?? 0;
                 if ($size === 0 && $code !== "@") {
                     error_log(
-                        "PackFormat::getInfo: Unknown format code '{$code}' in format '{$descriptiveFormat}' for event {$eventTypeValue}.",
+                        "PackFormat::getInfo: Unknown format code '{$code}' in format '{$descriptiveFormat}' for event {$eventTypeValue}."
                     );
                 }
 
@@ -884,7 +831,7 @@ class PackFormat
             } else {
                 if (!empty(trim($part))) {
                     error_log(
-                        "PackFormat::getInfo: Could not parse format part '{$part}' in format '{$descriptiveFormat}' for event {$eventTypeValue}.",
+                        "PackFormat::getInfo: Could not parse format part '{$part}' in format '{$descriptiveFormat}' for event {$eventTypeValue}."
                     );
                 }
             }
@@ -918,20 +865,13 @@ class PackFormat
         for ($i = 0; $i < $eventCount; $i++) {
             $headerSize = 4 + 8; // type (V) + timestamp (Q) = 12 bytes
             if ($offset + $headerSize > $blobLength) {
-                error_log(
-                    "PackFormat::unpack Loop {$i}/{$eventCount}: Not enough data for header. Offset={$offset}",
-                );
+                error_log("PackFormat::unpack Loop {$i}/{$eventCount}: Not enough data for header. Offset={$offset}");
                 break;
             }
 
-            $headerData = unpack(
-                "Vtype/Qtimestamp",
-                substr($eventsBlob, $offset, $headerSize),
-            );
+            $headerData = unpack("Vtype/Qtimestamp", substr($eventsBlob, $offset, $headerSize));
             if ($headerData === false) {
-                error_log(
-                    "PackFormat::unpack Loop {$i}/{$eventCount}: Failed to unpack header. Offset={$offset}",
-                );
+                error_log("PackFormat::unpack Loop {$i}/{$eventCount}: Failed to unpack header. Offset={$offset}");
                 break;
             }
             $offset += $headerSize;
@@ -940,207 +880,80 @@ class PackFormat
 
             if ($eventType === Events::SPRITE_TEXTURE_LOAD->value) {
                 $fixedPartSize = 24; // q(8) + q(8) + V(4) + x4(4)
-                if ($offset + $fixedPartSize > $blobLength) {
-                    error_log(
-                        "PackFormat::unpack (TEXTURE_LOAD): Not enough data for fixed part.",
-                    );
-                    break;
-                }
-                $fixedPartData = unpack(
-                    "qid1/qid2/VfilenameLength/x4padding",
-                    substr($eventsBlob, $offset, $fixedPartSize),
-                );
-                if ($fixedPartData === false) {
-                    error_log(
-                        "PackFormat::unpack (TEXTURE_LOAD): Failed to unpack fixed part.",
-                    );
-                    break;
-                }
+                if ($offset + $fixedPartSize > $blobLength) { error_log("PackFormat::unpack (TEXTURE_LOAD): Not enough data for fixed part."); break; }
+                $fixedPartData = unpack("qid1/qid2/VfilenameLength/x4padding", substr($eventsBlob, $offset, $fixedPartSize));
+                if ($fixedPartData === false) { error_log("PackFormat::unpack (TEXTURE_LOAD): Failed to unpack fixed part."); break; }
                 $offset += $fixedPartSize;
                 $filenameLength = $fixedPartData["filenameLength"];
-                if ($offset + $filenameLength > $blobLength) {
-                    error_log(
-                        "PackFormat::unpack (TEXTURE_LOAD): Not enough data for variable part.",
-                    );
-                    break;
-                }
-                $stringPartData =
-                    $filenameLength > 0
-                        ? unpack(
-                            "a{$filenameLength}filename",
-                            substr($eventsBlob, $offset, $filenameLength),
-                        )
-                        : ["filename" => ""];
+                if ($offset + $filenameLength > $blobLength) { error_log("PackFormat::unpack (TEXTURE_LOAD): Not enough data for variable part."); break; }
+                $stringPartData = ($filenameLength > 0) ? unpack("a{$filenameLength}filename", substr($eventsBlob, $offset, $filenameLength)) : ["filename" => ""];
                 $offset += $filenameLength;
                 $events[] = $headerData + $fixedPartData + $stringPartData;
+
             } elseif ($eventType === Events::PLUGIN_LOAD->value) {
                 $fixedPartSize = 4; // V(4)
-                if ($offset + $fixedPartSize > $blobLength) {
-                    error_log(
-                        "PackFormat::unpack (PLUGIN_LOAD): Not enough data for fixed part.",
-                    );
-                    break;
-                }
-                $fixedPartData = unpack(
-                    "VpathLength",
-                    substr($eventsBlob, $offset, $fixedPartSize),
-                );
-                if ($fixedPartData === false) {
-                    error_log(
-                        "PackFormat::unpack (PLUGIN_LOAD): Failed to unpack fixed part.",
-                    );
-                    break;
-                }
+                if ($offset + $fixedPartSize > $blobLength) { error_log("PackFormat::unpack (PLUGIN_LOAD): Not enough data for fixed part."); break; }
+                $fixedPartData = unpack("VpathLength", substr($eventsBlob, $offset, $fixedPartSize));
+                if ($fixedPartData === false) { error_log("PackFormat::unpack (PLUGIN_LOAD): Failed to unpack fixed part."); break; }
                 $offset += $fixedPartSize;
                 $pathLength = $fixedPartData["pathLength"];
-                if ($offset + $pathLength > $blobLength) {
-                    error_log(
-                        "PackFormat::unpack (PLUGIN_LOAD): Not enough data for variable part.",
-                    );
-                    break;
-                }
-                $stringPartData =
-                    $pathLength > 0
-                        ? unpack(
-                            "a{$pathLength}path",
-                            substr($eventsBlob, $offset, $pathLength),
-                        )
-                        : ["path" => ""];
+                if ($offset + $pathLength > $blobLength) { error_log("PackFormat::unpack (PLUGIN_LOAD): Not enough data for variable part."); break; }
+                $stringPartData = ($pathLength > 0) ? unpack("a{$pathLength}path", substr($eventsBlob, $offset, $pathLength)) : ["path" => ""];
                 $offset += $pathLength;
                 $events[] = $headerData + $fixedPartData + $stringPartData;
+
             } elseif ($eventType === Events::AUDIO_LOAD->value) {
-                $fixedPartSize = 4; // V(4)
-                if ($offset + $fixedPartSize > $blobLength) {
-                    error_log(
-                        "PackFormat::unpack (AUDIO_LOAD): Not enough data for fixed part.",
-                    );
-                    break;
-                }
-                $fixedPartData = unpack(
-                    "VpathLength",
-                    substr($eventsBlob, $offset, $fixedPartSize),
-                );
-                if ($fixedPartData === false) {
-                    error_log(
-                        "PackFormat::unpack (AUDIO_LOAD): Failed to unpack fixed part.",
-                    );
-                    break;
-                }
+                 $fixedPartSize = 4; // V(4)
+                if ($offset + $fixedPartSize > $blobLength) { error_log("PackFormat::unpack (AUDIO_LOAD): Not enough data for fixed part."); break; }
+                $fixedPartData = unpack("VpathLength", substr($eventsBlob, $offset, $fixedPartSize));
+                if ($fixedPartData === false) { error_log("PackFormat::unpack (AUDIO_LOAD): Failed to unpack fixed part."); break; }
                 $offset += $fixedPartSize;
                 $pathLength = $fixedPartData["pathLength"];
-                if ($offset + $pathLength > $blobLength) {
-                    error_log(
-                        "PackFormat::unpack (AUDIO_LOAD): Not enough data for variable part.",
-                    );
-                    break;
-                }
-                $stringPartData =
-                    $pathLength > 0
-                        ? unpack(
-                            "a{$pathLength}path",
-                            substr($eventsBlob, $offset, $pathLength),
-                        )
-                        : ["path" => ""];
+                if ($offset + $pathLength > $blobLength) { error_log("PackFormat::unpack (AUDIO_LOAD): Not enough data for variable part."); break; }
+                $stringPartData = ($pathLength > 0) ? unpack("a{$pathLength}path", substr($eventsBlob, $offset, $pathLength)) : ["path" => ""];
                 $offset += $pathLength;
                 $events[] = $headerData + $fixedPartData + $stringPartData;
+
             } elseif ($eventType === Events::TEXT_ADD->value) {
                 // Manually check format: qid1/qid2/epositionX/epositionY/epositionZ/Cr/Cg/Cb/Ca/x4/gfontSize/VfontPathLength/VtextLength/x4
-                $fixedPartSize =
-                    8 + 8 + 8 + 8 + 8 + 1 + 1 + 1 + 1 + 4 + 4 + 4 + 4 + 4; // 64 bytes
-                if ($offset + $fixedPartSize > $blobLength) {
-                    error_log(
-                        "PackFormat::unpack (TEXT_ADD): Not enough data for fixed part.",
-                    );
-                    break;
-                }
+                $fixedPartSize = 8+8+8+8+8+1+1+1+1+4+4+4+4+4; // 64 bytes
+                if ($offset + $fixedPartSize > $blobLength) { error_log("PackFormat::unpack (TEXT_ADD): Not enough data for fixed part."); break; }
                 $fixedPartData = unpack(
                     "qid1/qid2/epositionX/epositionY/epositionZ/Cr/Cg/Cb/Ca/x4padding1/gfontSize/VfontPathLength/VtextLength/x4padding2",
-                    substr($eventsBlob, $offset, $fixedPartSize),
+                    substr($eventsBlob, $offset, $fixedPartSize)
                 );
-                if ($fixedPartData === false) {
-                    error_log(
-                        "PackFormat::unpack (TEXT_ADD): Failed to unpack fixed part.",
-                    );
-                    break;
-                }
+                if ($fixedPartData === false) { error_log("PackFormat::unpack (TEXT_ADD): Failed to unpack fixed part."); break; }
                 $offset += $fixedPartSize;
                 $fontPathLength = $fixedPartData["fontPathLength"];
                 $textLength = $fixedPartData["textLength"];
 
-                if ($offset + $fontPathLength > $blobLength) {
-                    error_log(
-                        "PackFormat::unpack (TEXT_ADD): Not enough data for font path.",
-                    );
-                    break;
-                }
-                $fontPathData =
-                    $fontPathLength > 0
-                        ? unpack(
-                            "a{$fontPathLength}fontPath",
-                            substr($eventsBlob, $offset, $fontPathLength),
-                        )
-                        : ["fontPath" => ""];
+                if ($offset + $fontPathLength > $blobLength) { error_log("PackFormat::unpack (TEXT_ADD): Not enough data for font path."); break; }
+                $fontPathData = ($fontPathLength > 0) ? unpack("a{$fontPathLength}fontPath", substr($eventsBlob, $offset, $fontPathLength)) : ["fontPath" => ""];
                 $offset += $fontPathLength;
 
-                if ($offset + $textLength > $blobLength) {
-                    error_log(
-                        "PackFormat::unpack (TEXT_ADD): Not enough data for text.",
-                    );
-                    break;
-                }
-                $textData =
-                    $textLength > 0
-                        ? unpack(
-                            "a{$textLength}text",
-                            substr($eventsBlob, $offset, $textLength),
-                        )
-                        : ["text" => ""];
+                if ($offset + $textLength > $blobLength) { error_log("PackFormat::unpack (TEXT_ADD): Not enough data for text."); break; }
+                $textData = ($textLength > 0) ? unpack("a{$textLength}text", substr($eventsBlob, $offset, $textLength)) : ["text" => ""];
                 $offset += $textLength;
-                $events[] =
-                    $headerData + $fixedPartData + $fontPathData + $textData;
+                $events[] = $headerData + $fixedPartData + $fontPathData + $textData;
+
             } elseif ($eventType === Events::TEXT_SET_STRING->value) {
                 $fixedPartSize = 24; // q(8) + q(8) + V(4) + x4(4)
-                if ($offset + $fixedPartSize > $blobLength) {
-                    error_log(
-                        "PackFormat::unpack (TEXT_SET_STRING): Not enough data for fixed part.",
-                    );
-                    break;
-                }
-                $fixedPartData = unpack(
-                    "qid1/qid2/VtextLength/x4padding",
-                    substr($eventsBlob, $offset, $fixedPartSize),
-                );
-                if ($fixedPartData === false) {
-                    error_log(
-                        "PackFormat::unpack (TEXT_SET_STRING): Failed to unpack fixed part.",
-                    );
-                    break;
-                }
+                if ($offset + $fixedPartSize > $blobLength) { error_log("PackFormat::unpack (TEXT_SET_STRING): Not enough data for fixed part."); break; }
+                $fixedPartData = unpack("qid1/qid2/VtextLength/x4padding", substr($eventsBlob, $offset, $fixedPartSize));
+                if ($fixedPartData === false) { error_log("PackFormat::unpack (TEXT_SET_STRING): Failed to unpack fixed part."); break; }
                 $offset += $fixedPartSize;
                 $textLength = $fixedPartData["textLength"];
 
-                if ($offset + $textLength > $blobLength) {
-                    error_log(
-                        "PackFormat::unpack (TEXT_SET_STRING): Not enough data for text.",
-                    );
-                    break;
-                }
-                $textData =
-                    $textLength > 0
-                        ? unpack(
-                            "a{$textLength}text",
-                            substr($eventsBlob, $offset, $textLength),
-                        )
-                        : ["text" => ""];
+                if ($offset + $textLength > $blobLength) { error_log("PackFormat::unpack (TEXT_SET_STRING): Not enough data for text."); break; }
+                $textData = ($textLength > 0) ? unpack("a{$textLength}text", substr($eventsBlob, $offset, $textLength)) : ["text" => ""];
                 $offset += $textLength;
                 $events[] = $headerData + $fixedPartData + $textData;
+
             } elseif ($eventEnumValue !== null) {
                 // Handle other known fixed-size events
                 $payloadInfo = self::getInfo($eventType);
                 if ($payloadInfo === null) {
-                    error_log(
-                        "PackFormat::unpack: Could not get info for known event type {$eventType}.",
-                    );
+                    error_log("PackFormat::unpack: Could not get info for known event type {$eventType}.");
                     break;
                 }
 
@@ -1148,44 +961,30 @@ class PackFormat
                 $payloadFormat = $payloadInfo["format"];
 
                 if ($offset + $payloadSize > $blobLength) {
-                    error_log(
-                        "PackFormat::unpack ({$eventEnumValue->name}): Not enough data for payload (size {$payloadSize}).",
-                    );
+                    error_log("PackFormat::unpack ({$eventEnumValue->name}): Not enough data for payload (size {$payloadSize}).");
                     break;
                 }
 
                 if ($payloadSize > 0) {
-                    $payloadData = unpack(
-                        $payloadFormat,
-                        substr($eventsBlob, $offset, $payloadSize),
-                    );
+                    $payloadData = unpack($payloadFormat, substr($eventsBlob, $offset, $payloadSize));
                     if ($payloadData === false) {
-                        error_log(
-                            "PackFormat::unpack ({$eventEnumValue->name}): Failed to unpack payload.",
-                        );
+                        error_log("PackFormat::unpack ({$eventEnumValue->name}): Failed to unpack payload.");
                         break;
                     }
-                    $payloadData = array_filter(
-                        $payloadData,
-                        "is_string",
-                        ARRAY_FILTER_USE_KEY,
-                    );
+                    $payloadData = array_filter($payloadData, "is_string", ARRAY_FILTER_USE_KEY);
                     $events[] = $headerData + $payloadData;
                 } else {
                     $events[] = $headerData; // Event with no payload
                 }
                 $offset += $payloadSize;
             } else {
-                error_log(
-                    "PackFormat::unpack: Unknown event type {$eventType}. Cannot continue parsing.",
-                );
+                error_log("PackFormat::unpack: Unknown event type {$eventType}. Cannot continue parsing.");
                 error_log(bin2hex($eventsBlob));
                 break;
             }
         }
         return $events;
-    }
-}
+    }}
 // --- End PackFormat Class ---
 
 // --- CommandPacker Class ---
@@ -1222,110 +1021,64 @@ class CommandPacker
         $this->eventStream .= pack("VQ", $typeValue, 0); // 12 bytes header (type + timestamp)
 
         if ($type === Events::SPRITE_TEXTURE_LOAD) {
-            if (count($data) !== 4) {
-                error_log(
-                    "CommandPacker (TEXTURE_LOAD): Incorrect data count, expected 4.",
-                );
-                return;
-            }
+            if (count($data) !== 4) { error_log("CommandPacker (TEXTURE_LOAD): Incorrect data count, expected 4."); return; }
             $packedFixedPart = pack("qqVx4", $data[0], $data[1], $data[2]);
             $this->eventStream .= $packedFixedPart;
             $this->eventStream .= $data[3]; // Append filename string
+
         } elseif ($type === Events::PLUGIN_LOAD) {
-            if (count($data) !== 2) {
-                error_log(
-                    "CommandPacker (PLUGIN_LOAD): Incorrect data count, expected 2.",
-                );
-                return;
-            }
+             if (count($data) !== 2) { error_log("CommandPacker (PLUGIN_LOAD): Incorrect data count, expected 2."); return; }
             $packedFixedPart = pack("V", $data[0]);
             $this->eventStream .= $packedFixedPart;
             $this->eventStream .= $data[1]; // Append path string
+
         } elseif ($type === Events::AUDIO_LOAD) {
-            if (count($data) !== 2) {
-                error_log(
-                    "CommandPacker (AUDIO_LOAD): Incorrect data count, expected 2.",
-                );
-                return;
-            }
+             if (count($data) !== 2) { error_log("CommandPacker (AUDIO_LOAD): Incorrect data count, expected 2."); return; }
             $packedFixedPart = pack("V", $data[0]);
             $this->eventStream .= $packedFixedPart;
             $this->eventStream .= $data[1]; // Append path string
+
         } elseif ($type === Events::TEXT_ADD) {
-            if (count($data) !== 14) {
-                error_log(
-                    "CommandPacker (TEXT_ADD): Incorrect data count, expected 14.",
-                );
-                return;
-            }
-            // Corrected format: e = f64, g = f32
-            $packedFixedPart = pack(
-                "qqeeeCCCCx4gVVx4",
-                $data[0],
-                $data[1],
-                $data[2],
-                $data[3],
-                $data[4], // id1, id2, posXYZ (e)
-                $data[5],
-                $data[6],
-                $data[7],
-                $data[8], // rgba (C)
-                $data[9],
-                $data[10],
-                $data[11], // fontSize(g), fontPathLength(V), textLength(V)
+             if (count($data) !== 14) { error_log("CommandPacker (TEXT_ADD): Incorrect data count, expected 14."); return; }
+             // Corrected format: e = f64, g = f32
+            $packedFixedPart = pack("qqeeeCCCCx4gVVx4",
+                $data[0], $data[1], $data[2], $data[3], $data[4], // id1, id2, posXYZ (e)
+                $data[5], $data[6], $data[7], $data[8],             // rgba (C)
+                $data[9], $data[10], $data[11]                      // fontSize(g), fontPathLength(V), textLength(V)
             );
             $this->eventStream .= $packedFixedPart;
             $this->eventStream .= $data[12]; // Append fontPath
             $this->eventStream .= $data[13]; // Append text
+
         } elseif ($type === Events::TEXT_SET_STRING) {
-            if (count($data) !== 4) {
-                error_log(
-                    "CommandPacker (TEXT_SET_STRING): Incorrect data count, expected 4.",
-                );
-                return;
-            }
+             if (count($data) !== 4) { error_log("CommandPacker (TEXT_SET_STRING): Incorrect data count, expected 4."); return; }
             $packedFixedPart = pack("qqVx4", $data[0], $data[1], $data[2]);
             $this->eventStream .= $packedFixedPart;
             $this->eventStream .= $data[3]; // Append text string
+
         } else {
             // --- Fixed-Size Event Packing Logic ---
             $payloadInfo = PackFormat::getInfo($typeValue);
-            if ($payloadInfo === null) {
-                error_log(
-                    "CommandPacker ({$type->name}): Could not get payload info.",
-                );
-                return;
-            }
+            if ($payloadInfo === null) { error_log("CommandPacker ({$type->name}): Could not get payload info."); return; }
 
             $pureFormat = self::getPureFormat($payloadInfo["format"]);
-            if (empty($pureFormat) && !empty($data)) {
-                error_log(
-                    "CommandPacker ({$type->name}): Format is empty but data was provided.",
-                );
-                return;
-            }
+            if (empty($pureFormat) && !empty($data)) { error_log("CommandPacker ({$type->name}): Format is empty but data was provided."); return; }
 
             if (empty($pureFormat) && empty($data)) {
-                // Correctly handle no-payload events like AUDIO_STOP_ALL
+                 // Correctly handle no-payload events like AUDIO_STOP_ALL
             } else {
                 $numericData = array_values($data);
                 try {
                     $packedPayload = pack($pureFormat, ...$numericData);
                     if ($packedPayload === false) {
-                        error_log(
-                            "CommandPacker ({$type->name}): pack() returned false. Format='{$pureFormat}'",
-                        );
+                        error_log("CommandPacker ({$type->name}): pack() returned false. Format='{$pureFormat}'");
                     } else {
                         $this->eventStream .= $packedPayload;
                     }
                 } catch (\ValueError $e) {
-                    error_log(
-                        "CommandPacker ({$type->name}): ValueError during pack()! Format='{$pureFormat}', Error: {$e->getMessage()}",
-                    );
+                    error_log("CommandPacker ({$type->name}): ValueError during pack()! Format='{$pureFormat}', Error: {$e->getMessage()}");
                 } catch (\Exception $e) {
-                    error_log(
-                        "CommandPacker ({$type->name}): Exception during pack()! Format='{$pureFormat}', Error: {$e->getMessage()}",
-                    );
+                    error_log("CommandPacker ({$type->name}): Exception during pack()! Format='{$pureFormat}', Error: {$e->getMessage()}");
                 }
             }
         }
@@ -1334,17 +1087,12 @@ class CommandPacker
 
     private function packBufferedEvents(): void
     {
-        if (empty($this->eventBuffer)) {
-            return;
-        }
+        if (empty($this->eventBuffer)) { return; }
         foreach ($this->eventBuffer as $event) {
             $this->packEvent($event["type"], $event["data"]);
         }
         if ($this->chunkCallback !== null) {
-            ($this->chunkCallback)(
-                count($this->eventBuffer),
-                $this->commandCount,
-            );
+            ($this->chunkCallback)(count($this->eventBuffer), $this->commandCount);
         }
         $this->eventBuffer = [];
     }
@@ -1385,7 +1133,7 @@ class CommandPacker
             if (preg_match("/^([a-zA-Z])(\*|\d*)/", $part, $matches)) {
                 $code = $matches[1];
                 $count = $matches[2];
-                if ($count === "*") {
+                if ($count === '*') {
                     break; // Stop at variable part
                 }
                 $pure .= $code . $count;
@@ -1393,4 +1141,4 @@ class CommandPacker
         }
         return self::$pureFormatCache[$descriptiveFormat] = $pure;
     }
-} // --- End CommandPacker Class ---
+}// --- End CommandPacker Class ---

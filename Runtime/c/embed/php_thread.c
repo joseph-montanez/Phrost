@@ -1,7 +1,7 @@
 #include "php_thread.h"
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h> // For malloc/free
+#include <stdlib.h> // For malloc/free/realloc
 #include <limits.h> // For PATH_MAX
 
 #ifdef _WIN32
@@ -17,9 +17,8 @@ static char g_php_base_path[PATH_MAX];
 /**
  * @brief NEW: This function will receive all output (echo, errors) from PHP.
  */
-static size_t phrost_ub_write(const char *str, size_t str_length) {
+static size_t phrost_ub_write(const char* str, size_t str_length) {
     // We print it to the C stdout, prefixed with [PHP]
-    // The '%.*s' is a safe way to print a non-null-terminated string
     printf("[PHP] %.*s\n", (int)str_length, str);
     fflush(stdout); // Ensure it prints immediately
     return str_length;
@@ -27,9 +26,9 @@ static size_t phrost_ub_write(const char *str, size_t str_length) {
 
 
 /**
- * @brief Sets PHP INI defaults. From your C++ example.
+ * @brief Sets PHP INI defaults.
  */
-static void set_ini_defaults(HashTable *configuration_hash)
+static void set_ini_defaults(HashTable* configuration_hash)
 {
     zval ini_value;
     // Setting memory_limit
@@ -59,40 +58,33 @@ static void* php_thread_main(void* arg) {
     php_embed_module.ub_write = phrost_ub_write;
     php_embed_init(0, NULL);
 
-    // --- NEW: Force INI settings *after* init ---
-    // This is more reliable for dynamic paths.
+    // --- Force INI settings *after* init ---
 
     // 1. Set 'log_errors = 1'
-    // FIX: Added persistent flag '1'
     zend_alter_ini_entry(zend_string_init(ZEND_STRL("log_errors"), 1), zend_string_init(ZEND_STRL("1"), 1), ZEND_INI_USER, ZEND_INI_STAGE_RUNTIME);
 
     // 2. Set 'error_log' to a file in our base path
     char error_log_path[PATH_MAX];
     snprintf(error_log_path, PATH_MAX, "%sphp_errors.log", g_php_base_path);
     printf("[PHP Thread] Setting error_log to: %s\n", error_log_path);
-    // FIX: Added persistent flag '1' to key, '0' (non-persistent) to value
     zend_alter_ini_entry(zend_string_init(ZEND_STRL("error_log"), 1), zend_string_init(error_log_path, strlen(error_log_path), 0), ZEND_INI_USER, ZEND_INI_STAGE_RUNTIME);
 
     // 3. Set 'include_path' to the game directory
     char include_path[PATH_MAX];
     snprintf(include_path, PATH_MAX, ".:%sgame", g_php_base_path);
     printf("[PHP Thread] Setting include_path to: %s\n", include_path);
-    // FIX: Added persistent flag '1' to key, '0' (non-persistent) to value
     zend_alter_ini_entry(zend_string_init(ZEND_STRL("include_path"), 1), zend_string_init(include_path, strlen(include_path), 0), ZEND_INI_USER, ZEND_INI_STAGE_RUNTIME);
-    // --- END FIX ---
 
 
     // --- 2. Load the main PHP script ---
     zend_file_handle file_handle;
     char script_path[PATH_MAX];
     strcpy(script_path, g_php_base_path);
-    // IMPORTANT: Change this to your actual PHP script entry point
     strcat(script_path, "game/bundle.php");
 
     zend_stream_init_filename(&file_handle, script_path);
 
-    // This is the missing step:
-    if (php_stream_open_for_zend_ex(&file_handle, USE_PATH|REPORT_ERRORS|STREAM_OPEN_FOR_INCLUDE) != SUCCESS) {
+    if (php_stream_open_for_zend_ex(&file_handle, USE_PATH | REPORT_ERRORS | STREAM_OPEN_FOR_INCLUDE) != SUCCESS) {
         printf("[PHP Thread] CRITICAL: Failed to *open* main PHP script: %s. Check path.\n", script_path);
         php_embed_shutdown();
 
@@ -107,50 +99,37 @@ static void* php_thread_main(void* arg) {
     printf("[PHP Thread] Executing script: %s\n", script_path);
 
     bool script_executed_ok = true;
-    zend_first_try {
+    zend_first_try{
         // Run the script
-        // php_execute_script returns 1 (true) if the script ran.
-        // We don't check != SUCCESS (0) because that logic was wrong.
         if (!php_execute_script(&file_handle)) {
             script_executed_ok = false;
             printf("[PHP Thread] php_execute_script returned false.\n");
-        } else {
-            // Script ran, but did it throw an Uncaught Exception?
-            // This handles: throw new Exception("...");
+        }
+ else {
+            // Check for Uncaught Exceptions
             if (EG(exception)) {
                 zval property;
-                zend_class_entry *exception_ce = EG(exception)->ce;
-
-                // Read "message"
+                zend_class_entry* exception_ce = EG(exception)->ce;
                 zval* msg_zval = zend_read_property(exception_ce, EG(exception), "message", strlen("message"), 1, &property);
 
                 if (msg_zval && Z_TYPE_P(msg_zval) == IS_STRING) {
                         printf("[PHP Thread] CRITICAL: Uncaught Exception: %s\n", Z_STRVAL_P(msg_zval));
                 }
-
-                // Clear it so the engine doesn't think it's still in a broken state
                 zend_clear_exception();
-
-                // Mark as failed so we shut down
                 script_executed_ok = false;
             }
         }
-    } zend_catch {
-        // This handles Fatal Errors (Bailouts)
-        // This handles: require('missing_file.php') or syntax errors
+    } zend_catch{
         script_executed_ok = false;
         printf("[PHP Thread] CRITICAL: PHP Fatal Error (Bailout).\n");
     } zend_end_try();
 
     if (!script_executed_ok) {
         printf("[PHP Thread] Script failed to run. Shutting down.\n");
-
-        // Signal Main thread to stop
         pthread_mutex_lock(&bridge->mutex);
         bridge->engine_running = false;
         pthread_cond_signal(&bridge->php_to_swift_cond);
         pthread_mutex_unlock(&bridge->mutex);
-
         php_embed_shutdown();
         return NULL;
     }
@@ -178,7 +157,6 @@ static void* php_thread_main(void* arg) {
         }
 
         if (!bridge->engine_running) {
-            // Engine shut down, exit loop
             pthread_mutex_unlock(&bridge->mutex);
             break;
         }
@@ -188,68 +166,96 @@ static void* php_thread_main(void* arg) {
         ZVAL_DOUBLE(z_delta, bridge->swift_delta);
         if (bridge->swift_event_len > 0) {
             ZVAL_STRINGL(z_event_data, bridge->swift_event_data, bridge->swift_event_len);
-        } else {
+        }
+        else {
             ZVAL_EMPTY_STRING(z_event_data);
         }
-
 
         //-- Mark events buffer from Swift consumed
         bridge->swift_has_data = false;
         pthread_mutex_unlock(&bridge->mutex);
 
-
+        //-- Call PHP Function
         zend_fcall_info_init(&z_func_name, 0, &fci, &fci_cache, NULL, NULL);
         fci.param_count = 3;
         fci.params = z_params;
         fci.retval = &z_retval;
 
         if (zend_call_function(&fci, &fci_cache) == SUCCESS) {
+            pthread_mutex_lock(&bridge->mutex);
+
             if (Z_TYPE(z_retval) == IS_STRING) {
-                // --- 5. We got command data back from PHP ---
                 const char* php_str = Z_STRVAL(z_retval);
                 size_t php_len = Z_STRLEN(z_retval);
 
-                pthread_mutex_lock(&bridge->mutex);
-                // We must copy the data, as the zval will be destroyed
-                bridge->php_command_data = (char*)malloc(php_len);
-                if (bridge->php_command_data) {
+                // --- FIXED: Use Persistent Buffer (Realloc) ---
+
+                // 1. Check Capacity: Grow if needed
+                // We add +1 byte for a null terminator safety sentinel
+                if (php_len + 1 > bridge->php_buffer_cap) {
+                    // Growth Strategy: New length + padding * 2
+                    size_t new_cap = (php_len + 4096) * 2;
+                    char* new_ptr = (char*)realloc(bridge->php_command_data, new_cap);
+
+                    if (new_ptr) {
+                        bridge->php_command_data = new_ptr;
+                        bridge->php_buffer_cap = new_cap;
+                    }
+                    else {
+                        printf("[PHP Thread] CRITICAL ERROR: Failed to realloc command buffer to %zu bytes!\n", new_cap);
+                        // In event of allocation failure, return empty so we don't crash
+                        php_len = 0;
+                    }
+                }
+
+                // 2. Copy Data into the Persistent Buffer
+                // Only copy if we have a valid buffer and length > 0
+                if (bridge->php_command_data && php_len > 0) {
                     memcpy(bridge->php_command_data, php_str, php_len);
+                    // Null-terminate specifically for C/Swift safety, 
+                    // even if the binary data contains nulls earlier.
+                    bridge->php_command_data[php_len] = '\0';
                     bridge->php_command_len = (int32_t)php_len;
-                } else {
-                    printf("[PHP Thread] Error: Failed to malloc for command buffer!\n");
+                }
+                else {
                     bridge->php_command_len = 0;
                 }
-                bridge->php_has_data = true;
-                pthread_mutex_unlock(&bridge->mutex);
+
             }
-            zval_ptr_dtor(&z_retval); // Free the zval returned by PHP
-        } else {
+            else {
+                // PHP returned null/void/false
+                // We treat this as "No Commands", but we MUST set the len to 0
+                bridge->php_command_len = 0;
+            }
+
+            bridge->php_has_data = true; // ALWAYS signal data ready
+            pthread_mutex_unlock(&bridge->mutex);
+
+            zval_ptr_dtor(&z_retval); // Free PHP's return zval
+        }
+        else {
+            // --- Execution Failed ---
             if (EG(exception)) {
                 zval property;
-                zend_class_entry *exception_ce = EG(exception)->ce;
+                zend_class_entry* exception_ce = EG(exception)->ce;
                 zval* msg_zval = zend_read_property(exception_ce, EG(exception), "message", strlen("message"), 1, &property);
-                zend_string* msg_str = zval_get_string(msg_zval);
-
-                printf("[PHP Thread] RUNTIME ERROR in Phrost_Update: %s\n", ZSTR_VAL(msg_str));
-
-                zend_string_release(msg_str);
+                if (msg_zval && Z_TYPE_P(msg_zval) == IS_STRING) {
+                    printf("[PHP Thread] RUNTIME ERROR in Phrost_Update: %s\n", Z_STRVAL_P(msg_zval));
+                }
                 zend_clear_exception();
-            } else {
-                printf("[PHP Thread] Error: zend_call_function failed for Phrost_Update.\n");
             }
 
-            // Send empty response
+            // Always signal Swift to unblock it
             pthread_mutex_lock(&bridge->mutex);
-            bridge->php_command_data = NULL;
             bridge->php_command_len = 0;
             bridge->php_has_data = true;
             pthread_mutex_unlock(&bridge->mutex);
         }
 
-        // Free the zval we created for the event data
+        // Free parameters
         zval_ptr_dtor(z_event_data);
 
-        // --- 6. Signal Swift/Main thread that commands are ready ---
+        // Signal Swift that commands are ready
         pthread_cond_signal(&bridge->php_to_swift_cond);
     }
 
@@ -265,8 +271,8 @@ static void* php_thread_main(void* arg) {
  * @brief The C callback called *by Swift* (on the Swift/Main thread).
  */
 const char* swift_callback_to_php_bridge(int32_t frame, double delta,
-                                         const char* eventData, int32_t eventLen,
-                                         int32_t* outLen, ThreadBridge* bridge) {
+    const char* eventData, int32_t eventLen,
+    int32_t* outLen, ThreadBridge* bridge) {
 
     pthread_mutex_lock(&bridge->mutex);
 
@@ -285,27 +291,25 @@ const char* swift_callback_to_php_bridge(int32_t frame, double delta,
     }
 
     if (!bridge->engine_running) {
-        // PHP thread failed or we are shutting down
         pthread_mutex_unlock(&bridge->mutex);
         *outLen = 0;
         return NULL;
     }
 
-    // 3. We were woken up! Get the command data from PHP.
+    // 3. Return the Persistent Pointer
+    // We do NOT free this. The ThreadBridge owns this memory.
+    // Swift acts as a "Borrower" of this memory.
     const char* return_buffer = bridge->php_command_data;
     *outLen = bridge->php_command_len;
 
     bridge->php_has_data = false;
     pthread_mutex_unlock(&bridge->mutex);
 
-    // 4. Return the buffer (which was malloc'd on the PHP thread)
-    // The Swift engine is responsible for calling phrost_free_data (which is free())
     return return_buffer;
 }
 
 
 int php_thread_start(ThreadBridge* bridge, const char* base_path) {
-    // Initialize the bridge
     if (pthread_mutex_init(&bridge->mutex, NULL) != 0) return -1;
     if (pthread_cond_init(&bridge->swift_to_php_cond, NULL) != 0) return -1;
     if (pthread_cond_init(&bridge->php_to_swift_cond, NULL) != 0) return -1;
@@ -313,22 +317,29 @@ int php_thread_start(ThreadBridge* bridge, const char* base_path) {
     bridge->swift_event_data = NULL;
     bridge->swift_event_len = 0;
     bridge->swift_has_data = false;
-    bridge->php_command_data = NULL;
+
+    // --- Initialize Persistent Buffer ---
+    // Allocate 16KB initially to reduce early reallocations
+    bridge->php_buffer_cap = 1024 * 16;
+    bridge->php_command_data = (char*)malloc(bridge->php_buffer_cap);
+
+    if (!bridge->php_command_data) {
+        printf("CRITICAL: Failed to allocate initial PHP buffer.\n");
+        return -1;
+    }
+    // Zero it out for safety
+    memset(bridge->php_command_data, 0, bridge->php_buffer_cap);
+
     bridge->php_command_len = 0;
     bridge->php_has_data = false;
     bridge->engine_running = true;
 
-    // Store the base path for the PHP thread to use
     strcpy(g_php_base_path, base_path);
 
-    // Launch the PHP thread
     pthread_t thread_id;
     if (pthread_create(&thread_id, NULL, php_thread_main, (void*)bridge) != 0) {
         return -1;
     }
-
-    // Detach the thread so we don't have to join it manually
-    // We will signal it to stop
     pthread_detach(thread_id);
 
     return 0;
@@ -339,15 +350,23 @@ void php_thread_stop(ThreadBridge* bridge) {
     pthread_mutex_lock(&bridge->mutex);
     bridge->engine_running = false;
 
-    // Wake up both cond vars in case PHP thread is sleeping
+    // Wake up both cond vars
     pthread_cond_signal(&bridge->swift_to_php_cond);
     pthread_cond_signal(&bridge->php_to_swift_cond);
 
     pthread_mutex_unlock(&bridge->mutex);
 
     // Give the thread a moment to shut down
-    // In a real app, you might use a more robust join
-    usleep(100000); // 100ms
+    usleep(200000); // 200ms
+
+    // --- Cleanup Persistent Buffer ---
+    // We lock to ensure the PHP thread is definitely done using it
+    pthread_mutex_lock(&bridge->mutex);
+    if (bridge->php_command_data) {
+        free(bridge->php_command_data);
+        bridge->php_command_data = NULL;
+    }
+    pthread_mutex_unlock(&bridge->mutex);
 
     pthread_mutex_destroy(&bridge->mutex);
     pthread_cond_destroy(&bridge->swift_to_php_cond);

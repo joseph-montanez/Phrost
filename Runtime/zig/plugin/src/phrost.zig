@@ -112,7 +112,9 @@ pub const PackedAudioSetVolumeEvent = extern struct {
     _padding: u32, // Padding for alignment.
 };
 
-pub const PackedAudioStopAllEvent = extern struct {};
+pub const PackedAudioStopAllEvent = extern struct {
+    _unused: u8, // Padding to ensure non-zero struct size (MSVC compatibility).
+};
 
 pub const PackedAudioStopEvent = extern struct {
     audioId: u64, // The ID of the audio to stop.
@@ -145,7 +147,9 @@ pub const PackedCameraSetZoomEvent = extern struct {
     zoom: f64, // New zoom level. 1.0 is default, 2.0 is zoomed in.
 };
 
-pub const PackedCameraStopFollowingEvent = extern struct {};
+pub const PackedCameraStopFollowingEvent = extern struct {
+    _unused: u8, // Padding to ensure non-zero struct size (MSVC compatibility).
+};
 
 pub const PackedGeomAddLineEvent = extern struct {
     id1: i64, // Primary identifier.
@@ -155,7 +159,8 @@ pub const PackedGeomAddLineEvent = extern struct {
     g: u8, // Green color component (0-255).
     b: u8, // Blue color component (0-255).
     a: u8, // Alpha color component (0-255).
-    _padding: u32, // Padding for alignment.
+    isScreenSpace: u8, // If the geometry is unaffected by the camera.
+    _padding: [3]u8, // Padding for alignment.
     x1: f32, // Start X coordinate.
     y1: f32, // Start Y coordinate.
     x2: f32, // End X coordinate.
@@ -170,6 +175,8 @@ pub const PackedGeomAddPackedHeaderEvent = extern struct {
     g: u8, // Green color component (0-255).
     b: u8, // Blue color component (0-255).
     a: u8, // Alpha color component (0-255).
+    isScreenSpace: u8, // If the geometry is unaffected by the camera.
+    _padding: u16, // Padding for alignment.
     primitiveType: u32, // Raw value from PrimitiveType enum (point, line, rect).
     count: u32, // Number of primitives that follow this header.
 };
@@ -182,7 +189,8 @@ pub const PackedGeomAddPointEvent = extern struct {
     g: u8, // Green color component (0-255).
     b: u8, // Blue color component (0-255).
     a: u8, // Alpha color component (0-255).
-    _padding: u32, // Padding for alignment.
+    isScreenSpace: u8, // If the geometry is unaffected by the camera.
+    _padding: [3]u8, // Padding for alignment.
     x: f32, // X coordinate.
     y: f32, // Y coordinate.
 };
@@ -195,7 +203,8 @@ pub const PackedGeomAddRectEvent = extern struct {
     g: u8, // Green color component (0-255).
     b: u8, // Blue color component (0-255).
     a: u8, // Alpha color component (0-255).
-    _padding: u32, // Padding for alignment.
+    isScreenSpace: u8, // If the geometry is unaffected by the camera.
+    _padding: [3]u8, // Padding for alignment.
     x: f32, // Top-left X coordinate.
     y: f32, // Top-left Y coordinate.
     w: f32, // Width.
@@ -536,7 +545,7 @@ pub const event_payload_list = [_]KVPair{
     .{ "audioLoad", @sizeOf(PackedAudioLoadEvent) },
     .{ "audioLoaded", @sizeOf(PackedAudioLoadedEvent) },
     .{ "audioPlay", @sizeOf(PackedAudioPlayEvent) },
-    .{ "audioStopAll", 0 }, // No payload
+    .{ "audioStopAll", @sizeOf(PackedAudioStopAllEvent) },
     .{ "audioSetMasterVolume", @sizeOf(PackedAudioSetMasterVolumeEvent) },
     .{ "audioPause", @sizeOf(PackedAudioPauseEvent) },
     .{ "audioStop", @sizeOf(PackedAudioStopEvent) },
@@ -570,7 +579,7 @@ pub const event_payload_list = [_]KVPair{
     .{ "cameraSetZoom", @sizeOf(PackedCameraSetZoomEvent) },
     .{ "cameraSetRotation", @sizeOf(PackedCameraSetRotationEvent) },
     .{ "cameraFollowEntity", @sizeOf(PackedCameraFollowEntityEvent) },
-    .{ "cameraStopFollowing", 0 }, // No payload
+    .{ "cameraStopFollowing", @sizeOf(PackedCameraStopFollowingEvent) },
 
     // Script Events
     .{ "scriptSubscribe", @sizeOf(PackedScriptSubscribeEvent) },

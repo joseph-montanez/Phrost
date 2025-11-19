@@ -266,13 +266,14 @@ class SpritePackFormats
      * - g: u8 (Green color component (0-255).)
      * - b: u8 (Blue color component (0-255).)
      * - a: u8 (Alpha color component (0-255).)
-     * - _padding: u32 (Padding for alignment.)
+     * - isScreenSpace: u8 (If the geometry is unaffected by the camera.)
+     * - _padding: u8 (Padding for alignment.)
      * - x: f32 (Top-left X coordinate.)
      * - y: f32 (Top-left Y coordinate.)
      * - w: f32 (Width.)
      * - h: f32 (Height.)
      */
-    public const PACK_GEOM_ADD_FILL_RECT = "qid1/qid2/ez/Cr/Cg/Cb/Ca/x4_padding/gx/gy/gw/gh";
+    public const PACK_GEOM_ADD_FILL_RECT = "qid1/qid2/ez/Cr/Cg/Cb/Ca/CisScreenSpace/x3_padding/gx/gy/gw/gh";
 
     /**
      * Maps to Swift: `PackedGeomAddPackedHeaderEvent`
@@ -441,8 +442,9 @@ class AudioPackFormats
 
     /**
      * Maps to Swift: `PackedAudioStopAllEvent`
+     * - _unused: u8 (Padding to ensure non-zero struct size (MSVC compatibility).)
      */
-    public const PACK_AUDIO_STOP_ALL = "";
+    public const PACK_AUDIO_STOP_ALL = "C_unused";
 
     /**
      * Maps to Swift: `PackedAudioSetMasterVolumeEvent`
@@ -662,8 +664,9 @@ class CameraPackFormats
 
     /**
      * Maps to Swift: `PackedCameraStopFollowingEvent`
+     * - _unused: u8 (Padding to ensure non-zero struct size (MSVC compatibility).)
      */
-    public const PACK_CAMERA_STOP_FOLLOWING = "";
+    public const PACK_CAMERA_STOP_FOLLOWING = "C_unused";
 }
 
 class ScriptPackFormats

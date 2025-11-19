@@ -123,6 +123,7 @@ typedef struct {
 
 // Stops all playing audio. This event has no payload.
 typedef struct {
+    uint8_t _unused; // Padding to ensure non-zero struct size (MSVC compatibility).
 } PackedAudioStopAllEvent;
 
 // Payload to stop and rewind a specific audio sound.
@@ -165,6 +166,7 @@ typedef struct {
 
 // Tells the camera to stop following any entity.
 typedef struct {
+    uint8_t _unused; // Padding to ensure non-zero struct size (MSVC compatibility).
 } PackedCameraStopFollowingEvent;
 
 // Payload for adding a single geometry line.

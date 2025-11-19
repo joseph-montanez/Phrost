@@ -65,15 +65,21 @@ elseif(WIN32)
 
     if(MSVC_C_ARCHITECTURE_ID MATCHES "ARM64" OR CMAKE_GENERATOR_PLATFORM MATCHES "ARM64")
         message(STATUS "  > Architecture: ARM64")
-        set(SWIFT_BUILD_DIR "${ROOT_DIR}/Engine/PhrostEngineV2/.build/aarch64-unknown-windows-msvc/release")
+        set(SWIFT_ARCH_SLUG "aarch64-unknown-windows-msvc")
         set(PHP_BASE_DIR "${DEPS_DIR}/php-8.4.10-nts-Win32-vs17-arm64")
         set(SWIFT_RUNTIME_DIR "${SWIFT_SDK_BASE}/aarch64")
+        set(SDL_ROOT      "${DEPS_DIR}/SDL3-arm64")
+        set(CHIPMUNK_ROOT "${DEPS_DIR}/vcpkg/packages/chipmunk_arm64-windows")
     else()
         message(STATUS "  > Architecture: x64")
-        set(SWIFT_BUILD_DIR "${ROOT_DIR}/Engine/PhrostEngineV2/.build/x86_64-unknown-windows-msvc/release")
+        set(SWIFT_ARCH_SLUG "x86_64-unknown-windows-msvc")
         set(PHP_BASE_DIR "${DEPS_DIR}/php-8.4.14-nts-Win32-vs17-x64")
         set(SWIFT_RUNTIME_DIR "${SWIFT_SDK_BASE}/x86_64")
+        set(SDL_ROOT      "${DEPS_DIR}/SDL3-x64")
+        set(CHIPMUNK_ROOT "${DEPS_DIR}/vcpkg/packages/chipmunk_x64-windows")
     endif()
+
+    set(SWIFT_BUILD_ROOT "${ROOT_DIR}/Engine/PhrostEngineV2/.build/${SWIFT_ARCH_SLUG}")
 
     set(PHP_LIB_DIR  "${PHP_BASE_DIR}/sdk/lib")
     set(PHP_INC_DIR  "${PHP_BASE_DIR}/sdk/include")
@@ -151,9 +157,40 @@ find_library(SDL3_IMG_LIB   NAMES SDL3_image HINTS "${SDL_IMG_LIB_PATH}")
 find_library(SDL3_TTF_LIB   NAMES SDL3_ttf   HINTS "${SDL_TTF_LIB_PATH}")
 find_library(CHIPMUNK_LIB   NAMES ${CHIPMUNK_LIB_NAME} chipmunk HINTS "${CHIPMUNK_LIB_PATH}")
 
+# --- Find Engine Library (Dynamic Debug/Release Support) ---
+
+# 1. Find Release Version
+find_library(ENGINE_LIB_RELEASE 
+    NAMES PhrostShared libPhrostShared 
+    HINTS "${SWIFT_BUILD_ROOT}/release" 
+    NO_DEFAULT_PATH
+)
+
+# 2. Find Debug Version
+find_library(ENGINE_LIB_DEBUG 
+    NAMES PhrostShared libPhrostShared 
+    HINTS "${SWIFT_BUILD_ROOT}/debug" 
+    NO_DEFAULT_PATH
+)
+
+if(ENGINE_LIB_RELEASE AND NOT ENGINE_LIB_DEBUG)
+    message(STATUS "  [Swift] Debug lib not found. Using Release lib for all configs.")
+    set(ENGINE_LIB_DEBUG ${ENGINE_LIB_RELEASE})
+elseif(ENGINE_LIB_DEBUG AND NOT ENGINE_LIB_RELEASE)
+    message(STATUS "  [Swift] Release lib not found. Using Debug lib for all configs.")
+    set(ENGINE_LIB_RELEASE ${ENGINE_LIB_DEBUG})
+endif()
+
+if(NOT ENGINE_LIB_RELEASE AND NOT ENGINE_LIB_DEBUG)
+    message(FATAL_ERROR "Could not find PhrostShared in ${SWIFT_BUILD_ROOT}/release OR /debug")
+endif()
+
+
 target_link_libraries(PhrostHost PRIVATE
     ${PHP_LIB}
-    ${ENGINE_LIB}
+    # Use 'debug' for Debug builds and 'optimized' (Release) for everything else
+    debug     "${ENGINE_LIB_DEBUG}"
+    optimized "${ENGINE_LIB_RELEASE}"
     ${SDL3_LIB}
     ${SDL3_IMG_LIB}
     ${SDL3_TTF_LIB}

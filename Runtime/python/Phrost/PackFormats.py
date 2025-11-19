@@ -424,10 +424,11 @@ class AudioPackFormats:
 
     """
     Maps to Swift: `PackedAudioStopAllEvent`
+    - _unused: u8 (Padding to ensure non-zero struct size (MSVC compatibility).)
     """
-    # Format:
-    # Size: 0 bytes
-    PACK_AUDIO_STOP_ALL: Tuple[str, int] = ("", 0)
+    # Format: <B
+    # Size: 1 bytes
+    PACK_AUDIO_STOP_ALL: Tuple[str, int] = ("<B", 1)
 
     """
     Maps to Swift: `PackedAudioSetMasterVolumeEvent`
@@ -699,10 +700,11 @@ class CameraPackFormats:
 
     """
     Maps to Swift: `PackedCameraStopFollowingEvent`
+    - _unused: u8 (Padding to ensure non-zero struct size (MSVC compatibility).)
     """
-    # Format:
-    # Size: 0 bytes
-    PACK_CAMERA_STOP_FOLLOWING: Tuple[str, int] = ("", 0)
+    # Format: <B
+    # Size: 1 bytes
+    PACK_CAMERA_STOP_FOLLOWING: Tuple[str, int] = ("<B", 1)
 
 
 class ScriptPackFormats:

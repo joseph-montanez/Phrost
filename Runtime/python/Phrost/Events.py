@@ -2,7 +2,7 @@ from enum import IntEnum
 
 
 # --- Events Enum ---
-class Events(IntEnum):
+class Events(enum.IntEnum):
     SPRITE_ADD = 0
     SPRITE_REMOVE = 1
     SPRITE_MOVE = 2
