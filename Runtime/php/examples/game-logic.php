@@ -7,8 +7,8 @@ foreach (glob(__DIR__ . "/Phrost/*.php") as $filename) {
 }
 
 // --- Imports ---
-// Import all necessary classes from the Phrost namespace
 use Phrost\Audio;
+use Phrost\Camera; // Added Camera
 use Phrost\Id;
 use Phrost\Keycode;
 use Phrost\Mod;
@@ -29,8 +29,8 @@ global $world, $shutdown_flag_path, $save_path;
 $shutdown_flag_path = __DIR__ . "/../shutdown.flag";
 $save_path = __DIR__ . "/../save.data";
 
-$fontPath = __DIR__ . "/Roboto-Regular.ttf";
-$audioPath = __DIR__ . "/snoozy beats - neon dreams.wav";
+$fontPath = __DIR__ . "/assets/Roboto-Regular.ttf";
+$audioPath = __DIR__ . "/assets/snoozy beats - neon dreams.wav";
 
 // Create Text objects
 $fpsTextId = Id::generate();
@@ -51,30 +51,31 @@ $logicText->setColor(255, 255, 255, 255, false);
 $musicTrack = new Audio($audioPath);
 
 $world = [
-    "window" => new Window("Bunny Benchmark", 800, 450), // Initial window
-    "sprites" => [], // The associative array of all Sprite objects
+    "window" => new Window("Bunny Benchmark", 800, 450),
+    "camera" => new Camera(800.0 / 2, 450.0 / 2), // Added Camera
+    "sprites" => [],
     "textObjects" => [
-        // Store text objects
         "fps" => $fpsText,
         "logic" => $logicText,
     ],
-    "musicTrack" => $musicTrack, // Store Audio object
-    "spritesCount" => 0, // Total number of sprites
-    "activeLogic" => "PHP", // Which logic is currently running: "PHP", "Zig", or "Rust"
-    "pluginLoaded" => false, // If plugin is loaded
-    "chunkSize" => 0, // (For debugging)
-    "mouseX" => 0, // Last known mouse X
-    "mouseY" => 0, // Last known mouse Y
-    "fps" => 0.0, // Instantaneous FPS
-    "smoothed_fps" => 0.0, // Smoothed FPS
-    "fps_samples" => [], // Array of frame times for smoothing
+    "musicTrack" => $musicTrack,
+    "spritesCount" => 0,
+    "activeLogic" => "PHP",
+    "pluginLoaded" => false,
+    "chunkSize" => 0,
+    "inputState" => [], // Added Input State tracking
+    "mouseX" => 0,
+    "mouseY" => 0,
+    "fps" => 0.0,
+    "smoothed_fps" => 0.0,
+    "fps_samples" => [],
     "musicPlaying" => false,
     "assetsLoaded" => false,
-    "eventStacking" => true, // From main.php
+    "eventStacking" => true,
     "liveReload" => new LiveReload($shutdown_flag_path, $save_path),
 ];
 
-// Pack initial window setup (for both runners)
+// Pack initial window setup
 $world["__initial_packer"] = new Phrost\ChannelPacker();
 $world["window"]->setResizable(true);
 $world["window"]->packDirtyEvents($world["__initial_packer"]);
@@ -86,9 +87,7 @@ $world["window"]->packDirtyEvents($world["__initial_packer"]);
 function Phrost_Sleep(): string
 {
     global $world;
-
     unset($world["__initial_packer"]);
-
     return serialize($world);
 }
 
@@ -99,7 +98,6 @@ function Phrost_Wake(string $data): void
 {
     global $world, $save_path, $shutdown_flag_path;
 
-    // Use @ to suppress warnings from corrupt data
     $existing_world = @unserialize($data);
 
     if ($existing_world === false && $data !== serialize(false)) {
@@ -112,7 +110,6 @@ function Phrost_Wake(string $data): void
         echo "World state restored.\n";
     }
 
-    // Re-initialize transient objects
     if (!isset($world["liveReload"])) {
         $world["liveReload"] = new LiveReload($shutdown_flag_path, $save_path);
     } else {
@@ -121,7 +118,7 @@ function Phrost_Wake(string $data): void
 }
 
 /**
- * This is the fully refactored main game loop function.
+ * Main game loop.
  */
 function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
 {
@@ -131,10 +128,11 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
     /** @var LiveReload $live_reload */
     $live_reload = $world["liveReload"];
     $live_reload->poll($world["assetsLoaded"]);
-    //---
 
     /** @var Window $window */
     $window = $world["window"];
+    /** @var Camera $camera */
+    $camera = $world["camera"];
     /** @var Audio $music */
     $music = $world["musicTrack"];
     /** @var Text $fpsText */
@@ -158,10 +156,9 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
     $events = PackFormat::unpack($eventsBlob);
 
     // --- Packer Setup ---
-    // Use the pre-filled packer on the *first frame*, then create new ones.
     if (isset($world["__initial_packer"])) {
         $packer = $world["__initial_packer"];
-        unset($world["__initial_packer"]); // Use it only once
+        unset($world["__initial_packer"]);
     } else {
         $packer = new ChannelPacker();
     }
@@ -172,7 +169,6 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
         $live_reload->reset($world, $packer);
         return $packer->finalize();
     }
-    // ---
 
     // --- Initial Asset Loading ---
     if (!$world["assetsLoaded"]) {
@@ -181,17 +177,16 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
         $music->packDirtyEvents($packer);
 
         echo "Creating text sprites...\n";
-        $fpsText->packDirtyEvents($packer); // Sends TEXT_ADD
-        $logicText->packDirtyEvents($packer); // Sends TEXT_ADD
+        $fpsText->packDirtyEvents($packer);
+        $logicText->packDirtyEvents($packer);
 
-        // Initialize window size
         $window->setSize(800, 450);
         $window->packDirtyEvents($packer);
 
         $world["assetsLoaded"] = true;
     }
 
-    // --- Window Title Update ---
+    // --- Window Title & Text Update ---
     if ($world["activeLogic"] === "PHP") {
         $window->setTitle(
             sprintf(
@@ -202,17 +197,15 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
         );
     }
 
-    // --- Text Updates ---
     $fpsText->setText(sprintf("FPS: %.0f", $world["smoothed_fps"]));
-    $fpsText->packDirtyEvents($packer); // Sends TEXT_SET_STRING if changed
+    $fpsText->packDirtyEvents($packer);
 
     $logicText->setText("Logic: " . $world["activeLogic"]);
-    $logicText->packDirtyEvents($packer); // Sends TEXT_SET_STRING if changed
+    $logicText->packDirtyEvents($packer);
 
     $window->packDirtyEvents($packer);
 
     // --- Input Event Handling ---
-    $add_sprites = false;
     foreach ($events as $event) {
         if (!isset($event["type"])) {
             continue;
@@ -224,12 +217,15 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
             $world["mouseY"] = $event["y"] ?? 0;
         }
         if ($event["type"] === Events::INPUT_MOUSEDOWN->value) {
-            $add_sprites = true;
+            // Map mouse click to a pseudo-key in inputState for logic handling
+            $world["inputState"]["MOUSE_LEFT"] = true;
+        }
+        if ($event["type"] === Events::INPUT_MOUSEUP->value) {
+            unset($world["inputState"]["MOUSE_LEFT"]);
         }
 
         // --- Window Resize Event ---
         if ($event["type"] === Events::WINDOW_RESIZE->value) {
-            var_dump($event);
             $world["window"]->setSize($event["w"], $event["h"]);
         }
 
@@ -239,15 +235,16 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
                 continue;
             }
 
+            // Track key state for continuous actions
+            $world["inputState"][$event["keycode"]] = true;
+
             // LiveReload hooks
             $live_reload->resetOnEvent($event, Keycode::R, Mod::CTRL);
             $live_reload->shutdownOnEvent($event, Keycode::Q, Mod::NONE);
-            // ---
 
-            if ($event["keycode"] === Keycode::A) {
-                $add_sprites = true;
-            }
+            // --- Toggles (One-off actions) ---
 
+            // Toggle Event Stacking
             if ($event["keycode"] === Keycode::B) {
                 $world["eventStacking"] = !$world["eventStacking"];
                 echo "Turning PLUGIN_EVENT_STACKING " .
@@ -267,22 +264,20 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
                 $music->play();
                 $music->packDirtyEvents($packer);
                 $world["musicPlaying"] = true;
-                echo "Playing audio...\n";
             }
             if ($event["keycode"] === Keycode::O) {
                 Audio::stopAll($packer);
                 $world["musicPlaying"] = false;
-                echo "Stopping all audio...\n";
             }
 
-            // --- Plugin Toggle ---
+            // Toggle Logic (PHP / Zig)
             if ($event["keycode"] === Keycode::D) {
                 if ($world["activeLogic"] === "Zig") {
                     $world["activeLogic"] = "PHP";
                 } else {
                     $world["activeLogic"] = "Zig";
                 }
-
+                // Load Zig plugin if needed
                 if (!$world["pluginLoaded"]) {
                     $libExtension = match (PHP_OS_FAMILY) {
                         "Darwin" => "libzig_phrost_plugin.dylib",
@@ -301,9 +296,11 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
                 }
             }
 
-            if ($event["keycode"] === Keycode::R) {
-                // Note: This conflicts with CTRL+R for reload
-                // 'R' for Rust
+            // Load Rust
+            if (
+                $event["keycode"] === Keycode::R &&
+                !($event["mod"] & Mod::CTRL->value)
+            ) {
                 echo "Loading Rust Plugin...\n";
                 $libName = match (PHP_OS_FAMILY) {
                     "Darwin" => "librust_phrost_plugin.dylib",
@@ -314,11 +311,8 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
                     ),
                 };
                 $path = realpath(__DIR__ . "/" . $libName);
-
                 if (!$path) {
-                    echo "Error: Could not find Rust plugin at " .
-                        __DIR__ .
-                        "/../Plugins/rust-plugin/target/release/$libName\n";
+                    echo "Error: Could not find Rust plugin.\n";
                 } else {
                     $packer->add(Phrost\Events::PLUGIN_LOAD, [
                         strlen($path),
@@ -329,101 +323,104 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
                 }
             }
 
+            // Unload Plugin
             if ($event["keycode"] === Keycode::M) {
                 $packer->add(Phrost\Events::PLUGIN_UNLOAD, [1]);
                 $world["activeLogic"] = "PHP";
             }
 
-            // --- Debug Keys (Chunk Size) ---
+            // Debug Keys
             if ($event["keycode"] === Keycode::G) {
                 $world["chunkSize"] += 10;
-                echo "Chunk size increased to " . $world["chunkSize"] . "\n";
             }
             if ($event["keycode"] === Keycode::H) {
                 $world["chunkSize"] = max(0, $world["chunkSize"] - 10);
-                echo "Chunk size decreased to " . $world["chunkSize"] . "\n";
             }
+        }
 
-            // Note: Keycode::Q is now handled by shutdownOnEvent
-        } // End Keydown
+        if ($event["type"] === Events::INPUT_KEYUP->value) {
+            if (isset($world["inputState"][$event["keycode"]])) {
+                unset($world["inputState"][$event["keycode"]]);
+            }
+        }
 
-        // --- Internal Event Handling ---
-
+        // --- Texture Handling ---
         if ($event["type"] === Events::SPRITE_TEXTURE_SET->value) {
             if (isset($event["id1"], $event["id2"], $event["textureId"])) {
                 $key = Id::toHex([$event["id1"], $event["id2"]]);
                 if (isset($world["sprites"][$key])) {
-                    /** @var Sprite $sprite */
-                    $sprite = $world["sprites"][$key];
-                    $sprite->setTextureId($event["textureId"]);
+                    $world["sprites"][$key]->setTextureId($event["textureId"]);
                 }
-            } else {
-                error_log("Received incomplete SPRITE_TEXTURE_SET event.");
             }
         }
 
-        if ($event["type"] === Events::SPRITE_ADD->value) {
-            $sprite = new Sprite($event["id1"], $event["id2"], false);
-            $sprite->setPosition(
-                $event["positionX"],
-                $event["positionY"],
-                $event["positionZ"],
-                false,
-            );
-            $sprite->setScale(
-                $event["scaleX"],
-                $event["scaleY"],
-                $event["scaleZ"],
-                false,
-            );
-            $sprite->setSize($event["sizeW"], $event["sizeH"], false);
-            $sprite->setRotate(
-                $event["rotationX"],
-                $event["rotationY"],
-                $event["rotationZ"],
-                false,
-            );
-            $sprite->setColor(
-                $event["r"],
-                $event["g"],
-                $event["b"],
-                $event["a"],
-                false,
-            );
-            $sprite->setSpeed($event["speedX"], $event["speedY"], false);
-            $key = Id::toHex([$sprite->id0, $sprite->id1]);
-            $world["sprites"][$key] = $sprite;
-            $world["spritesCount"]++;
-        }
-
-        if ($event["type"] === Events::SPRITE_MOVE->value) {
-            $key = Id::toHex([$event["id1"], $event["id2"]]);
-            $sprite = $world["sprites"][$key];
-            $sprite->setPosition(
-                $event["positionX"],
-                $event["positionY"],
-                $event["positionZ"],
-                false,
-            );
-        }
-
-        if ($event["type"] === Events::SPRITE_SPEED->value) {
-            $key = Id::toHex([$event["id1"], $event["id2"]]);
-            $sprite = $world["sprites"][$key];
-            $sprite->setSpeed($event["speedX"], $event["speedY"], false);
-        }
-
+        // --- Audio Loaded ---
         if ($event["type"] === Events::AUDIO_LOADED->value) {
-            /** @var $event array{audioId:int} */
             $music->setLoadedId($event["audioId"]);
             echo "Audio loaded with ID: " . $event["audioId"] . "\n";
         }
-    } // End foreach event
+
+        // --- External Movement (e.g. from Rust/Zig plugins) ---
+        if ($event["type"] === Events::SPRITE_MOVE->value) {
+            $key = Id::toHex([$event["id1"], $event["id2"]]);
+            if (isset($world["sprites"][$key])) {
+                $world["sprites"][$key]->setPosition(
+                    $event["positionX"],
+                    $event["positionY"],
+                    $event["positionZ"],
+                    false,
+                );
+            }
+        }
+    } // End foreach events
 
     // --- Main Game Logic ---
+
+    // 1. Add Sprites (Input Dependent)
+    // We check inputState instead of checking events directly, allowing smooth holding of the key
     if ($world["activeLogic"] === "PHP") {
+        $shouldAdd =
+            isset($world["inputState"][Keycode::A]) ||
+            isset($world["inputState"]["MOUSE_LEFT"]);
+
+        if ($shouldAdd && $world["spritesCount"] < $maxSprite) {
+            $x = $world["mouseX"];
+            $y = $world["mouseY"];
+            for ($i = 0; $i < 1000; $i++) {
+                $id = Id::generate();
+                $sprite = new Sprite($id[0], $id[1]);
+                $sprite->setPosition($x, $y, 0.0);
+                $sprite->setSize(32.0, 32.0);
+                $sprite->setColor(
+                    rand(50, 240),
+                    rand(80, 240),
+                    rand(100, 240),
+                    255,
+                );
+                $sprite->setSpeed(
+                    (float) rand(-250, 250),
+                    (float) rand(-250, 250),
+                );
+                $sprite->setTexturePath(__DIR__ . "/assets/wabbit_alpha.png");
+
+                $key = Id::toHex([$sprite->id0, $sprite->id1]);
+                $world["sprites"][$key] = $sprite;
+                $sprite->packDirtyEvents($packer);
+            }
+            $world["spritesCount"] += 1000;
+        }
+
+        // 2. Update Sprite Positions (The Benchmark Logic)
         $size = $world["window"]->getSize();
+        $boundary_left = 12;
+        $boundary_right = $size["width"] - 12;
+        $boundary_top = 16;
+        $boundary_bottom = $size["height"] - 16;
+        $hotspot_offset_x = 16;
+        $hotspot_offset_y = 16;
+
         foreach ($world["sprites"] as $sprite) {
+            /** @var Sprite $sprite */
             $sprite->update($dt);
             $pos = $sprite->getPosition();
             $speed = $sprite->getSpeed();
@@ -432,12 +429,6 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
             $newPosX = $pos["x"];
             $newPosY = $pos["y"];
 
-            $boundary_left = 12;
-            $boundary_right = $size["width"] - 12;
-            $boundary_top = 16;
-            $boundary_bottom = $size["height"] - 16;
-            $hotspot_offset_x = 16;
-            $hotspot_offset_y = 16;
             $hotspot_x = $pos["x"] + $hotspot_offset_x;
             $hotspot_y = $pos["y"] + $hotspot_offset_y;
 
@@ -465,37 +456,10 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
             }
             $sprite->packDirtyEvents($packer);
         }
-        unset($sprite);
     }
 
-    // --- Add Sprites Loop ---
-    if ($world["activeLogic"] === "PHP") {
-        if ($add_sprites && $world["spritesCount"] < $maxSprite) {
-            $x = $world["mouseX"];
-            $y = $world["mouseY"];
-            for ($i = 0; $i < 1000; $i++) {
-                $id = Id::generate();
-                $sprite = new Sprite($id[0], $id[1]);
-                $sprite->setPosition($x, $y, 0.0);
-                $sprite->setSize(32.0, 32.0);
-                $sprite->setColor(
-                    rand(50, 240),
-                    rand(80, 240),
-                    rand(100, 240),
-                    255,
-                );
-                $sprite->setSpeed(
-                    (float) rand(-250, 250),
-                    (float) rand(-250, 250),
-                );
-                $sprite->setTexturePath(__DIR__ . "/wabbit_alpha.png");
-                $key = Id::toHex([$sprite->id0, $sprite->id1]);
-                $world["sprites"][$key] = $sprite;
-                $sprite->packDirtyEvents($packer);
-            }
-            $world["spritesCount"] += 1000;
-        }
-    }
+    // --- Camera Update ---
+    $camera->packDirtyEvents($packer);
 
     // --- Finalize & Return ---
     return $packer->finalize();
