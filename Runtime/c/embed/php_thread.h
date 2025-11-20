@@ -3,74 +3,61 @@
 
 #include <stdbool.h>
 #include "pthread_shim.h"
-#include "event_packer.h" // For ChannelInput
+#include "event_packer.h"
 
 #ifdef _WIN32
-// PHP requires Winsock2 to be included BEFORE windows.h
 #include <winsock2.h> 
 #include <windows.h>
 #endif
 
-// --- PHP Embed Headers ---
-// Note: We use C-style includes for a .c file
 #include <main/php.h>
 #include <zend.h>
 #include <main/php_ini.h>
 #include <ext/standard/info.h>
 #include <sapi/embed/php_embed.h>
 #include <zend_exceptions.h>
-// --- End PHP Headers ---
 
-
-/**
- * @brief Thread-safe data bridge between the Swift/Main thread
- * and the PHP logic thread.
- */
 typedef struct {
-    pthread_mutex_t mutex;
-    pthread_cond_t  swift_to_php_cond; // Swift has new events for PHP
-    pthread_cond_t  php_to_swift_cond; // PHP has new commands for Swift
+    char* data;
+    size_t capacity;
+    int32_t length;
+} CommandBuffer;
 
-    // Data from Swift -> PHP
+typedef struct {
+    // Config
+    bool use_threading; // NEW: Toggle threading vs main thread
+
+    // Threading Primitives
+    pthread_t       thread_id;
+    pthread_mutex_t mutex;
+    pthread_cond_t  swift_to_php_cond;
+    pthread_cond_t  php_to_swift_cond;
+
+    // Data Inputs (Swift -> PHP)
     const char* swift_event_data;
     int32_t     swift_event_len;
     int32_t     swift_frame;
     double      swift_delta;
     bool        swift_has_data;
 
-    // Data from PHP -> Swift
-    char* php_command_data;     // The Persistent Buffer
-    size_t  php_buffer_cap;       // [NEW] Actual allocated size
-    int32_t php_command_len;      // Amount of data actually used
-    bool    php_has_data;
+    // Outputs (PHP -> Swift)
+    CommandBuffer back_buffer;
+    CommandBuffer front_buffer;
 
-    // Control flag
+    bool        php_has_data;
     bool        engine_running;
-
 } ThreadBridge;
 
 /**
- * @brief Initializes the PHP thread and all thread-safe structures.
- *
- * @param bridge A pointer to the ThreadBridge struct to initialize.
- * @param base_path The absolute path to the executable's directory.
- * @return 0 on success, non-zero on failure.
+ * @brief Initializes PHP.
+ * @param use_threading If true, spawns a worker thread. If false, runs on main thread.
  */
-int php_thread_start(ThreadBridge* bridge, const char* base_path);
+int php_thread_start(ThreadBridge* bridge, const char* base_path, bool use_threading);
 
-/**
- * @brief Signals the PHP thread to shut down and joins it.
- *
- * @param bridge A pointer to the ThreadBridge struct.
- */
 void php_thread_stop(ThreadBridge* bridge);
 
-/**
- * @brief The C callback called *by Swift* (on the Swift/Main thread).
- * This function passes event data to the PHP thread and waits for command data.
- */
 const char* swift_callback_to_php_bridge(int32_t frame, double delta,
-                                         const char* eventData, int32_t eventLen,
-                                         int32_t* outLen, ThreadBridge* bridge);
+    const char* eventData, int32_t eventLen,
+    int32_t* outLen, ThreadBridge* bridge);
 
 #endif // PHP_THREAD_H

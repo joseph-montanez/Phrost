@@ -36,31 +36,6 @@ public struct FramePacker {
     }
 }
 
-public struct FrameUnpacker {
-    private let data: Data
-    private var offset = 0
-
-    /// Creates an unpacker with the binary data to be read.
-    public init(data: Data) {
-        self.data = data
-    }
-
-    /// Reads raw bytes from the buffer and interprets them as a specific type.
-    public mutating func unpack<T>() -> T {
-        let size = MemoryLayout<T>.stride
-        precondition(
-            offset + size <= data.count, "Buffer underflow: Not enough data to unpack \(T.self).")
-
-        // Modern, safe way to load a type from a raw byte buffer.
-        let value = data.withUnsafeBytes { bufferPtr in
-            bufferPtr.load(fromByteOffset: offset, as: T.self)
-        }
-
-        offset += size
-        return value
-    }
-}
-
 public struct PhrostAddSpriteEvent: Sendable {
     public var id: (Int64, Int64)
     public var position: (Double, Double, Double)
@@ -172,8 +147,8 @@ public final class SpriteManager: @unchecked Sendable {
     public init() {}
 
     func addSprite(_ spriteEvent: PackedSpriteAddEvent) {
-        // lock.lock()
-        // defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
 
         let spriteID = SpriteID(id1: spriteEvent.id1, id2: spriteEvent.id2)
         let newSprite = Sprite(
@@ -195,8 +170,8 @@ public final class SpriteManager: @unchecked Sendable {
     }
 
     public func removeSprite(id: SpriteID) {
-        // lock.lock()
-        // defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
 
         // 1. Remove from the main map
         if sprites.removeValue(forKey: id) != nil {
@@ -217,24 +192,52 @@ public final class SpriteManager: @unchecked Sendable {
         }
     }
 
-    func addRawSprite(_ sprite: Sprite) {
-        // lock.lock()
-        // defer { lock.unlock() }
+    // func addRawSprite(_ sprite: Sprite) {
+    //     print(1);
+    //     lock.lock()
+    //     defer { lock.unlock() }
 
-        sprites[sprite.id] = sprite
-        renderList.append(sprite)
-        isSortNeeded = true
-    }
+    //     print(2);
+    //     sprites[sprite.id] = sprite
+    //     print(3);
+    //     renderList.append(sprite)
+    //     print(4);
+    //     isSortNeeded = true
+    //     print(5);
+    // }
+
+    func addRawSprite(_ sprite: Sprite) {
+        print(1);
+            lock.lock()
+            defer { lock.unlock() }
+
+                    print(2);
+
+            // WORKAROUND: Windows ARM64 Alignment Crash
+            // Instead of writing directly to the dictionary property, copy it to a local variable,
+            // modify the local variable, and assign it back. This forces a clean memory re-layout.
+            var tempSprites = self.sprites
+            print(3);
+            tempSprites[sprite.id] = sprite
+            print(4);
+            self.sprites = tempSprites
+            print(6);
+
+            renderList.append(sprite)
+            print(7);
+            isSortNeeded = true
+            print(8);
+        }
 
     func getSprite(for id: SpriteID) -> Sprite? {
-        // lock.lock()
-        // defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         return sprites[id]
     }
 
     func moveSprite(_ id: SpriteID, _ position: (Double, Double, Double)) {
-        //        lock.lock()
-        //        defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
 
         if let sprite = sprites[id] {
             // Check if the Z position changed
@@ -248,26 +251,26 @@ public final class SpriteManager: @unchecked Sendable {
     }
 
     func scaleSprite(_ id: SpriteID, _ scale: (Double, Double, Double)) {
-        // lock.lock()
-        // defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         sprites[id]?.scale = scale
     }
 
     func resizeSprite(_ id: SpriteID, _ size: (Double, Double)) {
-        // lock.lock()
-        // defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         sprites[id]?.size = size
     }
 
     func colorSprite(_ id: SpriteID, _ color: (UInt8, UInt8, UInt8, UInt8)) {
-        // lock.lock()
-        // defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         sprites[id]?.color = color
     }
 
     func rotateSprite(_ id: SpriteID, _ rotate: (Double, Double, Double)) {
-        // lock.lock()
-        // defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         sprites[id]?.rotate = rotate
     }
 
@@ -279,8 +282,8 @@ public final class SpriteManager: @unchecked Sendable {
 
     // This function provides a snapshot of the sprites for rendering.
     func getSpritesForRendering() -> [Sprite] {
-        // lock.lock()
-        // defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
 
         // Check if the list needs sorting
         if isSortNeeded {
@@ -298,8 +301,8 @@ public final class SpriteManager: @unchecked Sendable {
 
     func setTexture(for id: SpriteID, texture: UnsafeMutablePointer<SDL_Texture>?) {
         // This logic assumes your 'sprites' dictionary stores CLASSES
-        // lock.lock()
-        // defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
 
         if let sprite = sprites[id] {
             sprite.texture = texture
@@ -311,8 +314,8 @@ public final class SpriteManager: @unchecked Sendable {
     }
 
     func setSourceRect(_ id: SpriteID, _ rect: (Float, Float, Float, Float)) {
-        // lock.lock()
-        // defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
 
         if let sprite = sprites[id] {
             // If width or height is 0 or less, treat it as "no source rect"
@@ -325,8 +328,8 @@ public final class SpriteManager: @unchecked Sendable {
     }
 
     func plugin(for id: SpriteID, dt: Double) {
-        // lock.lock()
-        // defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
 
         // --- FIX: Change 'var sprite' to 'let sprite' ---
         if let sprite = sprites[id] {

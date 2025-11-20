@@ -80,15 +80,16 @@ class ChannelPacker
             $channelBlob = $packer->finalize();
             $channelSize = strlen($channelBlob);
 
-            // Add to the index table: [Channel ID (u32), Channel Size (u32)]
+            // Index Table: [ID (4)] + [Size (4)] = 8 bytes (Naturally Aligned)
             $indexTable .= pack("VV", $channelId, $channelSize);
 
             // Add this channel's data to the main data blob
             $dataBlobs .= $channelBlob;
         }
 
-        // 1. Pack the total number of channels
-        $output = pack("V", $channelCount);
+        // 1. Pack Count + Padding to 8 bytes
+        // This ensures the Index Table starts at offset 8
+        $output = pack("Vx4", $channelCount);
         // 2. Append the index table
         $output .= $indexTable;
         // 3. Append the concatenated data blobs

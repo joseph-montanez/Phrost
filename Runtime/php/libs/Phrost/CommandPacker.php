@@ -29,119 +29,103 @@ class CommandPacker
         }
     }
 
+    // --- Pack string and pad to 8 bytes ---
+    private function packStringAligned(string $str): string
+    {
+        $len = strlen($str);
+        $padding = (8 - ($len % 8)) % 8;
+        return $str . str_repeat("\0", $padding);
+    }
+
+    // --- Pad stream to 8-byte boundary ---
+    private function padToBoundary(): void
+    {
+        $currentLen = strlen($this->eventStream);
+        $padding = (8 - ($currentLen % 8)) % 8;
+        if ($padding > 0) {
+            $this->eventStream .= str_repeat("\0", $padding);
+        }
+    }
+
     private function packEvent(Events $type, array $data): void
     {
         $typeValue = $type->value;
-        $this->eventStream .= pack("VQ", $typeValue, 0); // 12 bytes header (type + timestamp)
+
+        // ALIGNMENT FIX: Header is now 16 bytes (4 + 8 + 4 padding)
+        $this->eventStream .= pack("VQx4", $typeValue, 0);
 
         if ($type === Events::SPRITE_TEXTURE_LOAD) {
-            if (count($data) !== 4) {
-                error_log(
-                    "CommandPacker (TEXTURE_LOAD): Incorrect data count, expected 4.",
-                );
-                return;
-            }
+            // Fixed part is 24 bytes (Aligned)
             $packedFixedPart = pack("qqVx4", $data[0], $data[1], $data[2]);
             $this->eventStream .= $packedFixedPart;
-            $this->eventStream .= $data[3]; // Append filename string
+            // String must be aligned
+            $this->eventStream .= $this->packStringAligned($data[3]);
         } elseif ($type === Events::PLUGIN_LOAD) {
-            if (count($data) !== 2) {
-                error_log(
-                    "CommandPacker (PLUGIN_LOAD): Incorrect data count, expected 2.",
-                );
-                return;
-            }
-            $packedFixedPart = pack("V", $data[0]);
+            $packedFixedPart = pack("V", $data[0]); // 4 bytes
             $this->eventStream .= $packedFixedPart;
-            $this->eventStream .= $data[1]; // Append path string
+            // Pad the gap between fixed (4) and string?
+            // No, packStringAligned handles its own tail padding,
+            // but we need the START of the string to be aligned relative to struct?
+            // Ideally, the struct before it should end on boundary.
+            // V (4) is not 8-aligned.
+            // Let's pad the fixed part to 8 bytes first.
+            $this->eventStream .= str_repeat("\0", 4);
+
+            $this->eventStream .= $this->packStringAligned($data[1]);
         } elseif ($type === Events::AUDIO_LOAD) {
+            // Fixed part: Length(4) + Padding(4) = 8 bytes
+            // This remains correct, but Swift needs to skip the 'x4'.
             if (count($data) !== 2) {
                 error_log(
                     "CommandPacker (AUDIO_LOAD): Incorrect data count, expected 2.",
                 );
                 return;
             }
-            $packedFixedPart = pack("V", $data[0]);
+            $packedFixedPart = pack("Vx4", $data[0]);
             $this->eventStream .= $packedFixedPart;
-            $this->eventStream .= $data[1]; // Append path string
+            $this->eventStream .= $this->packStringAligned($data[1]);
         } elseif ($type === Events::TEXT_ADD) {
-            if (count($data) !== 14) {
-                error_log(
-                    "CommandPacker (TEXT_ADD): Incorrect data count, expected 14.",
-                );
-                return;
-            }
-            // Corrected format: e = f64, g = f32
+            // Fixed part is 64 bytes (Aligned)
             $packedFixedPart = pack(
                 "qqeeeCCCCx4gVVx4",
                 $data[0],
                 $data[1],
                 $data[2],
                 $data[3],
-                $data[4], // id1, id2, posXYZ (e)
+                $data[4],
                 $data[5],
                 $data[6],
                 $data[7],
-                $data[8], // rgba (C)
+                $data[8],
                 $data[9],
                 $data[10],
-                $data[11], // fontSize(g), fontPathLength(V), textLength(V)
+                $data[11],
             );
             $this->eventStream .= $packedFixedPart;
-            $this->eventStream .= $data[12]; // Append fontPath
-            $this->eventStream .= $data[13]; // Append text
+            $this->eventStream .= $this->packStringAligned($data[12]); // fontPath
+            $this->eventStream .= $this->packStringAligned($data[13]); // text
         } elseif ($type === Events::TEXT_SET_STRING) {
-            if (count($data) !== 4) {
-                error_log(
-                    "CommandPacker (TEXT_SET_STRING): Incorrect data count, expected 4.",
-                );
-                return;
-            }
+            // Fixed part is 24 bytes (Aligned)
             $packedFixedPart = pack("qqVx4", $data[0], $data[1], $data[2]);
             $this->eventStream .= $packedFixedPart;
-            $this->eventStream .= $data[3]; // Append text string
+            $this->eventStream .= $this->packStringAligned($data[3]);
         } else {
-            // --- Fixed-Size Event Packing Logic ---
+            // --- Fixed-Size Event Packing ---
             $payloadInfo = PackFormat::getInfo($typeValue);
-            if ($payloadInfo === null) {
-                error_log(
-                    "CommandPacker ({$type->name}): Could not get payload info.",
-                );
-                return;
-            }
-
-            $pureFormat = self::getPureFormat($payloadInfo["format"]);
-            if (empty($pureFormat) && !empty($data)) {
-                error_log(
-                    "CommandPacker ({$type->name}): Format is empty but data was provided.",
-                );
-                return;
-            }
-
-            if (empty($pureFormat) && empty($data)) {
-                // Correctly handle no-payload events like AUDIO_STOP_ALL
-            } else {
-                $numericData = array_values($data);
-                try {
-                    $packedPayload = pack($pureFormat, ...$numericData);
-                    if ($packedPayload === false) {
-                        error_log(
-                            "CommandPacker ({$type->name}): pack() returned false. Format='{$pureFormat}'",
-                        );
-                    } else {
-                        $this->eventStream .= $packedPayload;
-                    }
-                } catch (\ValueError $e) {
-                    error_log(
-                        "CommandPacker ({$type->name}): ValueError during pack()! Format='{$pureFormat}', Error: {$e->getMessage()}",
-                    );
-                } catch (\Exception $e) {
-                    error_log(
-                        "CommandPacker ({$type->name}): Exception during pack()! Format='{$pureFormat}', Error: {$e->getMessage()}",
-                    );
+            if ($payloadInfo !== null) {
+                $pureFormat = self::getPureFormat($payloadInfo["format"]);
+                if (!empty($pureFormat) || !empty($data)) {
+                    $numericData = array_values($data);
+                    $this->eventStream .= pack($pureFormat, ...$numericData);
                 }
             }
         }
+
+        // ALIGNMENT FIX: Ensure the ENTIRE event ends on an 8-byte boundary
+        // This handles cases where a fixed struct (like INPUT_KEYUP, 12 bytes)
+        // would cause the *next* event to start unaligned.
+        $this->padToBoundary();
+
         $this->commandCount++;
     }
 
@@ -175,14 +159,15 @@ class CommandPacker
         if ($this->commandCount === 0) {
             return "";
         }
-        return pack("V", $this->commandCount) . $this->eventStream;
+        // ALIGNMENT FIX: Pad the Command Count to 8 bytes (Vx4)
+        // This ensures the first event starts at offset 8
+        return pack("Vx4", $this->commandCount) . $this->eventStream;
     }
 
     public function getBufferCount(): int
     {
         return count($this->eventBuffer);
     }
-
     public function getTotalEventCount(): int
     {
         return $this->commandCount + count($this->eventBuffer);
@@ -199,7 +184,7 @@ class CommandPacker
                 $code = $matches[1];
                 $count = $matches[2];
                 if ($count === "*") {
-                    break; // Stop at variable part
+                    break;
                 }
                 $pure .= $code . $count;
             }

@@ -68,7 +68,9 @@ extension PhrostEngine {
         let color = SDL_Color(r: header.r, g: header.g, b: header.b, a: header.a)
         let (texture, (width, height)) = renderTextToTexture(
             font: font, text: textString, color: color)
-
+        // let texture: UnsafeMutablePointer<SDL_Texture>? = nil
+            // let width: Double = 100.0
+            // let height: Double = 20.0
         let spriteID = SpriteID(id1: header.id1, id2: header.id2)
         // Assuming Sprite struct has text/font properties
         let newTextSprite = Sprite(

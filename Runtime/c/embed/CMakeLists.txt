@@ -159,25 +159,29 @@ find_library(CHIPMUNK_LIB   NAMES ${CHIPMUNK_LIB_NAME} chipmunk HINTS "${CHIPMUN
 
 # --- Find Engine Library (Dynamic Debug/Release Support) ---
 
-# 1. Find Release Version
-find_library(ENGINE_LIB_RELEASE 
-    NAMES PhrostShared libPhrostShared 
-    HINTS "${SWIFT_BUILD_ROOT}/release" 
-    NO_DEFAULT_PATH
-)
+if(WIN32)
+    # 1. Find Release Import Lib
+    find_library(ENGINE_LIB_RELEASE 
+        NAMES PhrostShared
+        HINTS "${SWIFT_BUILD_ROOT}/release" 
+        NO_DEFAULT_PATH
+    )
+    # 2. Find Debug Import Lib
+    find_library(ENGINE_LIB_DEBUG 
+        NAMES PhrostShared
+        HINTS "${SWIFT_BUILD_ROOT}/debug" 
+        NO_DEFAULT_PATH
+    )
+else()
+    # Mac/Linux Static or Dynamic
+    find_library(ENGINE_LIB_RELEASE NAMES PhrostShared libPhrostShared HINTS "${SWIFT_BUILD_DIR}" NO_DEFAULT_PATH)
+    set(ENGINE_LIB_DEBUG ${ENGINE_LIB_RELEASE})
+endif()
 
-# 2. Find Debug Version
-find_library(ENGINE_LIB_DEBUG 
-    NAMES PhrostShared libPhrostShared 
-    HINTS "${SWIFT_BUILD_ROOT}/debug" 
-    NO_DEFAULT_PATH
-)
-
+# Fallback logic
 if(ENGINE_LIB_RELEASE AND NOT ENGINE_LIB_DEBUG)
-    message(STATUS "  [Swift] Debug lib not found. Using Release lib for all configs.")
     set(ENGINE_LIB_DEBUG ${ENGINE_LIB_RELEASE})
 elseif(ENGINE_LIB_DEBUG AND NOT ENGINE_LIB_RELEASE)
-    message(STATUS "  [Swift] Release lib not found. Using Debug lib for all configs.")
     set(ENGINE_LIB_RELEASE ${ENGINE_LIB_DEBUG})
 endif()
 
@@ -241,6 +245,17 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SDL_BIN}/SDL3_image.dll" "$<TARGET_FILE_DIR:PhrostHost>"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SDL_BIN}/SDL3_ttf.dll"   "$<TARGET_FILE_DIR:PhrostHost>"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CHIPMUNK_BIN}/chipmunk.dll" "$<TARGET_FILE_DIR:PhrostHost>"
+        
+        # 2. Copy Swift Runtime DLLs
+        # We glob them because there are many (swiftCore, swiftFoundation, etc)
+        COMMAND powershell -Command "Copy-Item '${SWIFT_RUNTIME_DIR}/*.dll' -Destination '$<TARGET_FILE_DIR:PhrostHost>' -Force"
+        
+        # 3. Copy PhrostShared.dll
+        # We assume Debug build for now since you are debugging. Ideally use $<CONFIG> logic.
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SWIFT_BUILD_ROOT}/debug/PhrostShared.dll" "$<TARGET_FILE_DIR:PhrostHost>"
+        # Fallback if debug doesn't exist (e.g. release build)
+        # COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SWIFT_BUILD_ROOT}/release/PhrostShared.dll" "$<TARGET_FILE_DIR:PhrostHost>"
+        
         COMMENT "Copying Runtime DLLs..."
     )
 endif()

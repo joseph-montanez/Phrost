@@ -6,13 +6,12 @@ import SwiftSDL
 #if os(Windows)
     import WinSDK  // Core C APIs for Windows
 #elseif os(Linux)
-    import Glibc   // Core C APIs for Linux
+    import Glibc  // Core C APIs for Linux
 #elseif os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     import Darwin  // Core C APIs for Apple platforms
 #else
     #error("Unsupported platform for core C library import")
 #endif
-
 
 // --- Windows-Specific Helpers ---
 #if os(Windows)
@@ -418,7 +417,7 @@ final class IPCServer: @unchecked Sendable {
         return data
     }
 
-    /// --- MODIFIED: Unblocks the main thread on disconnect ---
+    /// --- Unblocks the main thread on disconnect ---
     /// This is called from runServerLoop when a read/write fails.
     nonisolated private func handleClientDisconnect() {
         print("[ServerThread] Client disconnected.")
@@ -451,13 +450,11 @@ final class IPCServer: @unchecked Sendable {
     nonisolated private func runServerLoop() {
 
         #if os(macOS)
-            // --- FIX: Ignore SIGPIPE ---
             // This prevents the server from crashing if a client disconnects while
             // we are trying to write to the socket. The write() call will
             // instead return -1, and errno will be set to EPIPE (Broken Pipe).
             // Our readPipe/writePipe functions already handle this return value.
             signal(SIGPIPE, SIG_IGN)
-        // --- END FIX ---
         #endif
 
         #if os(Windows)

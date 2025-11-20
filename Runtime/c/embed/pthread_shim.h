@@ -59,7 +59,11 @@ static inline int pthread_detach(pthread_t thread) {
     CloseHandle(thread);
     return 0;
 }
-
+static inline int pthread_join(pthread_t thread, void** retval) {
+    WaitForSingleObject(thread, INFINITE);
+    CloseHandle(thread);
+    return 0;
+}
 #else
 // Non-Windows: Just include standard pthread
 #include <pthread.h>
