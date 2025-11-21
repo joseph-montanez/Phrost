@@ -1,0 +1,62 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug Phrost (Windows)",
+            "program": "${workspaceFolder}/Runtime/c/embed/out/build/arm64-Debug/PhrostHost.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/Runtime/c/embed/out/build/arm64-Debug",
+            "env": {
+                "PATH": "${env:PATH};C:\\Users\\Joseph\\AppData\\Local\\Programs\\Swift\\Toolchains\\6.2.1+Asserts\\usr\\bin"
+            },
+            "sourceLanguages": [
+                "swift",
+                "c",
+                "cpp"
+            ],
+            "preLaunchTask": "build"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Phrost}/Engine\\PhrostEngineV2",
+            "name": "Debug PhrostIPC (Engine\\PhrostEngineV2)",
+            "target": "PhrostIPC",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug PhrostIPC (Engine\\PhrostEngineV2)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Phrost}/Engine\\PhrostEngineV2",
+            "name": "Release PhrostIPC (Engine\\PhrostEngineV2)",
+            "target": "PhrostIPC",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release PhrostIPC (Engine\\PhrostEngineV2)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Phrost}/Engine\\PhrostEngineV2",
+            "name": "Debug Phrost (Engine\\PhrostEngineV2)",
+            "target": "Phrost",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug Phrost (Engine\\PhrostEngineV2)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Phrost}/Engine\\PhrostEngineV2",
+            "name": "Release Phrost (Engine\\PhrostEngineV2)",
+            "target": "Phrost",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release Phrost (Engine\\PhrostEngineV2)"
+        }
+    ]
+}
