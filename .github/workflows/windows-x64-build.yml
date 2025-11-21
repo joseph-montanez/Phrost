@@ -56,9 +56,9 @@ jobs:
 
           # --- A. PHP SDK (x64) ---
           # Official builds split the binaries and the SDK (devel-pack)
-          $PHP_FOLDER_NAME = "php-8.4.14-nts-Win32-vs17-x64"
-          $PhpBinUrl = "https://windows.php.net/downloads/releases/php-8.4.14-nts-Win32-vs17-x64.zip"
-          $PhpSdkUrl = "https://windows.php.net/downloads/releases/php-devel-pack-8.4.14-nts-Win32-vs17-x64.zip"
+          $PHP_FOLDER_NAME = "php-8.5.0-nts-Win32-vs17-x64"
+          $PhpBinUrl = "https://windows.php.net/downloads/releases/php-8.5.0-nts-Win32-vs17-x64.zip"
+          $PhpSdkUrl = "https://windows.php.net/downloads/releases/php-devel-pack-8.5.0-nts-Win32-vs17-x64.zip"
 
           Write-Host "Downloading PHP x64 Binaries..."
           curl.exe -L -o "php-x64.zip" $PhpBinUrl
@@ -76,7 +76,6 @@ jobs:
           tar -xf php-x64-sdk.zip -C "$PHP_FOLDER_NAME\sdk"
 
           # Fix SDK nesting (The zip contains a versioned folder inside)
-          # Your docs: move .\php-8.4.14-...\sdk\php-8.4.14-devel-vs17-x64\* .\php-8.4.14-...\sdk\
           $SdkRoot = Join-Path $env:DEPS_DIR "$PHP_FOLDER_NAME\sdk"
           $InnerSdk = Get-ChildItem -Path $SdkRoot -Directory | Select-Object -First 1
           if ($InnerSdk) {
@@ -87,7 +86,7 @@ jobs:
 
           # --- B. SDL3 (x64) ---
           Write-Host "Downloading SDL3 x64..."
-          $SdlUrl = "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-09/SDL3-x64-2025-11-09.zip"
+          $SdlUrl = "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-11/SDL3-x64-2025-11-16.zip"
           curl.exe -L -o "SDL3-x64.zip" $SdlUrl
 
           # Extract to temp, rename to 'SDL3-x64'
