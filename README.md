@@ -12,8 +12,22 @@ Downloads (Latest Auto-Build)
 
 | Platform | Status | Download |
 | :--- | :---: | :---: |
-| **Windows (Arm64)** | [![Build Phrost Engine (Windows Arm64)](https://github.com/joseph-montanez/Phrost/actions/workflows/windows-arm-build.yml/badge.svg)](https://github.com/joseph-montanez/Phrost/actions/workflows/windows-arm-build.yml) | [**Download Latest**](https://nightly.link/joseph-montanez/Phrost/workflows/windows-arm-build.yml/master/Phrost-Windows-Arm64.zip) |
-| **Windows (x64)** | [![Build Phrost Engine (Windows x64)](https://github.com/joseph-montanez/Phrost/actions/workflows/windows-x64-build.yml/badge.svg)](https://github.com/joseph-montanez/Phrost/actions/workflows/windows-x64-build.yml) | [**Download Latest**](https://nightly.link/joseph-montanez/Phrost/workflows/windows-x64-build.yml/master/Phrost-Windows-x64.zip) |
+| **Windows + PHP 8.4.10 (Arm64)** | [![Phrost Engine (Arm64)](https://github.com/joseph-montanez/Phrost/actions/workflows/windows-arm-build.yml/badge.svg)](https://github.com/joseph-montanez/Phrost/actions/workflows/windows-arm-build.yml) | [**Download Latest**](https://nightly.link/joseph-montanez/Phrost/workflows/windows-arm-build.yml/master/Phrost-Windows-Arm64.zip) |
+| **Windows + PHP 8.5.0 (x64)** | [![Phrost Engine (x64)](https://github.com/joseph-montanez/Phrost/actions/workflows/windows-x64-build.yml/badge.svg)](https://github.com/joseph-montanez/Phrost/actions/workflows/windows-x64-build.yml) | [**Download Latest**](https://nightly.link/joseph-montanez/Phrost/workflows/windows-x64-build.yml/master/Phrost-Windows-x64.zip) |
+
+Current Language Support
+---------------------------
+
+This table shows which languages can use which integration mode.
+
+| Language | Wrapper API | Embedded | Client (Hot-Reload) | Can Write Plugins | Bundle Distribution |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **PHP** | ✅ | ✅ | ✅ | | (coming soon) |
+| **Python** | (WIP) | | ✅ | | |
+| **JavaScript** | (Planned) | | ✅ | | |
+| **Rust** | | | | ✅ | |
+| **Zig** | | | | ✅ | |
+
 
 * * *
 

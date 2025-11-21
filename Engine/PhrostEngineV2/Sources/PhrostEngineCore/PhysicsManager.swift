@@ -3,7 +3,6 @@ import SwiftChipmunk2D
 import SwiftSDL
 
 // Helper class to store in Chipmunk's 'userData' pointer
-// This links a physics shape back to a SpriteID
 private class PhysicsDataLink: @unchecked Sendable {
     let id: SpriteID
     init(id: SpriteID) { self.id = id }
@@ -31,7 +30,7 @@ public final class PhysicsManager: @unchecked Sendable {
         self.space = UnsafeMutableRawPointer(cpSpaceNew()!).bindMemory(
             to: cpSpace.self, capacity: 1)
 
-        cpSpaceSetGravity(OpaquePointer(self.space), cpVect(x: 0, y: 980))  // Example gravity (positive y is down)
+        cpSpaceSetGravity(OpaquePointer(self.space), cpVect(x: 0, y: 980))  // Example gravity
 
         setupCollisionHandlers()
         print("PhysicsManager Initialized Successfully")
@@ -63,9 +62,9 @@ public final class PhysicsManager: @unchecked Sendable {
                 let angularVel = cpBodyGetAngularVelocity(OpaquePointer(link.body))
                 let sleeping = cpBodyIsSleeping(OpaquePointer(link.body))
 
-                // Update the sprite object directly
-                sprite.position = (pos.x, pos.y, sprite.position.2)
-                sprite.rotate = (sprite.rotate.0, sprite.rotate.1, angle * 180.0 / .pi)  // Convert to degrees
+                // Update the sprite object directly using new Vec3 structs
+                sprite.position = Vec3(pos.x, pos.y, sprite.position.z)
+                sprite.rotate = Vec3(sprite.rotate.x, sprite.rotate.y, angle * 180.0 / .pi)
 
                 // Trigger
                 queueSyncEvent(
@@ -297,9 +296,14 @@ public final class PhysicsManager: @unchecked Sendable {
         let timestamp = UInt64(truncatingIfNeeded: uptimeNanos / 1_000_000)
 
         eventsLock.lock()
+        // HEADER (16 bytes): ID(4) + Time(8) + Pad(4)
         generatedEventData.append(value: type.rawValue)
         generatedEventData.append(value: timestamp)
+        generatedEventData.append(Data(count: 4))  // ALIGNMENT FIX: Padding
+
+        // PAYLOAD (32 bytes): Aligned
         generatedEventData.append(value: event)
+
         generatedEventCount &+= 1
         eventsLock.unlock()
     }
@@ -328,9 +332,14 @@ public final class PhysicsManager: @unchecked Sendable {
         let timestamp = UInt64(truncatingIfNeeded: uptimeNanos / 1_000_000)
 
         eventsLock.lock()
+        // HEADER (16 bytes): ID(4) + Time(8) + Pad(4)
         generatedEventData.append(value: Events.physicsSyncTransform.rawValue)
         generatedEventData.append(value: timestamp)
+        generatedEventData.append(Data(count: 4))  // ALIGNMENT FIX: Padding
+
+        // PAYLOAD (64 bytes): Aligned
         generatedEventData.append(value: event)
+
         generatedEventCount &+= 1
         eventsLock.unlock()
     }

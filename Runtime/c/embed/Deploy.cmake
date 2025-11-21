@@ -4,30 +4,27 @@
 # PHP_SDK_DIR: Source directory of the PHP SDK
 # PROJECT_ROOT: The root of the repository
 # ASSETS_DIR: The source runtime/assets directory
-# IS_WINDOWS: "TRUE" or "FALSE" (Passed from CMake)
+# IS_WINDOWS: "TRUE" or "FALSE"
+# TARGET_ARCH: "aarch64..." or "x86_64..."
 
 message(STATUS "--- [Deploy] Starting Phrost Deployment ---")
 
 # --- 2. SETUP PATHS ---
 set(GAME_DIR     "${TARGET_DIR}/game")
 
-# On macOS, TARGET_DIR is inside the bundle (Phrost.app/Contents/MacOS)
-# We don't need a separate 'runtime' folder logic for the static build.
 if(IS_WINDOWS)
     set(RELEASE_ROOT "${TARGET_DIR}")
     set(RUNTIME_DEST "${RELEASE_ROOT}/runtime")
     set(PHP_EXE      "${RUNTIME_DEST}/php.exe")
 else()
-    # On macOS, we use the system PHP or the one in buildroot just for Composer
     set(RELEASE_ROOT "${TARGET_DIR}")
-    set(RUNTIME_DEST "${RELEASE_ROOT}") # No runtime subfolder needed
+    set(RUNTIME_DEST "${RELEASE_ROOT}") 
     set(PHP_EXE      "${PHP_SDK_DIR}/bin/php")
 endif()
 
 # --- 3. DEPLOY PHP RUNTIME (WINDOWS ONLY) ---
 if(IS_WINDOWS)
     message(STATUS "--- [Deploy] Copying PHP SDK (Windows Dynamic Build)...")
-    # Clean destination to prevent "File exists" errors
     file(REMOVE_RECURSE "${RUNTIME_DEST}")
     file(MAKE_DIRECTORY "${RUNTIME_DEST}")
 
@@ -45,18 +42,28 @@ if(IS_WINDOWS)
 
     if(PHP_INI_SRC)
         set(PHP_INI_DEST "${RUNTIME_DEST}/php.ini")
+    
         file(COPY "${PHP_INI_SRC}" DESTINATION "${RUNTIME_DEST}")
         file(RENAME "${RUNTIME_DEST}/php.ini-development" "${PHP_INI_DEST}")
 
         file(READ "${PHP_INI_DEST}" INI_CONTENT)
-        # Enable Extensions
+        
+        # Enable Extensions Directory
         if(INI_CONTENT MATCHES "extension_dir\\s*=")
             string(REGEX REPLACE ";?\\s*extension_dir\\s*=\\s*\"?[^\"]+\"?" "extension_dir = \"ext\"" INI_CONTENT "${INI_CONTENT}")
         else()
             set(INI_CONTENT "${INI_CONTENT}\nextension_dir = \"ext\"\n")
         endif()
-        # Uncomment extensions
+        
+        # Uncomment ALL extensions first
         string(REGEX REPLACE ";\\s*(extension=[a-z_]+)" "\\1" INI_CONTENT "${INI_CONTENT}")
+
+        # [FIX] Disable GMP specifically for ARM64 Windows
+        if(TARGET_ARCH MATCHES "aarch64")
+            message(STATUS "--- [Deploy] ARM64 Detected: Disabling extension=gmp")
+            string(REPLACE "extension=gmp" ";extension=gmp" INI_CONTENT "${INI_CONTENT}")
+        endif()
+
         file(WRITE "${PHP_INI_DEST}" "${INI_CONTENT}")
     endif()
 else()
@@ -66,17 +73,20 @@ endif()
 # --- 5. DEPLOY ASSETS ---
 message(STATUS "--- [Deploy] Copying Game Assets to ${GAME_DIR}...")
 
-# Ensure Game Directory Exists
 file(MAKE_DIRECTORY "${GAME_DIR}")
 
-# Copy 'assets' folder
+# Copy 'assets' folder (Preserve folder structure for general assets)
 if(EXISTS "${ASSETS_DIR}/assets")
     file(COPY "${ASSETS_DIR}/assets" DESTINATION "${GAME_DIR}")
 endif()
 
-# Copy 'php' source files
+# [FIX] Copy contents of 'php' folder directly into game root (Flattening)
 if(EXISTS "${ASSETS_DIR}/php")
-    file(COPY "${ASSETS_DIR}/php" DESTINATION "${GAME_DIR}")
+    # Glob all files and directories inside the php folder
+    file(GLOB PHP_CONTENTS "${ASSETS_DIR}/php/*")
+    if(PHP_CONTENTS)
+        file(COPY ${PHP_CONTENTS} DESTINATION "${GAME_DIR}")
+    endif()
 endif()
 
 # Move settings.json
@@ -109,7 +119,6 @@ endif()
 if(EXISTS "${COMPOSER_PHAR}")
     message(STATUS "--- [Deploy] Running 'composer install'...")
 
-    # On macOS, we might need to move composer.phar to game dir or run it referencing the file
     file(RENAME "${COMPOSER_PHAR}" "${GAME_DIR}/composer.phar")
 
     execute_process(

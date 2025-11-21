@@ -776,12 +776,34 @@ impl CommandPacker {
         }
     }
 
-    /// Finalizes the buffer by prepending the command count.
+    /// Pads the buffer to an 8-byte boundary.
+    fn pad_to_boundary(&mut self) {
+        let len = self.buffer.len();
+        let padding = (8 - (len % 8)) % 8;
+        if padding > 0 {
+            self.buffer.extend(std::iter::repeat(0).take(padding));
+        }
+    }
+
+    /// Writes a string followed by zeros to align to 8 bytes.
+    fn write_padded_string(&mut self, data: &[u8]) -> std::io::Result<()> {
+        self.buffer.write_all(data)?;
+        let padding = (8 - (data.len() % 8)) % 8;
+        if padding > 0 {
+            self.buffer.extend(std::iter::repeat(0).take(padding));
+        }
+        Ok(())
+    }
+
+    /// Finalizes the buffer by prepending the command count AND its padding.
     pub fn finalize(self) -> Vec<u8> {
-        let mut final_buffer = Vec::with_capacity(4 + self.buffer.len());
+        // We need space for Count(4) + Padding(4) + Data
+        let mut final_buffer = Vec::with_capacity(8 + self.buffer.len());
         final_buffer
             .write_u32::<LittleEndian>(self.command_count)
             .unwrap();
+        // Add 4 bytes of padding to align the data start to 8 bytes
+        final_buffer.write_u32::<LittleEndian>(0).unwrap();
         final_buffer.extend(self.buffer);
         final_buffer
     }
@@ -790,10 +812,11 @@ impl CommandPacker {
         self.command_count
     }
 
-    /// Writes the event type and a 0 timestamp.
+    /// Writes the event header (Type + Timestamp + Padding). Total 16 bytes.
     fn write_header(&mut self, event_type: Events) -> std::io::Result<()> {
         self.buffer.write_u32::<LittleEndian>(event_type as u32)?;
         self.buffer.write_u64::<LittleEndian>(0)?; // 8-byte timestamp
+        self.buffer.write_u32::<LittleEndian>(0)?; // 4-byte padding
         Ok(())
     }
 
@@ -805,6 +828,7 @@ impl CommandPacker {
             std::slice::from_raw_parts((payload as *const T) as *const u8, std::mem::size_of::<T>())
         };
         self.buffer.write_all(bytes)?;
+        self.pad_to_boundary();
         self.command_count += 1;
         Ok(())
     }
@@ -829,7 +853,8 @@ impl CommandPacker {
             )
         };
         self.buffer.write_all(header_bytes)?;
-        self.buffer.write_all(filename)?;
+        self.write_padded_string(filename)?;
+        self.pad_to_boundary();
         self.command_count += 1;
         Ok(())
     }
@@ -866,6 +891,10 @@ impl CommandPacker {
             )
         };
         self.buffer.write_all(header_bytes)?;
+        // Note: This packer usually expects data to follow. The user logic
+        // would need to append that data and then call pad_to_boundary.
+        // For now, we just pad and count it.
+        self.pad_to_boundary();
         self.command_count += 1;
         Ok(())
     }
@@ -909,8 +938,9 @@ impl CommandPacker {
             )
         };
         self.buffer.write_all(header_bytes)?;
-        self.buffer.write_all(font_path)?;
-        self.buffer.write_all(text)?;
+        self.write_padded_string(font_path)?;
+        self.write_padded_string(text)?;
+        self.pad_to_boundary();
         self.command_count += 1;
         Ok(())
     }
@@ -930,7 +960,8 @@ impl CommandPacker {
             )
         };
         self.buffer.write_all(header_bytes)?;
-        self.buffer.write_all(text)?;
+        self.write_padded_string(text)?;
+        self.pad_to_boundary();
         self.command_count += 1;
         Ok(())
     }
@@ -947,7 +978,12 @@ impl CommandPacker {
             )
         };
         self.buffer.write_all(header_bytes)?;
-        self.buffer.write_all(path)?;
+        // AudioLoad is special: Struct is 4 bytes. Swift expects 4 bytes skip (padding)
+        // before reading the string to align the string to 8 bytes.
+        self.buffer.write_u32::<LittleEndian>(0)?; 
+        
+        self.write_padded_string(path)?;
+        self.pad_to_boundary();
         self.command_count += 1;
         Ok(())
     }
@@ -965,7 +1001,8 @@ impl CommandPacker {
             )
         };
         self.buffer.write_all(header_bytes)?;
-        self.buffer.write_all(path)?;
+        self.write_padded_string(path)?;
+        self.pad_to_boundary();
         self.command_count += 1;
         Ok(())
     }
@@ -974,7 +1011,7 @@ impl CommandPacker {
 /// Represents one channel's data blob.
 pub struct ChannelInput<'a> {
     pub id: Channels,
-    pub data: &'a [u8], // This data should be the [count][events...] blob
+    pub data: &'a [u8], // This data should be the [count][pad][events...] blob
 }
 
 pub struct ChannelPacker;
@@ -987,14 +1024,16 @@ impl ChannelPacker {
 
         // 1. Pack the total number of channels
         final_buffer.write_u32::<LittleEndian>(channels.len() as u32)?;
+        // 2. Pack Padding (to match Vx4)
+        final_buffer.write_u32::<LittleEndian>(0)?;
 
-        // 2. Append the index table
+        // 3. Append the index table
         for channel in channels {
             final_buffer.write_u32::<LittleEndian>(channel.id as u32)?;
             final_buffer.write_u32::<LittleEndian>(channel.data.len() as u32)?;
         }
 
-        // 3. Append the concatenated data blobs
+        // 4. Append the concatenated data blobs
         for channel in channels {
             final_buffer.write_all(channel.data)?;
         }
@@ -1018,13 +1057,19 @@ impl<'a> EventUnpacker<'a> {
 
     /// Reads the total event count from the start of the blob.
     pub fn read_count(&mut self) -> std::io::Result<u32> {
-        self.cursor.read_u32::<LittleEndian>()
+        let count = self.cursor.read_u32::<LittleEndian>()?;
+        // Skip 4 bytes padding
+        self.cursor.seek(SeekFrom::Current(4))?;
+        Ok(count)
     }
 
-    /// Reads the event type (u32) and timestamp (u64).
+    /// Reads the event type (u32) and timestamp (u64). Skips padding.
     pub fn read_event_header(&mut self) -> std::io::Result<(Events, u64)> {
         let event_type_id = self.cursor.read_u32::<LittleEndian>()?;
         let timestamp = self.cursor.read_u64::<LittleEndian>()?;
+        // Skip 4 bytes header padding
+        self.cursor.seek(SeekFrom::Current(4))?;
+        
         let event_type = Events::from_u32(event_type_id).ok_or_else(|| {
             std::io::Error::new(std::io::ErrorKind::InvalidData, "Unknown event type ID")
         })?;
@@ -1047,16 +1092,29 @@ impl<'a> EventUnpacker<'a> {
         Ok(payload)
     }
 
-    /// Reads a variable-length byte vector.
-    pub fn read_variable(&mut self, len: u32) -> std::io::Result<Vec<u8>> {
-        let mut buffer = vec![0u8; len as usize];
-        self.cursor.read_exact(&mut buffer)?;
-        Ok(buffer)
-    }
-
     /// Skips N bytes in the stream.
     pub fn skip(&mut self, n: u32) -> std::io::Result<()> {
         self.cursor.seek(SeekFrom::Current(n as i64))?;
+        Ok(())
+    }
+    
+    /// Skips a string of length `len` and its associated padding.
+    pub fn skip_string_aligned(&mut self, len: u32) -> std::io::Result<()> {
+        self.skip(len)?;
+        let padding = (8 - (len % 8)) % 8;
+        if padding > 0 {
+            self.skip(padding)?;
+        }
+        Ok(())
+    }
+    
+    /// Aligns the cursor to the specified byte boundary (e.g., 8).
+    pub fn align_to(&mut self, alignment: u64) -> std::io::Result<()> {
+        let current = self.cursor.position();
+        let padding = (alignment - (current % alignment)) % alignment;
+        if padding > 0 {
+             self.cursor.seek(SeekFrom::Current(padding as i64))?;
+        }
         Ok(())
     }
 

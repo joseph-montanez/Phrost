@@ -215,7 +215,6 @@ fn get_payload_size(event: Events) -> Option<u32> {
         Events::pluginUnload => mem::size_of::<PackedPluginUnloadEvent>() as u32,
         Events::pluginSet => mem::size_of::<PackedPluginSetEvent>() as u32,
         Events::pluginEventStacking => mem::size_of::<PackedPluginEventStackingEvent>() as u32,
-        // --- MISSING EVENTS from Zig's list to make Rust complete ---
         Events::pluginSubscribeEvent => mem::size_of::<PackedPluginSubscribeEvent>() as u32,
         Events::pluginUnsubscribeEvent => mem::size_of::<PackedPluginUnsubscribeEvent>() as u32,
         Events::cameraSetPosition => mem::size_of::<PackedCameraSetPositionEvent>() as u32,
@@ -297,7 +296,6 @@ pub extern "C" fn Phrost_Wake(out_length: *mut c_int) -> *mut c_void {
         world.sprites.push(sprite);
         world.sprites_count += 1;
 
-        // --- MODIFIED: Use packer_render ---
         // Re-emit spriteAdd
         let _ = packer_render.pack(
             Events::spriteAdd,
@@ -325,7 +323,6 @@ pub extern "C" fn Phrost_Wake(out_length: *mut c_int) -> *mut c_void {
             },
         );
 
-        // --- MODIFIED: Use packer_render ---
         // Re-emit textureLoad
         let _ =
             packer_render.pack_sprite_texture_load(sprite.id1, sprite.id2, TEXTURE_PATH.as_bytes());
@@ -333,12 +330,11 @@ pub extern "C" fn Phrost_Wake(out_length: *mut c_int) -> *mut c_void {
 
     println!(
         "Phrost_Wake: Finished loading. Re-emitting {} commands.",
-        packer_render.command_count() // --- MODIFIED: Use packer_render ---
+        packer_render.command_count()
     );
 
-    // --- MODIFIED: Use ChannelPacker ---
     // 6. Finalize and return
-    let render_buffer = packer_render.finalize(); // Finalize the one packer
+    let render_buffer = packer_render.finalize();
 
     // Define channel inputs
     let channel_inputs = [ChannelInput {
@@ -355,7 +351,6 @@ pub extern "C" fn Phrost_Wake(out_length: *mut c_int) -> *mut c_void {
             return ptr::null_mut();
         }
     };
-    // --- END MODIFICATION ---
 
     unsafe { return_buffer(final_buffer, out_length) }
 }
@@ -370,7 +365,7 @@ pub extern "C" fn Phrost_Update(
 ) -> *mut c_void {
     // --- Initialization ---
     init_world();
-    // --- MODIFIED: Create separate packers ---
+    // --- Create separate packers ---
     let mut packer_render = CommandPacker::new();
     let mut packer_window = CommandPacker::new();
     // ---
@@ -392,25 +387,25 @@ pub extern "C" fn Phrost_Update(
         }
     }
 
-    // --- Event Unpacking (NO CHANGES NEEDED) ---
-    // This logic correctly unpacks the flat blob *from* Swift
+    // --- Event Unpacking ---
     let mut add_sprites = false;
     if !events_blob.is_null() && events_length > 0 {
         let blob_slice =
             unsafe { slice::from_raw_parts(events_blob as *const u8, events_length as usize) };
         let mut unpacker = EventUnpacker::new(blob_slice);
 
+        // Read Count (handles u32 + 4 byte padding)
         let _event_count = unpacker.read_count().unwrap_or(0);
         let blob_len = blob_slice.len();
-        const MIN_EVENT_HEADER_SIZE: u64 = 12;
+        const EVENT_HEADER_SIZE: u64 = 16; // 4 Type + 8 Time + 4 Pad
 
-        while unpacker.position() + MIN_EVENT_HEADER_SIZE <= blob_len as u64 {
+        while unpacker.position() + EVENT_HEADER_SIZE <= blob_len as u64 {
+            // Read Header (handles padding)
             let (event_type, _timestamp) = match unpacker.read_event_header() {
                 Ok(header) => header,
                 Err(_) => break, // Couldn't read header
             };
 
-            // Get fixed payload size
             let payload_size = match get_payload_size(event_type) {
                 Some(size) => size,
                 None => {
@@ -422,70 +417,75 @@ pub extern "C" fn Phrost_Update(
                 }
             };
 
-            // Check bounds
             if unpacker.position() + payload_size as u64 > blob_len as u64 {
-                eprintln!(
-                    "Warning: Insufficient remaining space for payload size {}. Ending read loop.",
-                    payload_size
-                );
                 break;
             }
 
             // Process Payload
             match event_type {
+                // Variable length events - strings + padding
+                Events::spriteTextureLoad => {
+                    if let Ok(header) = unpacker.read_payload::<PackedTextureLoadHeaderEvent>() {
+                        let _ = unpacker.skip_string_aligned(header.filename_length);
+                    } else { break; }
+                }
+                Events::textSetString => {
+                    if let Ok(header) = unpacker.read_payload::<PackedTextSetStringEvent>() {
+                        let _ = unpacker.skip_string_aligned(header.text_length);
+                    } else { break; }
+                }
+                Events::textAdd => {
+                    if let Ok(header) = unpacker.read_payload::<PackedTextAddEvent>() {
+                        let _ = unpacker.skip_string_aligned(header.font_path_length);
+                        let _ = unpacker.skip_string_aligned(header.text_length);
+                    } else { break; }
+                }
+                Events::pluginLoad => {
+                     if let Ok(header) = unpacker.read_payload::<PackedPluginLoadHeaderEvent>() {
+                        let _ = unpacker.skip_string_aligned(header.path_length);
+                    } else { break; }
+                }
+                Events::audioLoad => {
+                    // Special case: struct 4 bytes, skip 4 padding, then read string
+                    if let Ok(header) = unpacker.read_payload::<PackedAudioLoadEvent>() {
+                         let _ = unpacker.skip(4);
+                         let _ = unpacker.skip_string_aligned(header.path_length);
+                    } else { break; }
+                }
+                
+                // Fixed length events
+                Events::windowTitle => {
+                     let _ = unpacker.skip(payload_size);
+                }
                 Events::inputMousemotion => {
                     if let Ok(event) = unpacker.read_payload::<PackedMouseMotionEvent>() {
                         world.mouse_x = event.x;
                         world.mouse_y = event.y;
-                    } else {
-                        break;
-                    }
+                    } else { break; }
                 }
                 Events::inputMousedown => {
                     if let Ok(_) = unpacker.read_payload::<PackedMouseButtonEvent>() {
                         add_sprites = true;
-                    } else {
-                        break;
-                    }
+                    } else { break; }
                 }
                 Events::inputKeydown => {
                     if let Ok(event) = unpacker.read_payload::<PackedKeyEvent>() {
-                        // 97 == Keycode::A
-                        if event.keycode == 97 {
-                            add_sprites = true;
-                        }
-                    } else {
-                        break;
-                    }
+                        if event.keycode == 97 { add_sprites = true; }
+                    } else { break; }
                 }
                 Events::windowResize => {
                     if let Ok(event) = unpacker.read_payload::<PackedWindowResizeEvent>() {
                         world.window_width = event.w;
                         world.window_height = event.h;
-                    } else {
-                        break;
-                    }
-                }
-                Events::textSetString => {
-                    if let Ok(header) = unpacker.read_payload::<PackedTextSetStringEvent>() {
-                        let _ = unpacker.skip(header.text_length);
-                    } else {
-                        break;
-                    }
-                }
-                Events::textAdd => {
-                    if let Ok(header) = unpacker.read_payload::<PackedTextAddEvent>() {
-                        let _ = unpacker.skip(header.font_path_length);
-                        let _ = unpacker.skip(header.text_length);
-                    } else {
-                        break;
-                    }
+                    } else { break; }
                 }
                 _ => {
-                    // Skip any other known, fixed-size event type.
                     let _ = unpacker.skip(payload_size);
                 }
             }
+            
+            // ALIGNMENT: Ensure next header starts at 8-byte boundary
+            let _ = unpacker.align_to(8);
         }
     }
     // --- END Event Unpacking ---
@@ -499,13 +499,11 @@ pub extern "C" fn Phrost_Update(
     let title_bytes = title.as_bytes();
     let len_to_copy = title_bytes.len().min(255); // Leave room for null
     title_event.title[..len_to_copy].copy_from_slice(&title_bytes[..len_to_copy]);
-    // --- MODIFIED: Pack to window channel ---
     let _ = packer_window.pack(Events::windowTitle, &title_event);
 
     // --- Main Game Logic ---
     let (win_w, win_h) = (world.window_width, world.window_height);
     for sprite in world.sprites.iter_mut() {
-        // --- MODIFIED: Pass packer_render ---
         let _ = sprite.update(dt, win_w, win_h, &mut packer_render);
     }
 
@@ -535,7 +533,6 @@ pub extern "C" fn Phrost_Update(
 
             world.sprites.push(sprite);
 
-            // --- MODIFIED: Pack to render channel ---
             let _ = packer_render.pack(
                 Events::spriteAdd,
                 &PackedSpriteAddEvent {
@@ -562,18 +559,16 @@ pub extern "C" fn Phrost_Update(
                 },
             );
 
-            // --- MODIFIED: Pack to render channel ---
             let _ = packer_render.pack_sprite_texture_load(id1, id2, TEXTURE_PATH.as_bytes());
 
             world.sprites_count += 1;
         }
     }
 
-    // --- MODIFIED: Finalize & Return ---
+    // --- Finalize & Return ---
     let render_buffer = packer_render.finalize();
     let window_buffer = packer_window.finalize();
 
-    // Define channel inputs
     let channel_inputs = [
         ChannelInput {
             id: Channels::renderer,
@@ -585,7 +580,6 @@ pub extern "C" fn Phrost_Update(
         },
     ];
 
-    // Pack channels into the final buffer
     let final_buffer = match ChannelPacker::finalize(&channel_inputs) {
         Ok(buf) => buf,
         Err(e) => {
@@ -594,7 +588,6 @@ pub extern "C" fn Phrost_Update(
             return ptr::null_mut();
         }
     };
-    // --- END MODIFICATION ---
 
     unsafe { return_buffer(final_buffer, out_length) }
 }

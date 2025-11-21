@@ -202,7 +202,7 @@ const char* my_game_update(int32_t frame, double delta, const char* eventData, i
     // Use the bridge function
     //
     const char* outData = swift_callback_to_php_bridge(frame, delta, eventData, eventLen, outLen, &g_thread_bridge);
-    debug_walk_php_packet(outData, outLen);
+    debug_walk_php_packet(outData, *outLen);
     return outData;
 }
 

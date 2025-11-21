@@ -44,3 +44,4 @@ Engine/deps/php-8.4.10-nts-Win32-vs17-arm64-experimental/save.dat
 Runtime/c/embed/php_errors.log
 /Runtime/c/embed/Phrost.app
 /Runtime/c/embed/.vs
+.vscode/settings.json

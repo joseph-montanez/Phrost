@@ -8,40 +8,35 @@ import SwiftSDL_ttf
 extension PhrostEngine {
 
     // MARK: - Debug Helper
-    /// Debugs the raw command stream seen by Swift, mirroring the C walker logic.
     internal func debugWalkRendererBlob(_ data: Data) {
         print("\n--- [Swift Debug Walk] Start (\(data.count) bytes) ---")
         var offset = 0
-
+        
         func peek<T>(as type: T.Type) -> T? {
             if offset + MemoryLayout<T>.size > data.count { return nil }
             return data.withUnsafeBytes { $0.loadSafe(fromByteOffset: offset, as: T.self) }
         }
-
-        // 1. Read Command Count
+        
         guard let commandCount = peek(as: UInt32.self) else { return }
-        offset += 8 // Count(4) + Padding(4)
-
+        offset += 8
+        
         print("Commands: \(commandCount)")
-
+        
         for i in 0..<commandCount {
             let startOffset = offset
             guard let eventID = peek(as: UInt32.self) else { break }
             offset += 4
             guard let timestamp = peek(as: UInt64.self) else { break }
-            offset += 12 // Time(8) + Padding(4)
-
+            offset += 12
+            
             guard let event = Events(rawValue: eventID) else {
                 print("  [\(i)] Unknown Event ID: \(eventID) at offset \(startOffset)")
                 break
             }
-
+            
             let payloadSize = eventPayloadSizes[event.rawValue] ?? 0
-
             print("  [\(i)] Event: \(event) (ID: \(eventID)) | Time: \(timestamp) | PayloadBase: \(payloadSize)")
-
-            // --- Variable Length Handlers ---
-
+            
             if event == .textAdd {
                  if offset + payloadSize <= data.count {
                      let header = data.withUnsafeBytes { $0.loadSafe(fromByteOffset: offset, as: PackedTextAddEvent.self) }
@@ -49,29 +44,23 @@ extension PhrostEngine {
                      let txtLen = Int(header.textLength)
                      let fpPad = (8 - (fpLen % 8)) % 8
                      let txtPad = (8 - (txtLen % 8)) % 8
-
                      offset += payloadSize
-
+                     
                      let fontStr = String(data: data.subdata(in: offset..<(offset+fpLen)), encoding: .utf8) ?? ""
                      offset += fpLen + fpPad
-
                      let textStr = String(data: data.subdata(in: offset..<(offset+txtLen)), encoding: .utf8) ?? ""
                      offset += txtLen + txtPad
-
                      print("      > TextAdd: Font='\(fontStr)' Text='\(textStr)'")
                  }
-            }
+            } 
             else if event == .textSetString {
                 if offset + payloadSize <= data.count {
                     let header = data.withUnsafeBytes { $0.loadSafe(fromByteOffset: offset, as: PackedTextSetStringEvent.self) }
                     let txtLen = Int(header.textLength)
                     let txtPad = (8 - (txtLen % 8)) % 8
-
                     offset += payloadSize
-
                     let textStr = String(data: data.subdata(in: offset..<(offset+txtLen)), encoding: .utf8) ?? ""
                     offset += txtLen + txtPad
-
                     print("      > TextSet: '\(textStr)'")
                 }
             }
@@ -80,12 +69,9 @@ extension PhrostEngine {
                     let header = data.withUnsafeBytes { $0.loadSafe(fromByteOffset: offset, as: PackedTextureLoadHeaderEvent.self) }
                     let fnLen = Int(header.filenameLength)
                     let fnPad = (8 - (fnLen % 8)) % 8
-
                     offset += payloadSize
-
                     let fnStr = String(data: data.subdata(in: offset..<(offset+fnLen)), encoding: .utf8) ?? ""
                     offset += fnLen + fnPad
-
                     print("      > TexLoad: '\(fnStr)' (Len: \(fnLen))")
                 }
             }
@@ -93,12 +79,9 @@ extension PhrostEngine {
                 if let header = peek(as: PackedAudioLoadEvent.self) {
                     let pLen = Int(header.pathLength)
                     let pPad = (8 - (pLen % 8)) % 8
-
-                    offset += 8 // Header(4) + Pad(4)
-
+                    offset += 8
                     let audioStr = String(data: data.subdata(in: offset..<(offset+pLen)), encoding: .utf8) ?? ""
                     offset += pLen + pPad
-
                     print("      > AudioLoad: '\(audioStr)' (Len: \(pLen))")
                 }
             }
@@ -106,20 +89,16 @@ extension PhrostEngine {
                 if let header = peek(as: PackedPluginLoadHeaderEvent.self) {
                      let pLen = Int(header.pathLength)
                      let pPad = (8 - (pLen % 8)) % 8
-
                      offset += payloadSize
-
                      let pluginStr = String(data: data.subdata(in: offset..<(offset+pLen)), encoding: .utf8) ?? ""
                      offset += pLen + pPad
-
                      print("      > PluginLoad: '\(pluginStr)'")
                 }
             }
             else {
                 offset += payloadSize
             }
-
-            // Align End of Event
+            
             let pad = (8 - (offset % 8)) % 8
             offset += pad
         }
@@ -132,18 +111,14 @@ extension PhrostEngine {
         var lastTick: UInt64 = SDL_GetTicks()
         let targetMs: Double = 1000.0 / 60.0
 
-        // --- Main Loop ---
         while self.running {
             let frameStart: UInt64 = SDL_GetTicks()
-
             let now = SDL_GetTicks()
             let deltaMs = Double(now &- lastTick)
             let deltaSec = deltaMs / 1000.0
 
-            // 1. Poll SDL Events
             let (sdlEventStream, sdlEventCount) = pollEvents()
 
-            // 2. Prepare initial event payloads (SDL + Last Frame's Internal)
             var currentEventPayloads = Data()
             let initialEventCount = sdlEventCount + self.internalEventCount
 
@@ -152,54 +127,35 @@ extension PhrostEngine {
                 currentEventPayloads.append(self.internalEventStream)
             }
 
-            // 3. Clear the *next* frame's event stream.
             self.internalEventStream.removeAll()
             self.internalEventCount = 0
 
-            // 4. Step and Get Physics Events
             self.physicsManager.step(dt: deltaSec)
             let (physicsEvents, physicsEventCount) = self.physicsManager.drainGeneratedEvents()
 
-            // NEW: Accumulator for all C-Plugin outputs for THIS frame
             var allCPluginChannelOutputs: [UInt32: Data] = [:]
-
-            // =========================================================================
-            // 5. Call C-Plugin Update (Pass 1)
-            // =========================================================================
 
             var baseEvents = Data()
             let baseEventCount = initialEventCount + physicsEventCount
-
-            // ALIGNMENT: Construct a safe, aligned header [Count(4) + Pad(4)]
+            
             if baseEventCount > 0 {
-                // Write Count (4 bytes)
                 var count = UInt32(baseEventCount)
                 baseEvents.append(UnsafeBufferPointer(start: &count, count: 1))
-                // Write Padding (4 bytes of zeros)
                 baseEvents.append(Data(count: 4))
-
                 baseEvents.append(currentEventPayloads)
                 baseEvents.append(physicsEvents)
             } else {
-                 // Even if empty, send a 0-count header (8 bytes total)
-                 baseEvents.append(Data(count: 8))
+                 baseEvents.append(Data(count: 8)) 
             }
 
             let sortedPluginIDs = self.loadedPlugins.keys.sorted()
-
-            // Get channel data from *last frame's* PHP run
-            let channelsForPlugins = self.pluginChannelData
-            // Clear the buffer for *this frame's* PHP run
             self.pluginChannelData.removeAll()
 
             for pluginID in sortedPluginIDs {
                 guard let plugin = self.loadedPlugins[pluginID] else { continue }
-
-                // --- 5a. Build this plugin's custom event blob ---
                 var pluginInputStream = Data()
-                pluginInputStream.append(baseEvents)
+                pluginInputStream.append(baseEvents) 
 
-                // --- 5c. Call plugin ---
                 let updateFunc = plugin.updateFunc
                 let freeFunc = plugin.freeFunc
                 var cPluginCommandData = Data()
@@ -218,7 +174,6 @@ extension PhrostEngine {
                 }
                 freeFunc(cResultDataPtr)
 
-                // --- 5d. Process plugin's *output* ---
                 var cOffset = 0
                 guard !cPluginCommandData.isEmpty else { continue }
 
@@ -226,11 +181,8 @@ extension PhrostEngine {
                     return unpack(data: cPluginCommandData, offset: &cOffset, label: label, as: type)
                 }
 
-                // 1. Read Channel Count (4)
                 guard let cChannelCount = cUnpack(label: "C_ChannelCount", as: UInt32.self) else { continue }
-
-                // ALIGNMENT FIX: Skip Padding (4)
-                cOffset += 4
+                cOffset += 4 
 
                 var cChannelIndex: [(id: UInt32, size: UInt32)] = []
                 for _ in 0..<cChannelCount {
@@ -240,42 +192,28 @@ extension PhrostEngine {
                     cChannelIndex.append((id: id, size: size))
                 }
 
-                // --- 5e. Extract & Accumulate Channel Data Blobs ---
                 for entry in cChannelIndex {
                     let cChannelEnd = cOffset + Int(entry.size)
                     guard cChannelEnd <= cPluginCommandData.count else { break }
-
                     let cChannelBlob = cPluginCommandData.subdata(in: cOffset..<cChannelEnd)
                     cOffset = cChannelEnd
-
                     if !cChannelBlob.isEmpty {
-                        // Store blob.
                         allCPluginChannelOutputs[entry.id] = cChannelBlob
                     }
                 }
             }
 
-            // =========================================================================
-            // 6. Call User Update Logic (PHP) (Pass 2)
-            // =========================================================================
-
             var eventsForPHP = Data()
             eventsForPHP.append(baseEvents)
-
-            // Call PHP
+            
             lastTick = now
             let phpCommandData = updateCallback(frameCount, deltaSec, eventsForPHP)
 
-            // =========================================================================
-            // 7. Process Channel-Packed Commands from PHP
-            // =========================================================================
-
             var offset = 0
-            // ALIGNMENT FIX: Check empty before starting
             guard !phpCommandData.isEmpty else {
                 self.physicsManager.syncPhysicsToSprites()
                 render(deltaSec: deltaSec)
-
+                
                 let frameWorkEnd = SDL_GetTicks()
                 let frameTime = Double(frameWorkEnd &- frameStart)
                 let sleepMs = targetMs - frameTime
@@ -288,18 +226,13 @@ extension PhrostEngine {
                 return unpack(data: phpCommandData, offset: &offset, label: label, as: type)
             }
 
-            // --- 7a. Unpack Channel Header ---
             guard let channelCount = phpUnpack(label: "ChannelCount", as: UInt32.self) else {
                 print("PHP Command Error: Failed to read channel count.")
                 continue
             }
-
-            // ALIGNMENT FIX: Skip Padding (4)
             offset += 4
 
             var channelIndex: [(id: UInt32, size: UInt32)] = []
-
-            // --- 7b. Unpack Index Table ---
             for i in 0..<channelCount {
                 guard
                     let id = phpUnpack(label: "ChannelID", as: UInt32.self),
@@ -311,7 +244,6 @@ extension PhrostEngine {
                 channelIndex.append((id: id, size: size))
             }
 
-            // --- 7c. Extract & Process Channel Data Blobs ---
             self.pluginChannelData = allCPluginChannelOutputs
 
             for entry in channelIndex {
@@ -323,58 +255,42 @@ extension PhrostEngine {
                 let phpChannelBlob = phpCommandData.subdata(in: offset..<channelEnd)
                 offset = channelEnd
 
-                // Merge Logic with ALIGNMENT Fixes
                 if var existingBlob = self.pluginChannelData[entry.id] {
-                    // Unpack sub-counts to merge
                     var subOffset = 0
-                    // ALIGNMENT FIX: Check !isEmpty
                     if !phpChannelBlob.isEmpty,
                        let subCount = unpack(data: phpChannelBlob, offset: &subOffset, label: "PHP_SubCount", as: UInt32.self) {
-
-                        // ALIGNMENT FIX: Skip Padding (4)
+                       
                         subOffset += 4
-
+                        
                         if subCount > 0 {
                             let subEvents = phpChannelBlob.subdata(in: subOffset..<phpChannelBlob.count)
-
                             var existingOffset = 0
                             if let existingCount = unpack(data: existingBlob, offset: &existingOffset, label: "ExCount", as: UInt32.self) {
-                                // ALIGNMENT FIX: Skip Padding (4)
                                 existingOffset += 4
-
                                 let existingEvents = existingBlob.subdata(in: existingOffset..<existingBlob.count)
-
                                 let newTotalCount = existingCount &+ subCount
-
                                 var newBlob = Data()
-                                // Pack new Header: Count(4) + Pad(4)
                                 var newCount = newTotalCount
                                 newBlob.append(UnsafeBufferPointer(start: &newCount, count: 1))
-                                newBlob.append(Data(count: 4)) // Padding
-
+                                newBlob.append(Data(count: 4))
                                 newBlob.append(existingEvents)
-                                newBlob.append(subEvents) // Assumes subEvents is already padded correctly at end
+                                newBlob.append(subEvents) 
                                 self.pluginChannelData[entry.id] = newBlob
                             }
                         }
                     }
                 } else {
-                    // New Entry
                     if !phpChannelBlob.isEmpty {
                          self.pluginChannelData[entry.id] = phpChannelBlob
                     }
                 }
             }
 
-            // 3. Process ENGINE commands (0, 2)
             var phpGeneratedEvents = Data()
             var phpGeneratedEventCount: UInt32 = 0
 
             if let rendererBlob = self.pluginChannelData[0] {
-                // --- DEBUG WALKER CALL ---
-                debugWalkRendererBlob(rendererBlob)
-                // -------------------------
-
+                // debugWalkRendererBlob(rendererBlob)
                 let (events, count) = processCommands(rendererBlob)
                 phpGeneratedEvents.append(events)
                 phpGeneratedEventCount &+= count
@@ -388,29 +304,20 @@ extension PhrostEngine {
             self.pluginChannelData.removeValue(forKey: 0)
             self.pluginChannelData.removeValue(forKey: 2)
 
-            // =========================================================================
-            // 8. Finalize Internal Event Stream for *Next* Frame
-            // =========================================================================
-
             self.internalEventStream.removeAll()
             self.internalEventCount = 0
 
             self.internalEventStream.append(phpGeneratedEvents)
             self.internalEventCount = phpGeneratedEventCount
 
-            // 9. Sync Physics
             self.physicsManager.syncPhysicsToSprites()
-
-            // 10. Render
             render(deltaSec: deltaSec)
 
-            // 11. Frame Limiting
             let frameWorkEnd = SDL_GetTicks()
             let frameTime = Double(frameWorkEnd &- frameStart)
             let sleepMs = targetMs - frameTime
             if sleepMs > 0 { SDL_Delay(UInt32(sleepMs)) }
             frameCount &+= 1
-
         }
     }
 
@@ -418,8 +325,6 @@ extension PhrostEngine {
         self.running = false
     }
 
-    // MARK: - Event Polling
-    /// Polls for SDL events and packs them into a Data buffer.
     internal func pollEvents() -> (eventStream: Data, eventCount: UInt32) {
         var eventStream = Data()
         var eventCount: UInt32 = 0
@@ -427,7 +332,6 @@ extension PhrostEngine {
 
         while SDL_PollEvent(&e) {
             let timestamp = e.common.timestamp
-
             let _ = processImGuiInput(event: &e)
 
             switch e.type {
@@ -437,124 +341,88 @@ extension PhrostEngine {
             case UInt32(SDL_EVENT_WINDOW_RESIZED.rawValue):
                 var resizeEvent = PackedWindowResizeEvent(w: e.window.data1, h: e.window.data2)
                 var evt = Events.windowResize.rawValue
-
-                // ALIGNMENT HEADER (16 bytes): ID(4) + Time(8) + Pad(4)
                 eventStream.append(UnsafeBufferPointer(start: &evt, count: 1))
                 var ts = timestamp
                 eventStream.append(UnsafeBufferPointer(start: &ts, count: 1))
-                eventStream.append(Data(count: 4)) // Padding
-
+                eventStream.append(Data(count: 4))
                 eventStream.append(UnsafeBufferPointer(start: &resizeEvent, count: 1))
-
-                // ALIGNMENT TAIL: 8-byte alignment
                 let size = MemoryLayout<PackedWindowResizeEvent>.size
                 let pad = (8 - (size % 8)) % 8
                 if pad > 0 { eventStream.append(Data(count: pad)) }
-
                 eventCount += 1
-
+                
             case UInt32(SDL_EVENT_KEY_DOWN.rawValue):
                 var keyEvent = PackedKeyEvent(
                     scancode: Int32(e.key.scancode.rawValue), keycode: e.key.key, mod: e.key.mod,
                     isRepeat: e.key.repeat ? 1 : 0, _padding: 0)
                 var evt = Events.inputKeydown.rawValue
-
-                // ALIGNMENT HEADER
                 eventStream.append(UnsafeBufferPointer(start: &evt, count: 1))
                 var ts = timestamp
                 eventStream.append(UnsafeBufferPointer(start: &ts, count: 1))
-                eventStream.append(Data(count: 4)) // Padding
-
+                eventStream.append(Data(count: 4))
                 eventStream.append(UnsafeBufferPointer(start: &keyEvent, count: 1))
-
-                // ALIGNMENT TAIL
                 let size = MemoryLayout<PackedKeyEvent>.size
                 let pad = (8 - (size % 8)) % 8
                 if pad > 0 { eventStream.append(Data(count: pad)) }
-
                 eventCount += 1
-
+                
             case UInt32(SDL_EVENT_KEY_UP.rawValue):
                 var keyEvent = PackedKeyEvent(
                     scancode: Int32(e.key.scancode.rawValue), keycode: e.key.key, mod: e.key.mod,
                     isRepeat: 0, _padding: 0)
                 var evt = Events.inputKeyup.rawValue
-
-                // ALIGNMENT HEADER
-                eventStream.append(UnsafeBufferPointer(start: &evt, count: 1))
-                var ts = timestamp
-                eventStream.append(UnsafeBufferPointer(start: &ts, count: 1))
-                eventStream.append(Data(count: 4)) // Padding
-
-                eventStream.append(UnsafeBufferPointer(start: &keyEvent, count: 1))
-
-                // ALIGNMENT TAIL
-                let size = MemoryLayout<PackedKeyEvent>.size
-                let pad = (8 - (size % 8)) % 8
-                if pad > 0 { eventStream.append(Data(count: pad)) }
-
-                eventCount += 1
-
-            case UInt32(SDL_EVENT_MOUSE_MOTION.rawValue):
-                var motionEvent = PackedMouseMotionEvent(
-                    x: e.motion.x, y: e.motion.y, xrel: e.motion.xrel, yrel: e.motion.yrel)
-                var evt = Events.inputMousemotion.rawValue
-
-                // ALIGNMENT HEADER
                 eventStream.append(UnsafeBufferPointer(start: &evt, count: 1))
                 var ts = timestamp
                 eventStream.append(UnsafeBufferPointer(start: &ts, count: 1))
                 eventStream.append(Data(count: 4))
-
+                eventStream.append(UnsafeBufferPointer(start: &keyEvent, count: 1))
+                let size = MemoryLayout<PackedKeyEvent>.size
+                let pad = (8 - (size % 8)) % 8
+                if pad > 0 { eventStream.append(Data(count: pad)) }
+                eventCount += 1
+                
+            case UInt32(SDL_EVENT_MOUSE_MOTION.rawValue):
+                var motionEvent = PackedMouseMotionEvent(
+                    x: e.motion.x, y: e.motion.y, xrel: e.motion.xrel, yrel: e.motion.yrel)
+                var evt = Events.inputMousemotion.rawValue
+                eventStream.append(UnsafeBufferPointer(start: &evt, count: 1))
+                var ts = timestamp
+                eventStream.append(UnsafeBufferPointer(start: &ts, count: 1))
+                eventStream.append(Data(count: 4))
                 eventStream.append(UnsafeBufferPointer(start: &motionEvent, count: 1))
-
-                // ALIGNMENT TAIL
                 let size = MemoryLayout<PackedMouseMotionEvent>.size
                 let pad = (8 - (size % 8)) % 8
                 if pad > 0 { eventStream.append(Data(count: pad)) }
-
                 eventCount += 1
-
+                
             case UInt32(SDL_EVENT_MOUSE_BUTTON_DOWN.rawValue):
                 var buttonEvent = PackedMouseButtonEvent(
                     x: e.button.x, y: e.button.y, button: e.button.button, clicks: e.button.clicks,
                     _padding: 0)
                 var evt = Events.inputMousedown.rawValue
-
-                // ALIGNMENT HEADER
                 eventStream.append(UnsafeBufferPointer(start: &evt, count: 1))
                 var ts = timestamp
                 eventStream.append(UnsafeBufferPointer(start: &ts, count: 1))
                 eventStream.append(Data(count: 4))
-
                 eventStream.append(UnsafeBufferPointer(start: &buttonEvent, count: 1))
-
-                // ALIGNMENT TAIL
                 let size = MemoryLayout<PackedMouseButtonEvent>.size
                 let pad = (8 - (size % 8)) % 8
                 if pad > 0 { eventStream.append(Data(count: pad)) }
-
                 eventCount += 1
-
+                
             case UInt32(SDL_EVENT_MOUSE_BUTTON_UP.rawValue):
                 var buttonEvent = PackedMouseButtonEvent(
                     x: e.button.x, y: e.button.y, button: e.button.button, clicks: e.button.clicks,
                     _padding: 0)
                 var evt = Events.inputMouseup.rawValue
-
-                // ALIGNMENT HEADER
                 eventStream.append(UnsafeBufferPointer(start: &evt, count: 1))
                 var ts = timestamp
                 eventStream.append(UnsafeBufferPointer(start: &ts, count: 1))
                 eventStream.append(Data(count: 4))
-
                 eventStream.append(UnsafeBufferPointer(start: &buttonEvent, count: 1))
-
-                // ALIGNMENT TAIL
                 let size = MemoryLayout<PackedMouseButtonEvent>.size
                 let pad = (8 - (size % 8)) % 8
                 if pad > 0 { eventStream.append(Data(count: pad)) }
-
                 eventCount += 1
             default: continue
             }
@@ -572,7 +440,6 @@ extension PhrostEngine {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255)
         SDL_RenderClear(renderer)
 
-        // --- Z-SORTED RENDER ---
         let spritesToRender = spriteManager.getSpritesForRendering()
         let primitivesToRender = geometryManager.getPrimitivesForRendering()
 
@@ -590,7 +457,8 @@ extension PhrostEngine {
         )
 
         while sIdx < spritesToRender.count || pIdx < primitivesToRender.count {
-            let spriteZ = (sIdx < spritesToRender.count) ? spritesToRender[sIdx].position.2 : Double.infinity
+            // --- FIXED: Use .z struct property ---
+            let spriteZ = (sIdx < spritesToRender.count) ? spritesToRender[sIdx].position.z : Double.infinity
             let primitiveZ = (pIdx < primitivesToRender.count) ? primitivesToRender[pIdx].z : Double.infinity
 
             if spriteZ <= primitiveZ {
@@ -608,19 +476,19 @@ extension PhrostEngine {
         io.pointee.FontGlobalScale = scaleX
 
         ImGuiNewFrame()
-        // ImGui Demo/Text code...
         ImGuiRender()
         SDL_RenderPresent(renderer)
     }
 
     private func renderPrimitive(_ primitive: RenderPrimitive, cam: CameraTransform) {
-        SDL_SetRenderDrawColor(renderer, primitive.color.0, primitive.color.1, primitive.color.2, primitive.color.3)
-
+        // --- FIXED: Use .r, .g, .b, .a struct properties ---
+        SDL_SetRenderDrawColor(renderer, primitive.color.r, primitive.color.g, primitive.color.b, primitive.color.a)
+        
         let color = SDL_FColor(
-            r: Float(primitive.color.0) / 255.0,
-            g: Float(primitive.color.1) / 255.0,
-            b: Float(primitive.color.2) / 255.0,
-            a: Float(primitive.color.3) / 255.0)
+            r: Float(primitive.color.r) / 255.0,
+            g: Float(primitive.color.g) / 255.0,
+            b: Float(primitive.color.b) / 255.0,
+            a: Float(primitive.color.a) / 255.0)
         let tex_coord = SDL_FPoint(x: 0, y: 0)
 
         func renderTransformedRect(_ r: SDL_FRect, isFilled: Bool) {
@@ -696,7 +564,7 @@ extension PhrostEngine {
                 if primitive.isScreenSpace { renderScreenRect(r, isFilled: true) }
                 else { renderTransformedRect(r, isFilled: true) }
             }
-
+        
         case .points:
              var offsetPoints: [SDL_FPoint]
              if primitive.isScreenSpace { offsetPoints = primitive.points }
@@ -714,7 +582,7 @@ extension PhrostEngine {
                 if primitive.isScreenSpace { for r in primitive.rects { renderScreenRect(r, isFilled: false) } }
                 else { for r in primitive.rects { renderTransformedRect(r, isFilled: false) } }
             }
-
+        
         case .fillRects:
              if !primitive.rects.isEmpty {
                  if primitive.isScreenSpace { for r in primitive.rects { renderScreenRect(r, isFilled: true) } }
@@ -726,41 +594,51 @@ extension PhrostEngine {
     private func renderSprite(_ sprite: Sprite, deltaSec: Double, cam: CameraTransform) {
         if pluginOn { spriteManager.plugin(for: sprite.id, dt: deltaSec) }
 
-        let totalAngle = sprite.rotate.2 + (-self.cameraRotation * 180.0 / .pi)
-        let isScaled = (sprite.scale.0 != 1.0 || sprite.scale.1 != 1.0)
+        // --- FIXED: Use .z for rotation ---
+        let totalAngle = sprite.rotate.z + (-self.cameraRotation * 180.0 / .pi)
+
+        // --- FIXED: Use .x / .y for scale ---
+        let isScaled = (sprite.scale.x != 1.0 || sprite.scale.y != 1.0)
         let isRotated = (totalAngle != 0.0)
 
-        let screenPos = transformWorldToScreen(worldX: sprite.position.0, worldY: sprite.position.1, cam: cam)
-        let scaledW = sprite.size.0 * sprite.scale.0 * cam.camZoom
-        let scaledH = sprite.size.1 * sprite.scale.1 * cam.camZoom
+        // --- FIXED: Use .x / .y for position ---
+        let screenPos = transformWorldToScreen(worldX: sprite.position.x, worldY: sprite.position.y, cam: cam)
+        
+        // --- FIXED: Use .x / .y for size/scale ---
+        let scaledW = sprite.size.x * sprite.scale.x * cam.camZoom
+        let scaledH = sprite.size.y * sprite.scale.y * cam.camZoom
 
         if !isScaled && !isRotated {
             var rect = SDL_FRect(x: screenPos.x, y: screenPos.y, w: Float(scaledW), h: Float(scaledH))
             if let texture = sprite.texture {
-                SDL_SetTextureColorMod(texture, sprite.color.0, sprite.color.1, sprite.color.2)
+                // --- FIXED: Use .r, .g, .b ---
+                SDL_SetTextureColorMod(texture, sprite.color.r, sprite.color.g, sprite.color.b)
                 if var srcRect = sprite.sourceRect { SDL_RenderTexture(renderer, texture, &srcRect, &rect) }
                 else { SDL_RenderTexture(renderer, texture, nil, &rect) }
             } else {
-                SDL_SetRenderDrawColor(renderer, sprite.color.0, sprite.color.1, sprite.color.2, sprite.color.3)
+                // --- FIXED: Use .r, .g, .b, .a ---
+                SDL_SetRenderDrawColor(renderer, sprite.color.r, sprite.color.g, sprite.color.b, sprite.color.a)
                 SDL_RenderFillRect(renderer, &rect)
             }
         } else {
             if let texture = sprite.texture {
                  var rect = SDL_FRect(x: screenPos.x, y: screenPos.y, w: Float(scaledW), h: Float(scaledH))
                  var center = SDL_FPoint(x: Float(scaledW / 2.0), y: Float(scaledH / 2.0))
-                 SDL_SetTextureColorMod(texture, sprite.color.0, sprite.color.1, sprite.color.2)
+                 // --- FIXED: Use .r, .g, .b ---
+                 SDL_SetTextureColorMod(texture, sprite.color.r, sprite.color.g, sprite.color.b)
                  if var srcRect = sprite.sourceRect {
                      SDL_RenderTextureRotated(renderer, texture, &srcRect, &rect, totalAngle, &center, SDL_FLIP_NONE)
                  } else {
                      SDL_RenderTextureRotated(renderer, texture, nil, &rect, totalAngle, &center, SDL_FLIP_NONE)
                  }
             } else {
-                let w = sprite.size.0 * sprite.scale.0
-                let h = sprite.size.1 * sprite.scale.1
-                let angleRad = sprite.rotate.2 * .pi / 180.0
+                // --- FIXED: Use .x / .y for size/scale/pos ---
+                let w = sprite.size.x * sprite.scale.x
+                let h = sprite.size.y * sprite.scale.y
+                let angleRad = sprite.rotate.z * .pi / 180.0
                 let s = sin(angleRad); let c = cos(angleRad)
                 let half_w = w / 2.0; let half_h = h / 2.0
-                let pivotX = sprite.position.0 + half_w; let pivotY = sprite.position.1 + half_h
+                let pivotX = sprite.position.x + half_w; let pivotY = sprite.position.y + half_h
 
                 let p1x = pivotX + (-half_w * c - -half_h * s); let p1y = pivotY + (-half_w * s + -half_h * c)
                 let p2x = pivotX + (half_w * c - -half_h * s); let p2y = pivotY + (half_w * s + -half_h * c)
@@ -772,7 +650,11 @@ extension PhrostEngine {
                 let s3 = transformWorldToScreen(worldX: Double(p3x), worldY: Double(p3y), cam: cam)
                 let s4 = transformWorldToScreen(worldX: Double(p4x), worldY: Double(p4y), cam: cam)
 
-                let color = SDL_FColor(r: Float(sprite.color.0)/255.0, g: Float(sprite.color.1)/255.0, b: Float(sprite.color.2)/255.0, a: Float(sprite.color.3)/255.0)
+                // --- FIXED: Use .r, .g, .b, .a ---
+                let color = SDL_FColor(
+                    r: Float(sprite.color.r)/255.0, g: Float(sprite.color.g)/255.0, 
+                    b: Float(sprite.color.b)/255.0, a: Float(sprite.color.a)/255.0
+                )
                 let tex_coord = SDL_FPoint(x: 0.0, y: 0.0)
                 var vertices = [
                     SDL_Vertex(position: s1, color: color, tex_coord: tex_coord),

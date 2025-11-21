@@ -67,6 +67,8 @@ fn finalizeAndReturn(
     out_length: *i32,
 ) ?*anyopaque {
     // Finalize individual channel event counts
+    // Note: We write into the first 4 bytes. The next 4 bytes (indices 4-7)
+    // are already 0 from our initialization, providing the required padding.
     std.mem.writeInt(u32, cb_render.items[0..4], packer_render.command_count, .little);
     std.mem.writeInt(u32, cb_window.items[0..4], packer_window.command_count, .little);
 
@@ -134,17 +136,19 @@ export fn Phrost_Wake(out_length: *i32) ?*anyopaque {
     @memset(world.command_buffer_render[0..], 0);
     var fba_render = std.heap.FixedBufferAllocator.init(world.command_buffer_render[0..]);
     const temp_allocator = fba_render.allocator();
+
     var cb_render = std.ArrayList(u8).initCapacity(
         temp_allocator,
         @TypeOf(world).CHANNEL_BUFFER_SIZE,
-    ) catch |err|
-        {
-            std.debug.print("Phrost_Wake: Failed to init cb_render: {any}\n", .{err});
-            out_length.* = 0;
-            return null;
-        };
-    // Write a placeholder for the command count
-    cb_render.appendSliceAssumeCapacity(&.{ 0, 0, 0, 0 });
+    ) catch |err| {
+        std.debug.print("Phrost_Wake: Failed to init cb_render: {any}\n", .{err});
+        out_length.* = 0;
+        return null;
+    };
+
+    // --- FIXED: Reserve 8 bytes (Count + Padding) instead of 4 ---
+    cb_render.appendSliceAssumeCapacity(&.{ 0, 0, 0, 0, 0, 0, 0, 0 });
+
     var packer_render = ph.CommandPacker{ .writer = cb_render.writer(temp_allocator) };
 
     // Try to load the save file
@@ -224,8 +228,9 @@ export fn Phrost_Wake(out_length: *i32) ?*anyopaque {
 
     std.debug.print("Phrost_Wake: Finished loading. Re-emitting {d} commands.\n", .{packer_render.command_count});
 
-    // Finalize the render channel's event count
+    // --- Finalize event count matches the reserved 8 bytes ---
     std.mem.writeInt(u32, cb_render.items[0..4], packer_render.command_count, .little);
+
     // Prepare the final output buffer
     @memset(world.final_command_buffer[0..], 0);
     var fba_final = std.heap.FixedBufferAllocator.init(world.final_command_buffer[0..]);
@@ -298,9 +303,13 @@ export fn Phrost_Update(
             out_length.* = 0;
             return null;
         };
-    cb_render.appendSliceAssumeCapacity(&.{ 0, 0, 0, 0 });
+
+    // --- FIXED: Reserve 8 bytes (Count + Padding) instead of 4 ---
+    cb_render.appendSliceAssumeCapacity(&.{ 0, 0, 0, 0, 0, 0, 0, 0 });
+
     // Placeholder for count
     var packer_render = ph.CommandPacker{ .writer = cb_render.writer(fba_render.allocator()) };
+
     // --- Packer for Window Channel ---
     @memset(world.command_buffer_window[0..], 0);
     var fba_window = std.heap.FixedBufferAllocator.init(world.command_buffer_window[0..]);
@@ -313,7 +322,10 @@ export fn Phrost_Update(
             out_length.* = 0;
             return null;
         };
-    cb_window.appendSliceAssumeCapacity(&.{ 0, 0, 0, 0 }); // Placeholder for count
+
+    // --- FIXED: Reserve 8 bytes (Count + Padding) instead of 4 ---
+    cb_window.appendSliceAssumeCapacity(&.{ 0, 0, 0, 0, 0, 0, 0, 0 });
+
     var packer_window = ph.CommandPacker{ .writer = cb_window.writer(fba_window.allocator()) };
 
     // --- 3. Process Incoming Events ---

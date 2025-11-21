@@ -71,19 +71,7 @@ Write-Host ""
 # --- Build ---
 Write-Host "### 1. Starting Swift Build... ###"
 
-swift build -c release `
-    -Xcc -UHAVE_BUILTIN_CONSTANT_P `
-    -Xcc -DZEND_WIN32=1 `
-    -Xcc -DPHP_WIN32=1 `
-    -Xcc -DWIN32=1 `
-    -Xcc -D_WINDOWS=1 `
-    -Xcc -D_WIN32=1 `
-    -Xcc -DNDEBUG `
-    -Xcc "-I$($env:CHIPMUNK2D_INCLUDE)" `
-    -Xcc "-I$($env:SDL3_INCLUDE)" `
-    --triple aarch64-unknown-windows-msvc
-
-swift build -c debug -Xswiftc -Onone `
+swift build -c release --static-swift-stdlib `
     -Xcc -UHAVE_BUILTIN_CONSTANT_P `
     -Xcc -DZEND_WIN32=1 `
     -Xcc -DPHP_WIN32=1 `

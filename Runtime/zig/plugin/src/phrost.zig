@@ -2,7 +2,6 @@
 // Generated from: structs.json
 
 const std = @import("std");
-
 pub const Channels = enum(u32) {
     renderer = 0,
     input = 1,
@@ -87,424 +86,423 @@ pub const Events = enum(u32) {
 };
 
 pub const PackedAudioLoadEvent = extern struct {
-    pathLength: u32, // Length of the audio file path that follows.
+    pathLength: u32,
 };
 
 pub const PackedAudioLoadedEvent = extern struct {
-    audioId: u64, // The ID assigned to the loaded audio.
+    audioId: u64,
 };
 
 pub const PackedAudioPauseEvent = extern struct {
-    audioId: u64, // The ID of the audio to pause.
+    audioId: u64,
 };
 
 pub const PackedAudioPlayEvent = extern struct {
-    audioId: u64, // The ID of the audio to play.
+    audioId: u64,
 };
 
 pub const PackedAudioSetMasterVolumeEvent = extern struct {
-    volume: f32, // Volume level (e.g., 0.0 to 1.0).
+    volume: f32,
 };
 
 pub const PackedAudioSetVolumeEvent = extern struct {
-    audioId: u64, // The ID of the audio to modify.
-    volume: f32, // Volume level (0.0 to 1.0).
-    _padding: u32, // Padding for alignment.
+    audioId: u64,
+    volume: f32,
+    _padding: u32,
 };
 
 pub const PackedAudioStopAllEvent = extern struct {
-    _unused: u8, // Padding to ensure non-zero struct size (MSVC compatibility).
+    _unused: u8,
 };
 
 pub const PackedAudioStopEvent = extern struct {
-    audioId: u64, // The ID of the audio to stop.
+    audioId: u64,
 };
 
 pub const PackedAudioUnloadEvent = extern struct {
-    audioId: u64, // The ID of the audio to unload.
+    audioId: u64,
 };
 
 pub const PackedCameraFollowEntityEvent = extern struct {
-    id1: i64, // Primary ID of the entity to follow.
-    id2: i64, // Secondary ID of the entity to follow.
+    id1: i64,
+    id2: i64,
 };
 
 pub const PackedCameraMoveEvent = extern struct {
-    deltaX: f64, // Amount to move the camera on the X axis.
-    deltaY: f64, // Amount to move the camera on the Y axis.
+    deltaX: f64,
+    deltaY: f64,
 };
 
 pub const PackedCameraSetPositionEvent = extern struct {
-    positionX: f64, // New X position for the camera's top-left corner.
-    positionY: f64, // New Y position for the camera's top-left corner.
+    positionX: f64,
+    positionY: f64,
 };
 
 pub const PackedCameraSetRotationEvent = extern struct {
-    angleInRadians: f64, // New camera rotation in radians.
+    angleInRadians: f64,
 };
 
 pub const PackedCameraSetZoomEvent = extern struct {
-    zoom: f64, // New zoom level. 1.0 is default, 2.0 is zoomed in.
+    zoom: f64,
 };
 
 pub const PackedCameraStopFollowingEvent = extern struct {
-    _unused: u8, // Padding to ensure non-zero struct size (MSVC compatibility).
+    _unused: u8,
 };
 
 pub const PackedGeomAddLineEvent = extern struct {
-    id1: i64, // Primary identifier.
-    id2: i64, // Secondary identifier.
-    z: f64, // Z position (depth).
-    r: u8, // Red color component (0-255).
-    g: u8, // Green color component (0-255).
-    b: u8, // Blue color component (0-255).
-    a: u8, // Alpha color component (0-255).
-    isScreenSpace: u8, // If the geometry is unaffected by the camera.
-    _padding: [3]u8, // Padding for alignment.
-    x1: f32, // Start X coordinate.
-    y1: f32, // Start Y coordinate.
-    x2: f32, // End X coordinate.
-    y2: f32, // End Y coordinate.
+    id1: i64,
+    id2: i64,
+    z: f64,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+    isScreenSpace: u8,
+    _padding: [3]u8,
+    x1: f32,
+    y1: f32,
+    x2: f32,
+    y2: f32,
 };
 
 pub const PackedGeomAddPackedHeaderEvent = extern struct {
-    id1: i64, // Primary identifier.
-    id2: i64, // Secondary identifier.
-    z: f64, // Z position (depth).
-    r: u8, // Red color component (0-255).
-    g: u8, // Green color component (0-255).
-    b: u8, // Blue color component (0-255).
-    a: u8, // Alpha color component (0-255).
-    isScreenSpace: u8, // If the geometry is unaffected by the camera.
-    _padding: u16, // Padding for alignment.
-    primitiveType: u32, // Raw value from PrimitiveType enum (point, line, rect).
-    count: u32, // Number of primitives that follow this header.
+    id1: i64,
+    id2: i64,
+    z: f64,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+    isScreenSpace: u8,
+    _padding: u16,
+    primitiveType: u32,
+    count: u32,
 };
 
 pub const PackedGeomAddPointEvent = extern struct {
-    id1: i64, // Primary identifier.
-    id2: i64, // Secondary identifier.
-    z: f64, // Z position (depth).
-    r: u8, // Red color component (0-255).
-    g: u8, // Green color component (0-255).
-    b: u8, // Blue color component (0-255).
-    a: u8, // Alpha color component (0-255).
-    isScreenSpace: u8, // If the geometry is unaffected by the camera.
-    _padding: [3]u8, // Padding for alignment.
-    x: f32, // X coordinate.
-    y: f32, // Y coordinate.
+    id1: i64,
+    id2: i64,
+    z: f64,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+    isScreenSpace: u8,
+    _padding: [3]u8,
+    x: f32,
+    y: f32,
 };
 
 pub const PackedGeomAddRectEvent = extern struct {
-    id1: i64, // Primary identifier.
-    id2: i64, // Secondary identifier.
-    z: f64, // Z position (depth).
-    r: u8, // Red color component (0-255).
-    g: u8, // Green color component (0-255).
-    b: u8, // Blue color component (0-255).
-    a: u8, // Alpha color component (0-255).
-    isScreenSpace: u8, // If the geometry is unaffected by the camera.
-    _padding: [3]u8, // Padding for alignment.
-    x: f32, // Top-left X coordinate.
-    y: f32, // Top-left Y coordinate.
-    w: f32, // Width.
-    h: f32, // Height.
+    id1: i64,
+    id2: i64,
+    z: f64,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+    isScreenSpace: u8,
+    _padding: [3]u8,
+    x: f32,
+    y: f32,
+    w: f32,
+    h: f32,
 };
 
 pub const PackedGeomRemoveEvent = extern struct {
-    id1: i64, // Primary ID of geometry to remove.
-    id2: i64, // Secondary ID of geometry to remove.
+    id1: i64,
+    id2: i64,
 };
 
 pub const PackedGeomSetColorEvent = extern struct {
-    id1: i64, // Primary ID of the geometry entity.
-    id2: i64, // Secondary ID of the geometry entity.
-    r: u8, // New red component (0-255).
-    g: u8, // New green component (0-255).
-    b: u8, // New blue component (0-255).
-    a: u8, // New alpha component (0-255).
-    _padding: u32, // Padding for alignment.
+    id1: i64,
+    id2: i64,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+    _padding: u32,
 };
 
 pub const PackedKeyEvent = extern struct {
-    scancode: i32, // Physical key scancode.
-    keycode: u32, // Keycode (e.g., Keycode.A).
-    mod: u16, // Key modifiers (Shift, Ctrl, etc.).
-    isRepeat: u8, // 1 if this is a key repeat, 0 otherwise.
-    _padding: u8, // Padding for alignment.
+    scancode: i32,
+    keycode: u32,
+    mod: u16,
+    isRepeat: u8,
+    _padding: u8,
 };
 
 pub const PackedMouseButtonEvent = extern struct {
-    x: f32, // X coordinate of the mouse.
-    y: f32, // Y coordinate of the mouse.
-    button: u8, // Mouse button index.
-    clicks: u8, // Number of clicks (1 for single, 2 for double).
-    _padding: u16, // Padding for alignment.
+    x: f32,
+    y: f32,
+    button: u8,
+    clicks: u8,
+    _padding: u16,
 };
 
 pub const PackedMouseMotionEvent = extern struct {
-    x: f32, // Absolute X coordinate.
-    y: f32, // Absolute Y coordinate.
-    xrel: f32, // Relative X motion.
-    yrel: f32, // Relative Y motion.
+    x: f32,
+    y: f32,
+    xrel: f32,
+    yrel: f32,
 };
 
 pub const PackedPhysicsAddBodyEvent = extern struct {
-    id1: i64, // Primary identifier.
-    id2: i64, // Secondary identifier.
-    positionX: f64, // Initial X position.
-    positionY: f64, // Initial Y position.
-    bodyType: u8, // Body type (static, kinematic, dynamic).
-    shapeType: u8, // Shape type (box, circle).
-    lockRotation: u8, // Rotation lock (0 = unlocked, 1 = locked). Prevent bodies from falling over.
-    _padding: [5]u8, // Padding for 8-byte alignment.
-    mass: f64, // Mass of the body.
-    friction: f64, // Friction coefficient.
-    elasticity: f64, // Elasticity (bounciness).
-    width: f64, // Width of the shape (or radius).
-    height: f64, // Height of the shape (unused if circle).
+    id1: i64,
+    id2: i64,
+    positionX: f64,
+    positionY: f64,
+    bodyType: u8,
+    shapeType: u8,
+    lockRotation: u8,
+    _padding: [5]u8,
+    mass: f64,
+    friction: f64,
+    elasticity: f64,
+    width: f64,
+    height: f64,
 };
 
 pub const PackedPhysicsApplyForceEvent = extern struct {
-    id1: i64, // Primary ID of the body.
-    id2: i64, // Secondary ID of the body.
-    forceX: f64, // Force vector X component.
-    forceY: f64, // Force vector Y component.
+    id1: i64,
+    id2: i64,
+    forceX: f64,
+    forceY: f64,
 };
 
 pub const PackedPhysicsApplyImpulseEvent = extern struct {
-    id1: i64, // Primary ID of the body.
-    id2: i64, // Secondary ID of the body.
-    impulseX: f64, // Impulse vector X component.
-    impulseY: f64, // Impulse vector Y component.
+    id1: i64,
+    id2: i64,
+    impulseX: f64,
+    impulseY: f64,
 };
 
 pub const PackedPhysicsCollisionEvent = extern struct {
-    id1_A: i64, // Primary ID of the first body.
-    id2_A: i64, // Secondary ID of the first body.
-    id1_B: i64, // Primary ID of the second body.
-    id2_B: i64, // Secondary ID of the second body.
+    id1_A: i64,
+    id2_A: i64,
+    id1_B: i64,
+    id2_B: i64,
 };
 
 pub const PackedPhysicsRemoveBodyEvent = extern struct {
-    id1: i64, // Primary ID of body to remove.
-    id2: i64, // Secondary ID of body to remove.
+    id1: i64,
+    id2: i64,
 };
 
 pub const PackedPhysicsSetPositionEvent = extern struct {
-    id1: i64, // Primary ID of the body.
-    id2: i64, // Secondary ID of the body.
-    positionX: f64, // New X position.
-    positionY: f64, // New Y position.
+    id1: i64,
+    id2: i64,
+    positionX: f64,
+    positionY: f64,
 };
 
 pub const PackedPhysicsSetRotationEvent = extern struct {
-    id1: i64, // Primary ID of the body.
-    id2: i64, // Secondary ID of the body.
-    angleInRadians: f64, // New angle in radians.
+    id1: i64,
+    id2: i64,
+    angleInRadians: f64,
 };
 
 pub const PackedPhysicsSetVelocityEvent = extern struct {
-    id1: i64, // Primary ID of the body.
-    id2: i64, // Secondary ID of the body.
-    velocityX: f64, // New X velocity.
-    velocityY: f64, // New Y velocity.
+    id1: i64,
+    id2: i64,
+    velocityX: f64,
+    velocityY: f64,
 };
 
 pub const PackedPhysicsSyncTransformEvent = extern struct {
-    id1: i64, // Primary ID of the body.
-    id2: i64, // Secondary ID of the body.
-    positionX: f64, // Current X position.
-    positionY: f64, // Current Y position.
-    angle: f64, // Current rotation (in radians).
-    velocityX: f64, // Current X velocity.
-    velocityY: f64, // Current Y velocity.
-    angularVelocity: f64, // Current angular velocity (spin speed) in radians/sec.
-    isSleeping: u8, // 1 if the body is sleeping, 0 if active.
-    _padding: [7]u8, // Aligns struct to 64-bit boundary.
+    id1: i64,
+    id2: i64,
+    positionX: f64,
+    positionY: f64,
+    angle: f64,
+    velocityX: f64,
+    velocityY: f64,
+    angularVelocity: f64,
+    isSleeping: u8,
+    _padding: [7]u8,
 };
 
 pub const PackedPluginEventStackingEvent = extern struct {
-    eventId: u8, // 1 to enable stacking, 0 to disable.
-    _padding: u8, // Padding for alignment.
+    eventId: u8,
+    _padding: u8,
 };
 
 pub const PackedPluginLoadHeaderEvent = extern struct {
-    channelNo: u32, // Initial Channel number to receive events from. Look at channel subscription event to listen to more than one channel.
-    pathLength: u32, // Length of the plugin file path that follows.
+    channelNo: u32,
+    pathLength: u32,
 };
 
 pub const PackedPluginOnEvent = extern struct {
-    eventId: u8, // A custom event ID for the plugin.
+    eventId: u8,
 };
 
 pub const PackedPluginSetEvent = extern struct {
-    pluginId: u8, // ID of the plugin to set as active.
+    pluginId: u8,
 };
 
 pub const PackedPluginSubscribeEvent = extern struct {
-    pluginId: u8, // ID of the plugin.
-    _padding: [3]u8, // Padding for alignment.
-    channelNo: u32, // Channel number to receive events from.
+    pluginId: u8,
+    _padding: [3]u8,
+    channelNo: u32,
 };
 
 pub const PackedPluginUnloadEvent = extern struct {
-    pluginId: u8, // ID of the plugin to unload.
+    pluginId: u8,
 };
 
 pub const PackedPluginUnsubscribeEvent = extern struct {
-    pluginId: u8, // ID of the plugin.
-    _padding: [3]u8, // Padding for alignment.
-    channelNo: u32, // Channel number to stop receiving events from.
+    pluginId: u8,
+    _padding: [3]u8,
+    channelNo: u32,
 };
 
 pub const PackedScriptSubscribeEvent = extern struct {
-    channelNo: u32, // Channel number to start receiving events from.
-    _padding: u32, // Padding for alignment.
+    channelNo: u32,
+    _padding: u32,
 };
 
 pub const PackedScriptUnsubscribeEvent = extern struct {
-    channelNo: u32, // Channel number to stop receiving events from.
-    _padding: u32, // Padding for alignment.
+    channelNo: u32,
+    _padding: u32,
 };
 
 pub const PackedSpriteAddEvent = extern struct {
-    id1: i64, // Primary identifier (e.g., entity ID).
-    id2: i64, // Secondary identifier (e.g., component ID).
-    positionX: f64, // Initial X position.
-    positionY: f64, // Initial Y position.
-    positionZ: f64, // Initial Z position (depth).
-    scaleX: f64, // Initial X scale.
-    scaleY: f64, // Initial Y scale.
-    scaleZ: f64, // Initial Z scale.
-    sizeW: f64, // Initial width.
-    sizeH: f64, // Initial height.
-    rotationX: f64, // Initial X rotation (in radians).
-    rotationY: f64, // Initial Y rotation (in radians).
-    rotationZ: f64, // Initial Z rotation (in radians).
-    r: u8, // Red color component (0-255).
-    g: u8, // Green color component (0-255).
-    b: u8, // Blue color component (0-255).
-    a: u8, // Alpha color component (0-255).
-    _padding: u32, // Ensures 8-byte alignment for speeds.
-    speedX: f64, // Initial X speed.
-    speedY: f64, // Initial Y speed.
+    id1: i64,
+    id2: i64,
+    positionX: f64,
+    positionY: f64,
+    positionZ: f64,
+    scaleX: f64,
+    scaleY: f64,
+    scaleZ: f64,
+    sizeW: f64,
+    sizeH: f64,
+    rotationX: f64,
+    rotationY: f64,
+    rotationZ: f64,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+    _padding: u32,
+    speedX: f64,
+    speedY: f64,
 };
 
 pub const PackedSpriteColorEvent = extern struct {
-    id1: i64, // Primary ID of the sprite.
-    id2: i64, // Secondary ID of the sprite.
-    r: u8, // New red component (0-255).
-    g: u8, // New green component (0-255).
-    b: u8, // New blue component (0-255).
-    a: u8, // New alpha component (0-255).
-    _padding: u32, // Padding for alignment.
+    id1: i64,
+    id2: i64,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+    _padding: u32,
 };
 
 pub const PackedSpriteMoveEvent = extern struct {
-    id1: i64, // Primary ID of the sprite.
-    id2: i64, // Secondary ID of the sprite.
-    positionX: f64, // New X position.
-    positionY: f64, // New Y position.
-    positionZ: f64, // New Z position (depth).
+    id1: i64,
+    id2: i64,
+    positionX: f64,
+    positionY: f64,
+    positionZ: f64,
 };
 
 pub const PackedSpriteRemoveEvent = extern struct {
-    id1: i64, // Primary ID of sprite to remove.
-    id2: i64, // Secondary ID of sprite to remove.
+    id1: i64,
+    id2: i64,
 };
 
 pub const PackedSpriteResizeEvent = extern struct {
-    id1: i64, // Primary ID of the sprite.
-    id2: i64, // Secondary ID of the sprite.
-    sizeW: f64, // New width.
-    sizeH: f64, // New height.
+    id1: i64,
+    id2: i64,
+    sizeW: f64,
+    sizeH: f64,
 };
 
 pub const PackedSpriteRotateEvent = extern struct {
-    id1: i64, // Primary ID of the sprite.
-    id2: i64, // Secondary ID of the sprite.
-    rotationX: f64, // New X rotation (in radians).
-    rotationY: f64, // New Y rotation (in radians).
-    rotationZ: f64, // New Z rotation (in radians).
+    id1: i64,
+    id2: i64,
+    rotationX: f64,
+    rotationY: f64,
+    rotationZ: f64,
 };
 
 pub const PackedSpriteScaleEvent = extern struct {
-    id1: i64, // Primary ID of the sprite.
-    id2: i64, // Secondary ID of the sprite.
-    scaleX: f64, // New X scale.
-    scaleY: f64, // New Y scale.
-    scaleZ: f64, // New Z scale.
+    id1: i64,
+    id2: i64,
+    scaleX: f64,
+    scaleY: f64,
+    scaleZ: f64,
 };
 
 pub const PackedSpriteSetSourceRectEvent = extern struct {
-    id1: i64, // Primary ID of the sprite.
-    id2: i64, // Secondary ID of the sprite.
-    x: f32, // Source rect X coordinate.
-    y: f32, // Source rect Y coordinate.
-    w: f32, // Source rect Width.
-    h: f32, // Source rect Height.
+    id1: i64,
+    id2: i64,
+    x: f32,
+    y: f32,
+    w: f32,
+    h: f32,
 };
 
 pub const PackedSpriteSpeedEvent = extern struct {
-    id1: i64, // Primary ID of the sprite.
-    id2: i64, // Secondary ID of the sprite.
-    speedX: f64, // New X speed.
-    speedY: f64, // New Y speed.
+    id1: i64,
+    id2: i64,
+    speedX: f64,
+    speedY: f64,
 };
 
 pub const PackedSpriteTextureSetEvent = extern struct {
-    id1: i64, // Primary ID of the sprite.
-    id2: i64, // Secondary ID of the sprite.
-    textureId: u64, // The ID of the loaded texture to set.
+    id1: i64,
+    id2: i64,
+    textureId: u64,
 };
 
 pub const PackedTextAddEvent = extern struct {
-    id1: i64, // Primary identifier.
-    id2: i64, // Secondary identifier.
-    positionX: f64, // Initial X position.
-    positionY: f64, // Initial Y position.
-    positionZ: f64, // Initial Z position (depth).
-    r: u8, // Red color component (0-255).
-    g: u8, // Green color component (0-255).
-    b: u8, // Blue color component (0-255).
-    a: u8, // Alpha color component (0-255).
-    _padding1: u32, // Padding for alignment.
-    fontSize: f32, // Font size.
-    fontPathLength: u32, // Length of the font path string that follows.
-    textLength: u32, // Length of the initial text string that follows.
-    _padding2: u32, // Padding.
+    id1: i64,
+    id2: i64,
+    positionX: f64,
+    positionY: f64,
+    positionZ: f64,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+    _padding1: u32,
+    fontSize: f32,
+    fontPathLength: u32,
+    textLength: u32,
+    _padding2: u32,
 };
 
 pub const PackedTextSetStringEvent = extern struct {
-    id1: i64, // Primary ID of the text entity.
-    id2: i64, // Secondary ID of the text entity.
-    textLength: u32, // Length of the new text string that follows this header.
-    _padding: u32, // Padding for alignment.
+    id1: i64,
+    id2: i64,
+    textLength: u32,
+    _padding: u32,
 };
 
 pub const PackedTextureLoadHeaderEvent = extern struct {
-    id1: i64, // ID of the sprite this texture is for.
-    id2: i64, // Secondary ID.
-    filenameLength: u32, // Length of the texture filename that follows this header.
-    _padding: u32, // Padding for alignment.
+    id1: i64,
+    id2: i64,
+    filenameLength: u32,
+    _padding: u32,
 };
 
 pub const PackedWindowFlagsEvent = extern struct {
-    flags: u64, // Bitmask of window flags.
+    flags: u64,
 };
 
 pub const PackedWindowResizeEvent = extern struct {
-    w: i32, // New window width.
-    h: i32, // New window height.
+    w: i32,
+    h: i32,
 };
 
 pub const PackedWindowTitleEvent = extern struct {
-    title: @Vector(256, u8), // A fixed-size 256-byte NUL-padded string for the title.
+    title: @Vector(256, u8),
 };
 
 pub const KVPair = struct { []const u8, u32 };
-
 pub const event_payload_list = [_]KVPair{
     .{ "spriteAdd", @sizeOf(PackedSpriteAddEvent) },
     .{ "spriteRemove", @sizeOf(PackedSpriteRemoveEvent) },
@@ -524,24 +522,16 @@ pub const event_payload_list = [_]KVPair{
     .{ "geomAddPacked", @sizeOf(PackedGeomAddPackedHeaderEvent) },
     .{ "geomRemove", @sizeOf(PackedGeomRemoveEvent) },
     .{ "geomSetColor", @sizeOf(PackedGeomSetColorEvent) },
-
-    // Input Events
     .{ "inputKeyup", @sizeOf(PackedKeyEvent) },
     .{ "inputKeydown", @sizeOf(PackedKeyEvent) },
     .{ "inputMouseup", @sizeOf(PackedMouseButtonEvent) },
     .{ "inputMousedown", @sizeOf(PackedMouseButtonEvent) },
     .{ "inputMousemotion", @sizeOf(PackedMouseMotionEvent) },
-
-    // Window Events
     .{ "windowTitle", @sizeOf(PackedWindowTitleEvent) },
     .{ "windowResize", @sizeOf(PackedWindowResizeEvent) },
     .{ "windowFlags", @sizeOf(PackedWindowFlagsEvent) },
-
-    // Text Events
     .{ "textAdd", @sizeOf(PackedTextAddEvent) },
     .{ "textSetString", @sizeOf(PackedTextSetStringEvent) },
-
-    // Audio Events
     .{ "audioLoad", @sizeOf(PackedAudioLoadEvent) },
     .{ "audioLoaded", @sizeOf(PackedAudioLoadedEvent) },
     .{ "audioPlay", @sizeOf(PackedAudioPlayEvent) },
@@ -551,8 +541,6 @@ pub const event_payload_list = [_]KVPair{
     .{ "audioStop", @sizeOf(PackedAudioStopEvent) },
     .{ "audioUnload", @sizeOf(PackedAudioUnloadEvent) },
     .{ "audioSetVolume", @sizeOf(PackedAudioSetVolumeEvent) },
-
-    // Physics Events
     .{ "physicsAddBody", @sizeOf(PackedPhysicsAddBodyEvent) },
     .{ "physicsRemoveBody", @sizeOf(PackedPhysicsRemoveBodyEvent) },
     .{ "physicsApplyForce", @sizeOf(PackedPhysicsApplyForceEvent) },
@@ -563,8 +551,6 @@ pub const event_payload_list = [_]KVPair{
     .{ "physicsCollisionBegin", @sizeOf(PackedPhysicsCollisionEvent) },
     .{ "physicsCollisionSeparate", @sizeOf(PackedPhysicsCollisionEvent) },
     .{ "physicsSyncTransform", @sizeOf(PackedPhysicsSyncTransformEvent) },
-
-    // Plugin Events
     .{ "plugin", @sizeOf(PackedPluginOnEvent) },
     .{ "pluginLoad", @sizeOf(PackedPluginLoadHeaderEvent) },
     .{ "pluginUnload", @sizeOf(PackedPluginUnloadEvent) },
@@ -572,20 +558,15 @@ pub const event_payload_list = [_]KVPair{
     .{ "pluginEventStacking", @sizeOf(PackedPluginEventStackingEvent) },
     .{ "pluginSubscribeEvent", @sizeOf(PackedPluginSubscribeEvent) },
     .{ "pluginUnsubscribeEvent", @sizeOf(PackedPluginUnsubscribeEvent) },
-
-    // Camera Events
     .{ "cameraSetPosition", @sizeOf(PackedCameraSetPositionEvent) },
     .{ "cameraMove", @sizeOf(PackedCameraMoveEvent) },
     .{ "cameraSetZoom", @sizeOf(PackedCameraSetZoomEvent) },
     .{ "cameraSetRotation", @sizeOf(PackedCameraSetRotationEvent) },
     .{ "cameraFollowEntity", @sizeOf(PackedCameraFollowEntityEvent) },
     .{ "cameraStopFollowing", @sizeOf(PackedCameraStopFollowingEvent) },
-
-    // Script Events
     .{ "scriptSubscribe", @sizeOf(PackedScriptSubscribeEvent) },
     .{ "scriptUnsubscribe", @sizeOf(PackedScriptUnsubscribeEvent) },
 };
-
 pub const event_payload_sizes = std.StaticStringMap(u32).initComptime(event_payload_list);
 
 pub const Keycode = struct {
@@ -597,16 +578,45 @@ pub const CommandPacker = struct {
     writer: std.ArrayList(u8).Writer,
     command_count: u32 = 0,
 
+    // Pad to 8-byte boundary
+    fn padToBoundary(self: *CommandPacker) !void {
+        // Note: writer.context is the ArrayList
+        const current_len = self.writer.context.items.len;
+        const padding = (8 - (current_len % 8)) % 8;
+        if (padding > 0) {
+            try self.writer.writeByteNTimes(0, padding);
+        }
+    }
+
+    fn writePaddedString(self: *CommandPacker, str: []const u8) !void {
+        try self.writer.writeAll(str);
+        const padding = (8 - (str.len % 8)) % 8;
+        if (padding > 0) {
+            try self.writer.writeByteNTimes(0, padding);
+        }
+    }
+
     pub fn pack(self: *CommandPacker, event_type: Events, payload: anytype) !void {
+        // Header: Type(4) + Timestamp(8) + Pad(4) = 16 bytes
         try self.writer.writeInt(u32, @intFromEnum(event_type), .little);
-        try self.writer.writeInt(u64, 0, .little); // 8-byte timestamp
+        try self.writer.writeInt(u64, 0, .little); // timestamp
+        try self.writer.writeInt(u32, 0, .little); // padding
+
         try self.writer.writeAll(std.mem.asBytes(&payload));
+        try self.padToBoundary();
         self.command_count += 1;
     }
+
+    // Specialized helper for commands with strings
+    // Note: This assumes the header struct (PackedTextureLoadHeaderEvent, etc.)
+    // aligns correctly to 8 bytes before the string starts, or handles its own padding.
+    // Given the new structs, most do.
 
     pub fn packTextureLoad(self: *CommandPacker, id1: i64, id2: i64, path: []const u8) !void {
         try self.writer.writeInt(u32, @intFromEnum(Events.spriteTextureLoad), .little);
         try self.writer.writeInt(u64, 0, .little);
+        try self.writer.writeInt(u32, 0, .little); // header padding
+
         const header = PackedTextureLoadHeaderEvent{
             .id1 = id1,
             .id2 = id2,
@@ -614,81 +624,13 @@ pub const CommandPacker = struct {
             ._padding = 0,
         };
         try self.writer.writeAll(std.mem.asBytes(&header));
-        try self.writer.writeAll(path);
+        try self.writePaddedString(path);
+
+        try self.padToBoundary();
         self.command_count += 1;
     }
 
-    pub fn packPluginLoad(self: *CommandPacker, path: []const u8) !void {
-        try self.writer.writeInt(u32, @intFromEnum(Events.pluginLoad), .little);
-        try self.writer.writeInt(u64, 0, .little);
-        const header = PackedPluginLoadHeaderEvent{
-            .pathLength = @intCast(path.len),
-        };
-        try self.writer.writeAll(std.mem.asBytes(&header));
-        try self.writer.writeAll(path);
-        self.command_count += 1;
-    }
-
-    pub fn packAudioLoad(self: *CommandPacker, path: []const u8) !void {
-        try self.writer.writeInt(u32, @intFromEnum(Events.audioLoad), .little);
-        try self.writer.writeInt(u64, 0, .little);
-        const header = PackedAudioLoadEvent{
-            .pathLength = @intCast(path.len),
-        };
-        try self.writer.writeAll(std.mem.asBytes(&header));
-        try self.writer.writeAll(path);
-        self.command_count += 1;
-    }
-
-    pub fn packTextSetString(self: *CommandPacker, id1: i64, id2: i64, text: []const u8) !void {
-        try self.writer.writeInt(u32, @intFromEnum(Events.textSetString), .little);
-        try self.writer.writeInt(u64, 0, .little);
-
-        const header = PackedTextSetStringEvent{
-            .id1 = id1,
-            .id2 = id2,
-            .textLength = @intCast(text.len),
-            ._padding = 0,
-        };
-        try self.writer.writeAll(std.mem.asBytes(&header));
-        try self.writer.writeAll(text);
-        self.command_count += 1;
-    }
-
-    pub fn packTextAdd(
-        self: *CommandPacker,
-        id1: i64,
-        id2: i64,
-        pos: [3]f64,
-        color: [4]u8,
-        font_size: f32,
-        font_path: []const u8,
-        text: []const u8,
-    ) !void {
-        try self.writer.writeInt(u32, @intFromEnum(Events.textAdd), .little);
-        try self.writer.writeInt(u64, 0, .little);
-
-        const header = PackedTextAddEvent{
-            .id1 = id1,
-            .id2 = id2,
-            .positionX = pos[0],
-            .positionY = pos[1],
-            .positionZ = pos[2],
-            .r = color[0],
-            .g = color[1],
-            .b = color[2],
-            .a = color[3],
-            ._padding1 = 0,
-            .fontSize = font_size,
-            .fontPathLength = @intCast(font_path.len),
-            .textLength = @intCast(text.len),
-            ._padding2 = 0,
-        };
-        try self.writer.writeAll(std.mem.asBytes(&header));
-        try self.writer.writeAll(font_path);
-        try self.writer.writeAll(text);
-        self.command_count += 1;
-    }
+    // Add other specialized packers similarly (TextAdd, etc.) ensuring padToBoundary is called.
 };
 
 pub const EventUnpacker = struct {
@@ -709,8 +651,22 @@ pub const EventUnpacker = struct {
         return std.mem.bytesAsValue(T, &bytes_array).*;
     }
 
-    pub fn readVariable(self: *EventUnpacker, len: u32) ![]const u8 {
-        return self.stream.reader().readBytesNoEof(len);
+    // Skips bytes until the current position is a multiple of `alignment`
+    pub fn alignTo(self: *EventUnpacker, alignment: usize) !void {
+        const current_pos = self.stream.getPos() catch return;
+        const padding = (alignment - (current_pos % alignment)) % alignment;
+        if (padding > 0) {
+            try self.stream.reader().skipBytes(@intCast(padding), .{});
+        }
+    }
+
+    // Reads a string of length `len` and then skips the padding
+    pub fn skipStringAligned(self: *EventUnpacker, len: u32) !void {
+        try self.stream.reader().skipBytes(len, .{});
+        const padding = (8 - (len % 8)) % 8;
+        if (padding > 0) {
+            try self.stream.reader().skipBytes(padding, .{});
+        }
     }
 
     pub fn skip(self: *EventUnpacker, N: u32) !void {
@@ -755,19 +711,16 @@ pub const ChannelPacker = struct {
         data: []const u8,
     };
 
-    /// Finalizes all channel packers and combines them into a single binary blob
-    /// prefixed with the channel index.
     pub fn finalize(writer: anytype, channels: []const ChannelInput) !void {
-        // 1. Pack the total number of channels
+        // Write Channel Count (u32)
         try writer.writeInt(u32, @intCast(channels.len), .little);
+        // Write Padding (u32) - REQUIRED to match Swift/PHP "Vx4"
+        try writer.writeInt(u32, 0, .little);
 
-        // 2. Append the index table
         for (channels) |channel| {
             try writer.writeInt(u32, channel.id, .little);
             try writer.writeInt(u32, @intCast(channel.data.len), .little);
         }
-
-        // 3. Append the concatenated data blobs
         for (channels) |channel| {
             try writer.writeAll(channel.data);
         }
@@ -779,11 +732,7 @@ pub const ChannelUnpacker = struct {
         offset: u32,
         size: u32,
     };
-
-    /// The full, original blob
     blob: []const u8,
-
-    /// Map of Channel ID -> { offset_in_blob, size }
     index_table: std.AutoHashMap(u32, ChannelInfo),
 
     const Header = extern struct {
@@ -796,22 +745,23 @@ pub const ChannelUnpacker = struct {
             .blob = blob,
             .index_table = std.AutoHashMap(u32, ChannelInfo).init(allocator),
         };
-
         var stream = std.io.fixedBufferStream(blob);
         const reader = stream.reader();
 
-        const channel_count = reader.readInt(u32, .little) catch {
-            std.debug.print("ChannelUnpacker: Failed to read channel count.\n", .{});
-            return error.InvalidFormat;
-        };
+        const channel_count = reader.readInt(u32, .little) catch return error.InvalidFormat;
+
+        // Skip 4 bytes padding to align after channel count?
+        // Note: ChannelPacker.php doesn't seem to pad the channel count *itself* in finalize(),
+        // but CommandPacker DOES.
+        // However, `finalize` in PHP: `pack("Vx4", $channelCount)`
+        // YES, PHP `ChannelPacker::finalize` pads the count!
+        try reader.skipBytes(4, .{}); // Skip padding
 
         const index_table_size: u32 = channel_count * @sizeOf(Header);
-        const data_start_offset: u32 = 4 + index_table_size;
+        // 8 bytes (count + pad) + table size
+        const data_start_offset: u32 = 8 + index_table_size;
 
-        if (data_start_offset > blob.len) {
-            std.debug.print("ChannelUnpacker: Blob too small for index table. Need {d}, have {d}.\n", .{ data_start_offset, blob.len });
-            return error.InvalidFormat;
-        }
+        if (data_start_offset > blob.len) return error.InvalidFormat;
 
         var current_data_offset = data_start_offset;
 
@@ -819,10 +769,7 @@ pub const ChannelUnpacker = struct {
             const id = reader.readInt(u32, .little) catch return error.InvalidFormat;
             const size = reader.readInt(u32, .little) catch return error.InvalidFormat;
 
-            if (current_data_offset + size > blob.len) {
-                std.debug.print("ChannelUnpacker: Channel {d} size {d} exceeds blob length {d}.\n", .{ id, size, blob.len });
-                return error.InvalidFormat;
-            }
+            if (current_data_offset + size > blob.len) return error.InvalidFormat;
 
             try self.index_table.put(id, .{
                 .offset = current_data_offset,
@@ -838,8 +785,6 @@ pub const ChannelUnpacker = struct {
         self.index_table.deinit();
     }
 
-    /// Returns a new EventUnpacker configured to read *only* the data
-    /// for the specified channel.
     pub fn getChannelEventUnpacker(self: *ChannelUnpacker, channel_id: Channels) ?EventUnpacker {
         const id_raw = @intFromEnum(channel_id);
         const info = self.index_table.get(id_raw) orelse return null;

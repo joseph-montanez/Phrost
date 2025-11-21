@@ -14,80 +14,105 @@ pub fn processIncomingEvents(
         const blob_len: usize = @intCast(eventsLength);
         const blob_slice = @as([*]const u8, @ptrCast(blob_ptr))[0..blob_len];
 
-        // --- FIXED: Use EventUnpacker directly, not ChannelUnpacker ---
-        // The Swift engine sends a flat [count][events...] blob, not a channel-packed blob.
         var unpacker = ph.EventUnpacker.init(blob_slice);
 
-        // Process events using the *exact same* robust loop as before,
-        // but now it's operating on the *entire* blob.
-        // Read event_count for logging/syncing, but DO NOT use it to control the loop.
+        // 1. Read Command Count
+        // PHP packs this as "Vx4" (UInt32 + 4 bytes padding) to ensure alignment starts at 8.
         const event_count = blk: {
             if (unpacker.read(u32)) |count| {
+                // Skip 4 bytes padding
+                unpacker.skip(4) catch break :blk 0;
                 break :blk count;
             } else |_| {
-                // std.debug.print("Phrost_Update: Received blob length {d} but couldn't read event count ({any}).\n", .{ eventsLength, err });
                 break :blk 0;
             }
         };
-        // std.debug.print("Phrost_Update: Received blob length {d}. Event count: {d}\n", .{ eventsLength, event_count });
-        // **FINAL ROBUST LOOP STRUCTURE**
-        const MIN_EVENT_HEADER_SIZE = 12;
-        while (true) {
-            // Safe Position Check: Check if there is enough room for the minimum header (12 bytes).
-            const current_pos = unpacker.stream.getPos() catch {
-                // If getPos() fails (stream error), we terminate the loop safely.
-                break;
-            };
 
-            // --- MODIFIED: Check against the unpacker's stream length ---
-            if (current_pos + MIN_EVENT_HEADER_SIZE > unpacker.stream.getWritten().len) {
-                // Not enough room for even the header.
-                // We stop.
+        const EVENT_HEADER_SIZE = 16; // 4(Type) + 8(Time) + 4(Pad)
+
+        // Loop based on buffer availability, but conceptually we are processing `event_count` commands.
+        while (true) {
+            const current_pos = unpacker.stream.getPos() catch break;
+
+            // Safety Check: Is there enough data for a header?
+            if (current_pos + EVENT_HEADER_SIZE > unpacker.stream.getWritten().len) {
                 break;
             }
 
-            // Read Header
+            // 2. Read Event Header
             const event_type_raw = unpacker.read(u32) catch break;
             _ = unpacker.read(u64) catch break; // Discard timestamp
+            _ = unpacker.skip(4) catch break; // Discard header padding
 
             const event_type = std.meta.intToEnum(ph.Events, event_type_raw) catch {
-                // This is the garbage event, which we now log and stop at.
-                std.debug.print("Unknown event: {d} at offset {d}. Stopping processing.\n", .{ event_type_raw, current_pos });
-                // --- DIAGNOSTIC BLOCK: Hexdump the *channel* blob ---
-                const dump_start: usize = 0;
-                const dump_end: usize = @min(unpacker.stream.getWritten().len, 400);
-
-                std.debug.print("Phrost_Update: Input Channel Blob. Event count: {d}\n", .{event_count});
-                std.debug.print("--- RAW BLOB DUMP (0 to {d}) ---\n", .{dump_end});
-
-                // Use the thread-safe locking mechanism provided in std.debug/std.Progress
-                const writer = std.debug.lockStderrWriter(&.{});
-                defer std.debug.unlockStderrWriter();
-                ph.hexdump_util(writer, unpacker.stream.getWritten()[dump_start..dump_end]) catch {};
-
-                std.debug.print("--------------------------------\n", .{});
-                // --------------------------------------------------------
+                std.debug.print("Unknown event type: {d} at offset {d}. Stopping.\n", .{ event_type_raw, current_pos });
                 break;
             };
 
-            // Determine Payload Size and Check Bounds for Payload
             const payload_size = ph.event_payload_sizes.get(@tagName(event_type)) orelse {
-                std.debug.print("Unknown payload size for event: {any}. Stopping processing.\n", .{event_type});
+                std.debug.print("Unknown payload size for event: {any}. Stopping.\n", .{event_type});
                 break;
             };
 
+            // Safety Check: Is there enough data for the fixed payload?
             const pos_after_header = unpacker.stream.getPos() catch break;
-
-            // --- MODIFIED: Check against the unpacker's stream length ---
             if (pos_after_header + payload_size > unpacker.stream.getWritten().len) {
-                // Not enough room for the full payload.
-                // End gracefully.
-                std.debug.print("Warning: Insufficient remaining space for payload size {d}. Ending read loop.\n", .{payload_size});
                 break;
             }
 
-            // Process Payload
+            // 3. Process Payload
             switch (event_type) {
+                // --- VARIABLE LENGTH EVENTS (Strings) ---
+                // These have a fixed header, then string data + string padding.
+
+                .spriteTextureLoad => {
+                    const header = unpacker.readPayload(ph.PackedTextureLoadHeaderEvent) catch break;
+                    // Read filename string + padding
+                    unpacker.skipStringAligned(header.filenameLength) catch break;
+                },
+
+                .textAdd => {
+                    const header = unpacker.readPayload(ph.PackedTextAddEvent) catch break;
+                    // Read font path + padding
+                    unpacker.skipStringAligned(header.fontPathLength) catch break;
+                    // Read text + padding
+                    unpacker.skipStringAligned(header.textLength) catch break;
+                },
+
+                .textSetString => {
+                    const header = unpacker.readPayload(ph.PackedTextSetStringEvent) catch break;
+                    // Read text + padding
+                    unpacker.skipStringAligned(header.textLength) catch break;
+                },
+
+                .pluginLoad => {
+                    const header = unpacker.readPayload(ph.PackedPluginLoadHeaderEvent) catch break;
+                    // Read path + padding
+                    unpacker.skipStringAligned(header.pathLength) catch break;
+                },
+
+                .audioLoad => {
+                    // Note: PackedAudioLoadEvent is just u32 length.
+                    // PHP packs it as "Vx4" (8 bytes). But the STRUCT is 4 bytes.
+                    // The `EventUnpacker.alignTo(8)` at the end of loop handles the `x4`.
+                    // However, Swift logic specifically skips 4 bytes inside the case.
+                    // Let's trust the Structs.swift definition (size 4) and let the
+                    // final alignment handle the gap.
+                    const header = unpacker.readPayload(ph.PackedAudioLoadEvent) catch break;
+                    // BUT: Swift explicitly does `offset += 4` *before* reading string.
+                    // This means the padding is INSIDE the payload area effectively.
+                    // To match Swift:
+                    unpacker.skip(4) catch break;
+
+                    unpacker.skipStringAligned(header.pathLength) catch break;
+                },
+
+                .windowTitle => {
+                    // Fixed size buffer in struct, just read normally
+                    unpacker.skip(payload_size) catch break;
+                },
+
+                // --- INPUT ---
                 .inputMousemotion => {
                     const event = unpacker.readPayload(ph.PackedMouseMotionEvent) catch break;
                     world.mouseX = event.x;
@@ -101,50 +126,25 @@ pub fn processIncomingEvents(
                     const event = unpacker.readPayload(ph.PackedKeyEvent) catch break;
                     if (event.keycode == ph.Keycode.A) add_sprites = true;
                 },
-                .spriteTextureSet => {
-                    _ = unpacker.readPayload(ph.PackedSpriteTextureSetEvent) catch break;
-                },
 
-                // Handle window resize event to update world state
+                // --- WINDOW ---
                 .windowResize => {
                     const event = unpacker.readPayload(ph.PackedWindowResizeEvent) catch break;
                     world.windowWidth = event.w;
                     world.windowHeight = event.h;
                 },
-                .windowTitle => {
-                    unpacker.skip(payload_size) catch break;
-                    // This should be the intended struct size
-                },
-
-                // Handle variable payload events by manually skipping the correct size
-                // (Note: Since ph.event_payload_sizes.get() was used, we now just use skip)
-
-                .textSetString => {
-                    // 1. Read the fixed-size header to get the string length
-                    const header = unpacker.readPayload(ph.PackedTextSetStringEvent) catch break;
-                    // 2. Skip the variable length string data
-                    // Note: textLength is u32, so cast to u32 is safe for skip
-                    unpacker.skip(header.textLength) catch break;
-                },
-
-                // --- Also apply this logic to textAdd (another variable length event) ---
-                .textAdd => {
-                    // Read the fixed-size header to get the string length
-
-                    const header =
-                        unpacker.readPayload(ph.PackedTextAddEvent) catch break;
-                    // Skip the font path (variable length)
-                    unpacker.skip(header.fontPathLength) catch break;
-                    // Skip the text content (variable length)
-                    unpacker.skip(header.textLength) catch break;
-                },
 
                 else => |_| {
-                    // Skip any other known, fixed-size event type.
+                    // Standard fixed-size event.
                     unpacker.skip(payload_size) catch break;
                 },
             }
-        } // End of while loop
+
+            // 4. ALIGNMENT
+            // Ensure the stream is aligned to 8 bytes before the next event header starts.
+            // This matches PHP's `padToBoundary()` and Swift's `alignOffset`.
+            unpacker.alignTo(8) catch break;
+        }
     }
     return add_sprites;
 }
