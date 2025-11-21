@@ -27,6 +27,7 @@ This table shows which languages can use which integration mode.
 | **JavaScript** | (Planned) | | ✅ | | |
 | **Rust** | | | | ✅ | |
 | **Zig** | | | | ✅ | |
+| **C** | | | | ✅ | |
 
 
 * * *

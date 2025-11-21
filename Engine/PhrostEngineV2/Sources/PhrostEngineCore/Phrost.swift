@@ -65,14 +65,21 @@ public struct SpriteID: Hashable, Sendable {
 public struct Vec2: Hashable, Sendable {
     public var x: Double
     public var y: Double
-    public init(_ x: Double, _ y: Double) { self.x = x; self.y = y }
+    public init(_ x: Double, _ y: Double) {
+        self.x = x
+        self.y = y
+    }
 }
 
 public struct Vec3: Hashable, Sendable {
     public var x: Double
     public var y: Double
     public var z: Double
-    public init(_ x: Double, _ y: Double, _ z: Double) { self.x = x; self.y = y; self.z = z }
+    public init(_ x: Double, _ y: Double, _ z: Double) {
+        self.x = x
+        self.y = y
+        self.z = z
+    }
 }
 
 public struct ColorRGBA: Hashable, Sendable {
@@ -80,8 +87,11 @@ public struct ColorRGBA: Hashable, Sendable {
     public var g: UInt8
     public var b: UInt8
     public var a: UInt8
-    public init(_ r: UInt8, _ g: UInt8, _ b: UInt8, _ a: UInt8) { 
-        self.r = r; self.g = g; self.b = b; self.a = a 
+    public init(_ r: UInt8, _ g: UInt8, _ b: UInt8, _ a: UInt8) {
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
     }
 }
 
@@ -137,6 +147,14 @@ public final class SpriteManager: @unchecked Sendable {
 
     func addSprite(_ spriteEvent: PackedSpriteAddEvent) {
         let spriteID = SpriteID(id1: spriteEvent.id1, id2: spriteEvent.id2)
+
+        // --- Prevent Duplicates in RenderList ---
+        if sprites[spriteID] != nil {
+            // If the sprite ID already exists, remove the OLD instance from the render list
+            // so we don't draw it twice.
+            renderList.removeAll(where: { $0.id == spriteID })
+        }
+
         let newSprite = Sprite(
             id: spriteID,
             position: Vec3(spriteEvent.positionX, spriteEvent.positionY, spriteEvent.positionZ),
@@ -150,8 +168,7 @@ public final class SpriteManager: @unchecked Sendable {
             font: nil,
             sourceRect: nil
         )
-        
-        // Standard Dictionary Insertion
+
         sprites[spriteID] = newSprite
         renderList.append(newSprite)
         isSortNeeded = true
@@ -162,11 +179,18 @@ public final class SpriteManager: @unchecked Sendable {
             renderList.removeAll(where: { $0.id == id })
             isSortNeeded = true
         } else {
-            print("SpriteManager Warning: Attempted to remove non-existent sprite ID (\(id.id1), \(id.id2))")
+            print(
+                "SpriteManager Warning: Attempted to remove non-existent sprite ID (\(id.id1), \(id.id2))"
+            )
         }
     }
 
     func addRawSprite(_ sprite: Sprite) {
+        // --- Prevent Duplicates in RenderList ---
+        if sprites[sprite.id] != nil {
+            renderList.removeAll(where: { $0.id == sprite.id })
+        }
+
         sprites[sprite.id] = sprite
         renderList.append(sprite)
         isSortNeeded = true
@@ -217,7 +241,9 @@ public final class SpriteManager: @unchecked Sendable {
         if let sprite = sprites[id] {
             sprite.texture = texture
         } else {
-            print("SpriteManager Error: Attempted to set texture for unknown sprite ID (\(id.id1), \(id.id2))")
+            print(
+                "SpriteManager Error: Attempted to set texture for unknown sprite ID (\(id.id1), \(id.id2))"
+            )
         }
     }
 
@@ -250,7 +276,8 @@ public final class SpriteManager: @unchecked Sendable {
 }
 // MARK: - Geometry Manager (Primitive Rendering)
 public enum PrimitiveType: UInt32 {
-    case point = 0, line, rect, fillRect, points, lines, rects, fillRects
+    case point = 0
+    case line, rect, fillRect, points, lines, rects, fillRects
 }
 
 public final class RenderPrimitive: @unchecked Sendable {
@@ -303,7 +330,8 @@ public final class GeometryManager: @unchecked Sendable {
     public func addPoint(event: PackedGeomAddPointEvent) {
         let id = SpriteID(id1: event.id1, id2: event.id2)
         let color = (event.r, event.g, event.b, event.a)
-        let primitive = RenderPrimitive(id: id, type: .point, z: event.z, color: color, isScreenSpace: event.isScreenSpace == 1)
+        let primitive = RenderPrimitive(
+            id: id, type: .point, z: event.z, color: color, isScreenSpace: event.isScreenSpace == 1)
         primitive.points = [SDL_FPoint(x: event.x, y: event.y)]
         addPrimitive(primitive)
     }
@@ -311,8 +339,11 @@ public final class GeometryManager: @unchecked Sendable {
     public func addLine(event: PackedGeomAddLineEvent) {
         let id = SpriteID(id1: event.id1, id2: event.id2)
         let color = (event.r, event.g, event.b, event.a)
-        let primitive = RenderPrimitive(id: id, type: .line, z: event.z, color: color, isScreenSpace: event.isScreenSpace == 1)
-        primitive.points = [SDL_FPoint(x: event.x1, y: event.y1), SDL_FPoint(x: event.x2, y: event.y2)]
+        let primitive = RenderPrimitive(
+            id: id, type: .line, z: event.z, color: color, isScreenSpace: event.isScreenSpace == 1)
+        primitive.points = [
+            SDL_FPoint(x: event.x1, y: event.y1), SDL_FPoint(x: event.x2, y: event.y2),
+        ]
         addPrimitive(primitive)
     }
 
@@ -320,7 +351,8 @@ public final class GeometryManager: @unchecked Sendable {
         let id = SpriteID(id1: event.id1, id2: event.id2)
         let color = (event.r, event.g, event.b, event.a)
         let type: PrimitiveType = isFilled ? .fillRect : .rect
-        let primitive = RenderPrimitive(id: id, type: type, z: event.z, color: color, isScreenSpace: event.isScreenSpace == 1)
+        let primitive = RenderPrimitive(
+            id: id, type: type, z: event.z, color: color, isScreenSpace: event.isScreenSpace == 1)
         primitive.rects = [SDL_FRect(x: event.x, y: event.y, w: event.w, h: event.h)]
         addPrimitive(primitive)
     }
@@ -329,7 +361,8 @@ public final class GeometryManager: @unchecked Sendable {
         guard let type = PrimitiveType(rawValue: header.primitiveType) else { return }
         let id = SpriteID(id1: header.id1, id2: header.id2)
         let color = (header.r, header.g, header.b, header.a)
-        let primitive = RenderPrimitive(id: id, type: type, z: header.z, color: color, isScreenSpace: header.isScreenSpace == 1)
+        let primitive = RenderPrimitive(
+            id: id, type: type, z: header.z, color: color, isScreenSpace: header.isScreenSpace == 1)
 
         switch type {
         case .points, .lines:

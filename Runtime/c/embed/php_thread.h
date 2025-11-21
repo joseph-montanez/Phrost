@@ -6,7 +6,7 @@
 #include "event_packer.h"
 
 #ifdef _WIN32
-#include <winsock2.h> 
+#include <winsock2.h>
 #include <windows.h>
 #endif
 
@@ -25,35 +25,40 @@ typedef struct {
 
 typedef struct {
     // Config
-    bool use_threading; // NEW: Toggle threading vs main thread
+    bool use_threading;
 
     // Threading Primitives
     pthread_t       thread_id;
     pthread_mutex_t mutex;
-    pthread_cond_t  swift_to_php_cond;
-    pthread_cond_t  php_to_swift_cond;
+    pthread_cond_t  swift_to_php_cond; // Signal: "Input Ready"
+    pthread_cond_t  php_to_swift_cond; // Signal: "Output Ready"
 
-    // Data Inputs (Swift -> PHP)
-    const char* swift_event_data;
-    int32_t     swift_event_len;
-    int32_t     swift_frame;
-    double      swift_delta;
-    bool        swift_has_data;
+    // --- PIPELINE BUFFERS ---
 
-    // Outputs (PHP -> Swift)
+    // 1. Input Buffers (Double Buffered)
+    CommandBuffer input_accum; // Swift writes here (Accumulator)
+    CommandBuffer input_proc;  // PHP reads here (Processor)
+
+    int32_t       input_frame; // Latest frame info from Swift
+    double        input_delta;
+
+    int32_t       proc_frame;  // Snapshot of frame info for PHP
+    double        proc_delta;
+
+    bool          input_ready; // True when Accumulator has data
+
+    // 2. Output Buffers (Double Buffered)
     CommandBuffer back_buffer;
     CommandBuffer front_buffer;
+    bool          output_ready;
 
-    bool        php_has_data;
+    // 3. State Flags
     bool        engine_running;
+    bool        first_frame_ready;
+
 } ThreadBridge;
 
-/**
- * @brief Initializes PHP.
- * @param use_threading If true, spawns a worker thread. If false, runs on main thread.
- */
 int php_thread_start(ThreadBridge* bridge, const char* base_path, bool use_threading);
-
 void php_thread_stop(ThreadBridge* bridge);
 
 const char* swift_callback_to_php_bridge(int32_t frame, double delta,
