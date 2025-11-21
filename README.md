@@ -22,7 +22,7 @@ This table shows which languages can use which integration mode.
 
 | Language | Wrapper API | Embedded | Client (Hot-Reload) | Can Write Plugins | Bundle Distribution |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **PHP** | ✅ | ✅ | ✅ | | (coming soon) |
+| **PHP** | ✅ | ✅ | ✅ | | ✅ |
 | **Python** | (WIP) | | ✅ | | |
 | **JavaScript** | (Planned) | | ✅ | | |
 | **Rust** | | | | ✅ | |
