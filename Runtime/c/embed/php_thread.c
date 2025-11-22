@@ -17,8 +17,8 @@ static char g_php_base_path[PATH_MAX];
 
 // --- Helper: PHP Output Wrapper ---
 static size_t phrost_ub_write(const char* str, size_t str_length) {
-    printf("[PHP] %.*s\n", (int)str_length, str);
-    fflush(stdout);
+    // printf("[PHP] %.*s\n", (int)str_length, str);
+    // fflush(stdout);
     return str_length;
 }
 
@@ -42,8 +42,7 @@ static void ensure_buffer_capacity(CommandBuffer* buf, size_t needed_size) {
             buf->data = new_ptr;
             buf->capacity = new_cap;
             memset(buf->data + buf->length, 0, new_cap - buf->capacity);
-        }
-        else {
+        } else {
             printf("[PHP Bridge] CRITICAL: Failed to realloc buffer!\n");
         }
     }
@@ -63,11 +62,8 @@ static void append_input_packet(CommandBuffer* dst, const char* src, int32_t src
     uint32_t* dst_count_ptr = (uint32_t*)dst->data;
     const uint32_t* src_count_ptr = (const uint32_t*)src;
 
-    uint32_t dst_count = *dst_count_ptr;
-    uint32_t src_count = *src_count_ptr;
-
     // Merge counts
-    *dst_count_ptr = dst_count + src_count;
+    *dst_count_ptr = *dst_count_ptr + *src_count_ptr;
 
     // Append Body (Skip 8 byte header of src)
     size_t src_body_len = src_len - 8;
@@ -135,8 +131,7 @@ static void internal_php_run_frame(ThreadBridge* bridge) {
 
     if (bridge->input_proc.length > 0) {
         ZVAL_STRINGL(&z_params[2], bridge->input_proc.data, bridge->input_proc.length);
-    }
-    else {
+    } else {
         ZVAL_EMPTY_STRING(&z_params[2]);
     }
 
@@ -153,8 +148,7 @@ static void internal_php_run_frame(ThreadBridge* bridge) {
             }
         }
         zval_ptr_dtor(&z_retval);
-    }
-    else {
+    } else {
         if (EG(exception)) {
             zend_clear_exception();
             printf("[PHP Bridge] Exception in Phrost_Update\n");
@@ -201,14 +195,16 @@ static void* php_thread_main(void* arg) {
         bridge->input_accum = bridge->input_proc;
         bridge->input_proc = temp;
 
-        // Take snapshot for PHP
         bridge->proc_frame = bridge->input_frame;
         bridge->proc_delta = bridge->input_delta;
 
-        // RESET DELTA ACCUMULATOR
-        // We have consumed the time. Reset to 0 for the next batch of inputs.
+        // RESET Accumulators
         bridge->input_delta = 0.0;
         bridge->input_ready = false;
+        bridge->pending_frames = 0; // [FIX] Reset the throttle counter
+
+        // Signal Swift that we have cleared the queue
+        pthread_cond_signal(&bridge->php_to_swift_cond);
 
         pthread_mutex_unlock(&bridge->mutex);
 
@@ -254,13 +250,13 @@ int php_thread_start(ThreadBridge* bridge, const char* base_path, bool use_threa
     bridge->input_ready = false;
     bridge->output_ready = false;
     bridge->first_frame_ready = false;
+    bridge->pending_frames = 0; // Init throttle
 
     if (use_threading) {
         if (pthread_create(&bridge->thread_id, NULL, php_thread_main, (void*)bridge) != 0) {
             return -1;
         }
-    }
-    else {
+    } else {
         if (!internal_php_init()) return -1;
     }
     return 0;
@@ -274,8 +270,7 @@ void php_thread_stop(ThreadBridge* bridge) {
         pthread_cond_signal(&bridge->swift_to_php_cond);
         pthread_mutex_unlock(&bridge->mutex);
         pthread_join(bridge->thread_id, NULL);
-    }
-    else {
+    } else {
         php_embed_shutdown();
     }
 
@@ -294,6 +289,7 @@ const char* swift_callback_to_php_bridge(int32_t frame, double delta,
     int32_t* outLen, ThreadBridge* bridge)
 {
     if (!bridge->use_threading) {
+        // Sync Fallback
         bridge->proc_frame = frame;
         bridge->proc_delta = delta;
         ensure_buffer_capacity(&bridge->input_proc, eventLen);
@@ -311,11 +307,17 @@ const char* swift_callback_to_php_bridge(int32_t frame, double delta,
     // --- THREADED PIPELINE MODE ---
     pthread_mutex_lock(&bridge->mutex);
 
+    // [FIX] THROTTLING / BACKPRESSURE
+    // If PHP is >3 frames behind, we stop accumulating and wait.
+    // This prevents memory explosion and thrashing.
+    while (bridge->pending_frames > 3 && bridge->engine_running) {
+        pthread_cond_wait(&bridge->php_to_swift_cond, &bridge->mutex);
+    }
+
     // 1. Accumulate Input
     bridge->input_frame = frame;
-
-    // ACCUMULATE DELTA
     bridge->input_delta += delta;
+    bridge->pending_frames++; // Track pending work
 
     append_input_packet(&bridge->input_accum, eventData, eventLen);
     bridge->input_ready = true;
@@ -323,20 +325,49 @@ const char* swift_callback_to_php_bridge(int32_t frame, double delta,
 
     // 2. Output Check
     bool new_data_available = false;
+    // --- FIX: DEADLOCK PREVENTION LOOP ---
+    // While we are throttled, we must STILL process output.
+    // If we don't, PHP freezes waiting for us to take the output,
+    // and never gets around to resetting pending_frames.
+    while (bridge->pending_frames > 3 && bridge->engine_running) {
 
-    if (bridge->output_ready) {
+        // Check for output while waiting
+        if (bridge->output_ready) {
+            CommandBuffer temp = bridge->front_buffer;
+            bridge->front_buffer = bridge->back_buffer;
+            bridge->back_buffer = temp;
+            bridge->output_ready = false;
+
+            // Unblock PHP so it can process the pending frames!
+            pthread_cond_signal(&bridge->swift_to_php_cond);
+
+            new_data_available = true;
+        }
+
+        // Wait for signal (PHP signals when output is ready OR when pending_frames is reset)
+        pthread_cond_wait(&bridge->php_to_swift_cond, &bridge->mutex);
+    }
+
+    // 1. Accumulate Input (Now safe to proceed)
+    bridge->input_frame = frame;
+    bridge->input_delta += delta;
+    bridge->pending_frames++;
+
+    append_input_packet(&bridge->input_accum, eventData, eventLen);
+    bridge->input_ready = true;
+    pthread_cond_signal(&bridge->swift_to_php_cond);
+
+    // 2. Standard Output Check (If we didn't already get it in the loop)
+    if (!new_data_available && bridge->output_ready) {
         CommandBuffer temp = bridge->front_buffer;
         bridge->front_buffer = bridge->back_buffer;
         bridge->back_buffer = temp;
-        bridge->output_ready = false; // Consumed
-
-        // Signal PHP that back buffer is free
+        bridge->output_ready = false;
         pthread_cond_signal(&bridge->swift_to_php_cond);
-
         new_data_available = true;
     }
 
-    // 3. First Frame Sync (Blocking)
+    // 3. First Frame Sync
     if (!bridge->first_frame_ready) {
         while (!bridge->output_ready && bridge->engine_running) {
             pthread_cond_wait(&bridge->php_to_swift_cond, &bridge->mutex);
@@ -347,7 +378,6 @@ const char* swift_callback_to_php_bridge(int32_t frame, double delta,
         bridge->back_buffer = temp;
         bridge->output_ready = false;
         pthread_cond_signal(&bridge->swift_to_php_cond);
-
         new_data_available = true;
     }
 
@@ -358,14 +388,11 @@ const char* swift_callback_to_php_bridge(int32_t frame, double delta,
         return NULL;
     }
 
-    // --- RETURN 0 IF STALE ---
     if (new_data_available) {
         *outLen = bridge->front_buffer.length;
-    }
-    else {
-        *outLen = 0; // Tell Swift: "Keep rendering, but don't run any commands"
+    } else {
+        *outLen = 0;
     }
 
-    // Always return the pointer, it's valid memory, but length dictates usage.
     return bridge->front_buffer.data;
 }

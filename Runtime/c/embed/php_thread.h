@@ -39,6 +39,7 @@ typedef struct {
     CommandBuffer input_accum; // Swift writes here (Accumulator)
     CommandBuffer input_proc;  // PHP reads here (Processor)
 
+    int32_t       pending_frames;
     int32_t       input_frame; // Latest frame info from Swift
     double        input_delta;
 
