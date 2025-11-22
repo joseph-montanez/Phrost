@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Phrost | Next-Gen Game Engine</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap");
+
+            :root {
+                --frost-glow: 0 0 20px rgba(34, 211, 238, 0.15);
+                --frost-border: rgba(34, 211, 238, 0.2);
+            }
+
+            body {
+                font-family: "Inter", sans-serif;
+                background-color: #030508; /* Deep black/blue */
+                color: #e0f2fe;
+                overflow-x: hidden;
+            }
+
+            .font-mono {
+                font-family: "JetBrains Mono", monospace;
+            }
+
+            /* Custom Scrollbar */
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: #0a0a0a;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #1e293b;
+                border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #22d3ee;
+            }
+
+            /* Glassmorphism Utilities */
+            .glass-panel {
+                background: rgba(15, 23, 42, 0.6);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid var(--frost-border);
+            }
+
+            .glass-card {
+                background: linear-gradient(
+                    145deg,
+                    rgba(15, 23, 42, 0.6) 0%,
+                    rgba(15, 23, 42, 0.3) 100%
+                );
+                backdrop-filter: blur(8px);
+                border: 1px solid rgba(34, 211, 238, 0.1);
+                transition: all 0.3s ease;
+            }
+
+            .glass-card:hover {
+                border-color: rgba(34, 211, 238, 0.5);
+                box-shadow: var(--frost-glow);
+                transform: translateY(-5px);
+            }
+
+            /* Gradient Text */
+            .text-frost {
+                background: linear-gradient(
+                    135deg,
+                    #cffafe 0%,
+                    #22d3ee 50%,
+                    #0ea5e9 100%
+                );
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+
+            /* Animation classes */
+            .fade-in-up {
+                animation: fadeInUp 0.8s ease-out forwards;
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            .delay-100 {
+                animation-delay: 0.1s;
+            }
+            .delay-200 {
+                animation-delay: 0.2s;
+            }
+            .delay-300 {
+                animation-delay: 0.3s;
+            }
+
+            @keyframes fadeInUp {
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .code-cursor {
+                display: inline-block;
+                width: 8px;
+                height: 18px;
+                background-color: #22d3ee;
+                animation: blink 1s step-end infinite;
+                vertical-align: middle;
+            }
+
+            @keyframes blink {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0;
+                }
+            }
+        </style>
+    </head>
+    <body class="relative">
+        <!-- Background Particles Canvas -->
+        <canvas
+            id="frostCanvas"
+            class="fixed top-0 left-0 w-full h-full pointer-events-none z-0"
+        ></canvas>
+
+        <!-- Navbar -->
+        <nav
+            class="fixed w-full z-50 top-0 transition-all duration-300 border-b border-transparent"
+            id="navbar"
+        >
+            <div
+                class="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
+            ></div>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+                <div class="flex justify-between items-center h-20">
+                    <!-- Logo -->
+                    <div
+                        class="flex-shrink-0 flex items-center gap-2 cursor-pointer"
+                        onclick="window.scrollTo(0,0)"
+                    >
+                        <!-- Ice Crystal Icon SVG -->
+                        <svg
+                            class="w-8 h-8 text-cyan-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 3v18M3 12h18M7.5 7.5L16.5 16.5M16.5 7.5L7.5 16.5"
+                            ></path>
+                        </svg>
+                        <span
+                            class="font-bold text-2xl tracking-wider text-white"
+                            >PHROST</span
+                        >
+                    </div>
+
+                    <!-- Desktop Menu -->
+                    <div class="hidden md:flex items-center space-x-8">
+                        <a
+                            href="#features"
+                            class="text-slate-300 hover:text-cyan-400 transition-colors text-sm font-medium tracking-wide"
+                            >FEATURES</a
+                        >
+                        <a
+                            href="#publish"
+                            class="text-slate-300 hover:text-cyan-400 transition-colors text-sm font-medium tracking-wide"
+                            >PUBLISH</a
+                        >
+                        <a
+                            href="#docs"
+                            class="text-slate-300 hover:text-cyan-400 transition-colors text-sm font-medium tracking-wide"
+                            >DOCS</a
+                        >
+                        <a
+                            href="#download"
+                            class="px-5 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all duration-300 font-semibold text-sm"
+                        >
+                            GET EARLY ACCESS
+                        </a>
+                    </div>
+
+                    <!-- Mobile menu button -->
+                    <div class="md:hidden flex items-center">
+                        <button
+                            id="mobile-menu-btn"
+                            class="text-slate-300 hover:text-white focus:outline-none"
+                        >
+                            <svg
+                                class="h-8 w-8"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 6h16M4 12h16M4 18h16"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Menu Panel -->
+            <div
+                id="mobile-menu"
+                class="md:hidden hidden absolute w-full glass-panel border-t border-slate-800"
+            >
+                <div class="px-4 pt-2 pb-6 space-y-1">
+                    <a
+                        href="#features"
+                        class="block px-3 py-3 rounded-md text-base font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50"
+                        >Features</a
+                    >
+                    <a
+                        href="#showcase"
+                        class="block px-3 py-3 rounded-md text-base font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50"
+                        >Showcase</a
+                    >
+                    <a
+                        href="#docs"
+                        class="block px-3 py-3 rounded-md text-base font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50"
+                        >Documentation</a
+                    >
+                    <a
+                        href="#download"
+                        class="block mt-4 px-3 py-3 text-center rounded-md font-bold bg-cyan-500 text-slate-900"
+                        >Get Early Access</a
+                    >
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section
+            class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-4 sm:px-6 lg:px-8 z-10"
+        >
+            <div class="max-w-7xl mx-auto text-center">
+                <div
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel mb-8 fade-in-up"
+                >
+                    <span
+                        class="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse"
+                    ></span>
+                    <span class="text-xs font-mono text-cyan-200"
+                        >v0.0.2 ALPHA IS LIVE</span
+                    >
+                </div>
+
+                <h1
+                    class="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight mb-6 fade-in-up delay-100"
+                >
+                    Build Cool.<br />
+                    <span class="text-frost">Stay Frosty.</span>
+                </h1>
+
+                <p
+                    class="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-slate-400 fade-in-up delay-200"
+                >
+                    Phrost is a language-agnostic game engine built for dynamic
+                    workflows. Pipeline your events across threads and write
+                    game logic in PHP, Python, or Lua with instant
+                    hot-reloading.
+                </p>
+
+                <div
+                    class="mt-10 flex justify-center gap-4 fade-in-up delay-300 flex-col sm:flex-row"
+                >
+                    <a
+                        href="#download"
+                        class="px-8 py-4 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold text-lg transition-all shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:shadow-[0_0_30px_rgba(34,211,238,0.6)]"
+                    >
+                        Download SDK
+                    </a>
+                    <a
+                        href="#docs"
+                        class="px-8 py-4 rounded-lg glass-panel text-cyan-100 hover:text-white hover:border-cyan-400 border border-slate-700 font-medium text-lg transition-all"
+                    >
+                        Architecture Docs
+                    </a>
+                </div>
+
+                <!-- Code Snippet Preview -->
+                <div
+                    class="mt-20 mx-auto max-w-4xl glass-panel rounded-xl overflow-hidden shadow-2xl border border-slate-800 text-left transform hover:scale-[1.01] transition-transform duration-500 fade-in-up delay-300"
+                >
+                    <div
+                        class="flex items-center gap-2 px-4 py-3 bg-slate-900/90 border-b border-slate-800"
+                    >
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span class="ml-4 text-xs text-slate-500 font-mono"
+                            >WarriorBody.php</span
+                        >
+                    </div>
+                    <div class="p-6 bg-[#050911] overflow-x-auto">
+                        <pre
+                            class="font-mono text-sm md:text-base leading-relaxed"
+                        >
+<span class="text-purple-400">&lt;?php</span>
+
+<span class="text-purple-400">namespace</span> Game;
+
+<span class="text-purple-400">use</span> Phrost\ChannelPacker;
+<span class="text-purple-400">use</span> Phrost\Id;
+<span class="text-purple-400">use</span> Phrost\Keycode;
+<span class="text-purple-400">use</span> Phrost\PhysicsBody;
+
+<span class="text-cyan-400">class</span> <span class="text-yellow-300">WarriorBody</span> <span class="text-cyan-400">extends</span> <span class="text-yellow-300">PhysicsBody</span>
+{
+    <span class="text-cyan-400">public</span> <span class="text-cyan-400">bool</span> <span class="text-blue-300">$isOnGround</span> = <span class="text-purple-400">false</span>;
+
+    <span class="text-slate-500">//...</span>
+
+    <span class="text-slate-500">/**
+     * Runs every frame to process input and update player state.
+     *
+     * @param array &amp;$inputState The global input state (passed by reference).
+     * @param ChannelPacker $packer The binary event packer.
+     */</span>
+    <span class="text-cyan-400">public function</span> <span class="text-yellow-300">update</span>(<span class="text-cyan-400">array</span> &<span class="text-blue-300">$inputState</span>, <span class="text-yellow-300">ChannelPacker</span> <span class="text-blue-300">$packer</span>): <span class="text-cyan-400">void</span>
+    {
+        <span class="text-blue-300">$moveSpeed</span> = <span class="text-orange-300">250.0</span>; <span class="text-slate-500">// Target horizontal speed</span>
+        <span class="text-blue-300">$targetVx</span> = <span class="text-orange-300">0.0</span>; <span class="text-slate-500">// Default to no horizontal movement</span>
+
+        <span class="text-slate-500">// Check for left/right input</span>
+        <span class="text-purple-400">if</span> (<span class="text-cyan-400">isset</span>(<span class="text-blue-300">$inputState</span>[Keycode::LEFT])) {
+            <span class="text-blue-300">$targetVx</span> = -<span class="text-blue-300">$moveSpeed</span>;
+        }
+        <span class="text-purple-400">if</span> (<span class="text-cyan-400">isset</span>(<span class="text-blue-300">$inputState</span>[Keycode::RIGHT])) {
+            <span class="text-blue-300">$targetVx</span> = <span class="text-blue-300">$moveSpeed</span>;
+        }
+
+        <span class="text-slate-500">// Get the current vertical velocity</span>
+        <span class="text-blue-300">$currentV</span> = <span class="text-red-400">$this</span>->getVelocity();
+        <span class="text-blue-300">$currentVy</span> = <span class="text-blue-300">$currentV</span>[<span class="text-green-300">"y"</span>];
+
+        <span class="text-slate-500">// --- Jumping (Still uses Impulse) ---</span>
+        <span class="text-purple-400">if</span> (<span class="text-cyan-400">isset</span>(<span class="text-blue-300">$inputState</span>[Keycode::UP])) {
+            <span class="text-purple-400">if</span> (<span class="text-red-400">$this</span>->isOnGround) {
+                <span class="text-cyan-400">echo</span> <span class="text-green-300">"Jumping!\n"</span>;
+                <span class="text-slate-500">// 'self' is now $this</span>
+                <span class="text-red-400">$this</span>->applyImpulse(<span class="text-blue-300">$packer</span>, <span class="text-orange-300">0.0</span>, -<span class="text-orange-300">400.0</span>);
+                <span class="text-red-400">$this</span>->isOnGround = <span class="text-purple-400">false</span>; <span class="text-slate-500">// Set state</span>
+
+                <span class="text-slate-500">// "Consume" the jump input from the referenced array</span>
+                <span class="text-cyan-400">unset</span>(<span class="text-blue-300">$inputState</span>[Keycode::UP]);
+            } <span class="text-purple-400">else</span> {
+                <span class="text-cyan-400">echo</span> <span class="text-green-300">"No Jumping!\n"</span>;
+            }
+        }
+
+        <span class="text-slate-500">// --- Set the Final Velocity ---</span>
+        <span class="text-red-400">$this</span>->setVelocity(<span class="text-blue-300">$targetVx</span>, <span class="text-blue-300">$currentVy</span>);
+
+        <span class="text-slate-500">// Finally, pack any events this body generated (setVelocity, applyImpulse)</span>
+        <span class="text-red-400">$this</span>->packDirtyEvents(<span class="text-blue-300">$packer</span>);
+    }<span class="code-cursor"></span>
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="py-24 relative z-10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">
+                        Designed for
+                        <span class="text-cyan-400">Dynamic Flexibility</span>
+                    </h2>
+                    <p class="text-slate-400 max-w-2xl mx-auto">
+                        A modern architecture that decouples logic from
+                        rendering, allowing you to use the best tools for the
+                        job.
+                    </p>
+                </div>
+
+                <div
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                >
+                    <!-- Feature 1 -->
+                    <div class="glass-card p-8 rounded-2xl">
+                        <div
+                            class="w-12 h-12 bg-cyan-500/10 rounded-lg flex items-center justify-center mb-6 border border-cyan-500/20"
+                        >
+                            <svg
+                                class="w-6 h-6 text-cyan-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">
+                            Language Agnostic
+                        </h3>
+                        <p class="text-slate-400 leading-relaxed">
+                            Don't fight the engine. Implement your game logic in
+                            dynamic languages like PHP, Python, or Lua without
+                            sacrificing the core engine loop.
+                        </p>
+                    </div>
+
+                    <!-- Feature 2 -->
+                    <div class="glass-card p-8 rounded-2xl">
+                        <div
+                            class="w-12 h-12 bg-cyan-500/10 rounded-lg flex items-center justify-center mb-6 border border-cyan-500/20"
+                        >
+                            <svg
+                                class="w-6 h-6 text-cyan-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">
+                            Live Hot-Reload
+                        </h3>
+                        <p class="text-slate-400 leading-relaxed">
+                            Iterate instantly. Update your scripts and assets
+                            while the game is running. No compilation times, no
+                            restarting.
+                        </p>
+                    </div>
+
+                    <!-- Feature 3 -->
+                    <div class="glass-card p-8 rounded-2xl">
+                        <div
+                            class="w-12 h-12 bg-cyan-500/10 rounded-lg flex items-center justify-center mb-6 border border-cyan-500/20"
+                        >
+                            <svg
+                                class="w-6 h-6 text-cyan-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">
+                            Event Pipelining
+                        </h3>
+                        <p class="text-slate-400 leading-relaxed">
+                            A robust threaded event system queues and pipelines
+                            logic updates, ensuring your scripts run smoothly
+                            alongside the renderer.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Section -->
+        <section
+            class="py-20 border-y border-slate-800 bg-slate-900/50 z-10 relative"
+        >
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                    <div>
+                        <div class="text-4xl font-bold text-white mb-2">
+                            Instant
+                        </div>
+                        <div
+                            class="text-slate-500 text-sm uppercase tracking-wider"
+                        >
+                            Hot Reload
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-4xl font-bold text-white mb-2">
+                            Threaded
+                        </div>
+                        <div
+                            class="text-slate-500 text-sm uppercase tracking-wider"
+                        >
+                            Event Queue
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-4xl font-bold text-white mb-2">
+                            Multi-API
+                        </div>
+                        <div
+                            class="text-slate-500 text-sm uppercase tracking-wider"
+                        >
+                            Renderer
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-4xl font-bold text-white mb-2">
+                            Open
+                        </div>
+                        <div
+                            class="text-slate-500 text-sm uppercase tracking-wider"
+                        >
+                            Source
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA / Download -->
+        <section id="download" class="py-24 relative z-10">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <div
+                    class="glass-panel p-12 rounded-3xl border border-cyan-500/30 relative overflow-hidden"
+                >
+                    <!-- Decorative glow behind -->
+                    <div
+                        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/20 blur-[80px] rounded-full"
+                    ></div>
+
+                    <h2
+                        class="text-3xl md:text-5xl font-bold text-white mb-6 relative"
+                    >
+                        Ready to break the ice?
+                    </h2>
+                    <p class="text-lg text-slate-300 mb-10 relative">
+                        Join us developers creating the next generation of 2D
+                        games with Phrost.
+                    </p>
+
+                    <div
+                        class="flex flex-col sm:flex-row justify-center items-center gap-4 relative"
+                    >
+                        <!-- Main Dynamic Download Button -->
+                        <a
+                            id="download-link"
+                            href="https://nightly.link/joseph-montanez/Phrost/workflows/windows-x64-build.yml/master/Phrost-Windows-x64.zip"
+                            class="w-full sm:w-auto px-8 py-4 bg-white text-slate-900 rounded-lg font-bold hover:bg-cyan-50 transition-colors flex items-center justify-center gap-2 group"
+                        >
+                            <svg
+                                class="w-5 h-5 text-slate-900"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                ></path>
+                            </svg>
+                            <span id="download-text"
+                                >Download for Windows (x64)</span
+                            >
+                        </a>
+
+                        <a
+                            href="https://github.com/joseph-montanez/Phrost"
+                            target="_blank"
+                            class="w-full sm:w-auto px-8 py-4 bg-slate-800 text-white border border-slate-700 rounded-lg font-bold hover:bg-slate-700 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12c0-5.523-4.477-10-10-10z"
+                                />
+                            </svg>
+                            GitHub Source
+                        </a>
+                    </div>
+
+                    <!-- Manual Architecture Links -->
+                    <div class="mt-6 text-sm text-slate-400 relative">
+                        <p class="mb-2">Manual Selection:</p>
+                        <div class="flex justify-center gap-4">
+                            <a
+                                href="https://nightly.link/joseph-montanez/Phrost/workflows/windows-x64-build.yml/master/Phrost-Windows-x64.zip"
+                                class="text-cyan-400 hover:text-cyan-300 hover:underline"
+                                >Windows x64</a
+                            >
+                            <span class="text-slate-600">|</span>
+                            <a
+                                href="https://nightly.link/joseph-montanez/Phrost/workflows/windows-arm-build.yml/master/Phrost-Windows-Arm64.zip"
+                                class="text-cyan-400 hover:text-cyan-300 hover:underline"
+                                >Windows Arm64</a
+                            >
+                        </div>
+                    </div>
+                    <p class="mt-4 text-slate-600 text-xs">
+                        Requires Windows 10/11, macOS or Linux (Ubuntu 20.04+)
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-black border-t border-slate-900 py-12 relative z-10">
+            <div
+                class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center"
+            >
+                <div class="flex items-center gap-2 mb-4 md:mb-0">
+                    <svg
+                        class="w-6 h-6 text-cyan-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 3v18M3 12h18M7.5 7.5L16.5 16.5M16.5 7.5L7.5 16.5"
+                        ></path>
+                    </svg>
+                    <span class="text-slate-300 font-bold text-lg"
+                        >PHROST ENGINE</span
+                    >
+                </div>
+                <div class="flex gap-8 text-slate-500 text-sm">
+                    <a href="#" class="hover:text-cyan-400 transition-colors"
+                        >Privacy</a
+                    >
+                    <a href="#" class="hover:text-cyan-400 transition-colors"
+                        >Terms</a
+                    >
+                    <a href="#" class="hover:text-cyan-400 transition-colors"
+                        >Twitter</a
+                    >
+                    <a href="#" class="hover:text-cyan-400 transition-colors"
+                        >Discord</a
+                    >
+                </div>
+                <div class="mt-4 md:mt-0 text-slate-600 text-sm">
+                    &copy; 2025 Phrost Technologies.
+                </div>
+            </div>
+        </footer>
+
+        <script>
+            // --- Navbar Scroll Effect ---
+            window.addEventListener("scroll", () => {
+                const nav = document.getElementById("navbar");
+                if (window.scrollY > 20) {
+                    nav.classList.add("border-slate-800");
+                } else {
+                    nav.classList.remove("border-slate-800");
+                }
+            });
+
+            // --- Mobile Menu Toggle ---
+            const mobileBtn = document.getElementById("mobile-menu-btn");
+            const mobileMenu = document.getElementById("mobile-menu");
+            let isMenuOpen = false;
+
+            mobileBtn.addEventListener("click", () => {
+                isMenuOpen = !isMenuOpen;
+                if (isMenuOpen) {
+                    mobileMenu.classList.remove("hidden");
+                } else {
+                    mobileMenu.classList.add("hidden");
+                }
+            });
+
+            // --- Frost Particle System ---
+            const canvas = document.getElementById("frostCanvas");
+            const ctx = canvas.getContext("2d");
+
+            let width, height;
+            let particles = [];
+
+            function resize() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+
+            window.addEventListener("resize", resize);
+            resize();
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+
+                reset() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height - height; // Start above
+                    this.size = Math.random() * 2 + 0.5;
+                    this.speed = Math.random() * 1 + 0.2;
+                    this.opacity = Math.random() * 0.5 + 0.1;
+                    this.drift = (Math.random() - 0.5) * 0.5;
+                }
+
+                update() {
+                    this.y += this.speed;
+                    this.x += this.drift;
+
+                    if (this.y > height) {
+                        this.reset();
+                        this.y = -10; // Reset to just above top
+                    }
+                }
+
+                draw() {
+                    ctx.fillStyle = `rgba(34, 211, 238, ${this.opacity})`; // Cyan color
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function initParticles() {
+                particles = [];
+                const particleCount = Math.min(width * 0.1, 150); // Responsive count
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push(new Particle());
+                    // Randomize initial Y so they don't all fall at once
+                    particles[i].y = Math.random() * height;
+                }
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+
+                // Add a very subtle gradient overlay for atmosphere
+                const gradient = ctx.createLinearGradient(0, 0, 0, height);
+                gradient.addColorStop(0, "rgba(0,0,0,0)");
+                gradient.addColorStop(1, "rgba(34, 211, 238, 0.02)");
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+
+                particles.forEach((p) => {
+                    p.update();
+                    p.draw();
+                });
+                requestAnimationFrame(animate);
+            }
+
+            initParticles();
+            animate();
+
+            // Re-init on significant resize to adjust density
+            let resizeTimeout;
+            window.addEventListener("resize", () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(initParticles, 200);
+            });
+
+            // --- Auto-Detect Windows Architecture ---
+            (function () {
+                const x64Link =
+                    "https://nightly.link/joseph-montanez/Phrost/workflows/windows-x64-build.yml/master/Phrost-Windows-x64.zip";
+                const armLink =
+                    "https://nightly.link/joseph-montanez/Phrost/workflows/windows-arm-build.yml/master/Phrost-Windows-Arm64.zip";
+
+                const btn = document.getElementById("download-link");
+                const btnText = document.getElementById("download-text");
+
+                function setArm() {
+                    btn.href = armLink;
+                    btnText.innerText = "Download for Windows (Arm64)";
+                    console.log("Phrost: Detected ARM architecture.");
+                }
+
+                // 1. Modern API (Chrome/Edge 90+) - Most accurate
+                if (
+                    navigator.userAgentData &&
+                    navigator.userAgentData.getHighEntropyValues
+                ) {
+                    navigator.userAgentData
+                        .getHighEntropyValues(["architecture", "bitness"])
+                        .then((ua) => {
+                            if (ua.architecture === "arm") {
+                                setArm();
+                            }
+                        })
+                        .catch((e) => console.log(e));
+                }
+                // 2. Legacy User Agent Detection
+                else if (/ARM64|AArch64/i.test(navigator.userAgent)) {
+                    setArm();
+                }
+                // Default is already x64, so no action needed otherwise.
+            })();
+        </script>
+    </body>
+</html>

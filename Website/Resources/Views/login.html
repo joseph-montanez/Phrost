@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sign In | Phrost Engine</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap");
+
+            :root {
+                --frost-glow: 0 0 20px rgba(34, 211, 238, 0.15);
+                --frost-border: rgba(34, 211, 238, 0.2);
+            }
+
+            body {
+                font-family: "Inter", sans-serif;
+                background-color: #030508;
+                color: #e0f2fe;
+                overflow-x: hidden;
+            }
+
+            /* Glassmorphism */
+            .glass-panel {
+                background: rgba(15, 23, 42, 0.6);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid var(--frost-border);
+            }
+
+            .input-glass {
+                background: rgba(2, 6, 23, 0.5);
+                border: 1px solid rgba(51, 65, 85, 0.5);
+                color: white;
+                transition: all 0.3s ease;
+            }
+
+            .input-glass:focus {
+                outline: none;
+                border-color: #22d3ee;
+                box-shadow: 0 0 15px rgba(34, 211, 238, 0.1);
+                background: rgba(2, 6, 23, 0.8);
+            }
+
+            /* Animated Form Toggle */
+            .form-container {
+                transition: all 0.5s ease-in-out;
+            }
+
+            .hidden-form {
+                display: none;
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            .visible-form {
+                display: block;
+                opacity: 1;
+                transform: translateY(0);
+                animation: fadeIn 0.4s ease-out forwards;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Custom Checkbox */
+            .peer:checked + .custom-checkbox {
+                background-color: #22d3ee;
+                border-color: #22d3ee;
+            }
+            .peer:checked + .custom-checkbox svg {
+                display: block;
+            }
+        </style>
+    </head>
+    <body class="relative min-h-screen flex flex-col">
+        <!-- Background Particles -->
+        <canvas
+            id="frostCanvas"
+            class="fixed top-0 left-0 w-full h-full pointer-events-none z-0"
+        ></canvas>
+
+        <!-- Simplified Nav -->
+        <nav class="absolute w-full z-50 top-0 p-6">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <a
+                    href="index.html"
+                    class="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                >
+                    <svg
+                        class="w-8 h-8 text-cyan-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 3v18M3 12h18M7.5 7.5L16.5 16.5M16.5 7.5L7.5 16.5"
+                        ></path>
+                    </svg>
+                    <span class="font-bold text-xl tracking-wider text-white"
+                        >PHROST</span
+                    >
+                </a>
+                <a
+                    href="index.html"
+                    class="text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-1"
+                >
+                    <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                        />
+                    </svg>
+                    Back to Home
+                </a>
+            </div>
+        </nav>
+
+        <!-- Auth Container -->
+        <main
+            class="flex-grow flex items-center justify-center relative z-10 px-4 py-20"
+        >
+            <div class="w-full max-w-md">
+                <div
+                    class="glass-panel rounded-2xl p-1 overflow-hidden shadow-2xl shadow-cyan-900/20"
+                >
+                    <!-- Toggle Switch -->
+                    <div
+                        class="grid grid-cols-2 p-1 bg-slate-900/50 rounded-t-xl"
+                    >
+                        <button
+                            id="tab-login"
+                            onclick="switchTab('login')"
+                            class="py-3 text-sm font-bold rounded-lg bg-slate-800 text-white shadow-lg transition-all"
+                        >
+                            Sign In
+                        </button>
+                        <button
+                            id="tab-register"
+                            onclick="switchTab('register')"
+                            class="py-3 text-sm font-bold rounded-lg text-slate-400 hover:text-white transition-all"
+                        >
+                            Create Account
+                        </button>
+                    </div>
+
+                    <div class="p-8">
+                        <!-- LOGIN FORM -->
+                        <div id="login-form" class="visible-form">
+                            <h2 class="text-2xl font-bold text-white mb-6">
+                                Welcome back
+                            </h2>
+
+                            <form
+                                class="space-y-4"
+                                onsubmit="event.preventDefault(); window.location.href='publish.html'"
+                            >
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider"
+                                        >Email</label
+                                    >
+                                    <input
+                                        type="email"
+                                        class="w-full px-4 py-3 rounded-lg input-glass"
+                                        placeholder="dev@phrost.engine"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider flex justify-between"
+                                    >
+                                        <span>Password</span>
+                                        <a
+                                            href="#"
+                                            class="text-cyan-400 hover:text-cyan-300 normal-case"
+                                            >Forgot?</a
+                                        >
+                                    </label>
+                                    <input
+                                        type="password"
+                                        class="w-full px-4 py-3 rounded-lg input-glass"
+                                        placeholder="••••••••"
+                                        required
+                                    />
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    <label
+                                        class="cursor-pointer relative flex items-center gap-2"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            class="peer hidden"
+                                        />
+                                        <div
+                                            class="custom-checkbox w-4 h-4 border border-slate-600 rounded bg-slate-900/50 flex items-center justify-center transition-all"
+                                        >
+                                            <svg
+                                                class="w-3 h-3 text-black hidden"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="3"
+                                                    d="M5 13l4 4L19 7"
+                                                ></path>
+                                            </svg>
+                                        </div>
+                                        <span
+                                            class="text-sm text-slate-400 select-none"
+                                            >Remember me</span
+                                        >
+                                    </label>
+                                </div>
+
+                                <button
+                                    class="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:shadow-[0_0_25px_rgba(34,211,238,0.5)] mt-4"
+                                >
+                                    Sign In
+                                </button>
+                            </form>
+
+                            <div class="mt-6">
+                                <div class="relative">
+                                    <div
+                                        class="absolute inset-0 flex items-center"
+                                    >
+                                        <div
+                                            class="w-full border-t border-slate-700"
+                                        ></div>
+                                    </div>
+                                    <div
+                                        class="relative flex justify-center text-sm"
+                                    >
+                                        <span
+                                            class="px-2 bg-[#0a1120] text-slate-500"
+                                            >Or continue with</span
+                                        >
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 grid grid-cols-2 gap-3">
+                                    <button
+                                        class="flex items-center justify-center gap-2 py-2.5 border border-slate-700 rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium text-slate-300"
+                                    >
+                                        <svg
+                                            class="w-5 h-5"
+                                            fill="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+                                            />
+                                        </svg>
+                                        GitHub
+                                    </button>
+                                    <button
+                                        class="flex items-center justify-center gap-2 py-2.5 border border-slate-700 rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium text-slate-300"
+                                    >
+                                        <svg
+                                            class="w-5 h-5"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                                fill="#4285F4"
+                                            />
+                                            <path
+                                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                                fill="#34A853"
+                                            />
+                                            <path
+                                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                                                fill="#FBBC05"
+                                            />
+                                            <path
+                                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                                                fill="#EA4335"
+                                            />
+                                        </svg>
+                                        Google
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- REGISTER FORM -->
+                        <div id="register-form" class="hidden-form">
+                            <h2 class="text-2xl font-bold text-white mb-6">
+                                Start Building
+                            </h2>
+
+                            <form class="space-y-4">
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider"
+                                        >Username</label
+                                    >
+                                    <input
+                                        type="text"
+                                        class="w-full px-4 py-3 rounded-lg input-glass"
+                                        placeholder="DevOne"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider"
+                                        >Email</label
+                                    >
+                                    <input
+                                        type="email"
+                                        class="w-full px-4 py-3 rounded-lg input-glass"
+                                        placeholder="dev@phrost.engine"
+                                        required
+                                    />
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label
+                                            class="block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider"
+                                            >Password</label
+                                        >
+                                        <input
+                                            type="password"
+                                            class="w-full px-4 py-3 rounded-lg input-glass"
+                                            placeholder="••••••"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider"
+                                            >Confirm</label
+                                        >
+                                        <input
+                                            type="password"
+                                            class="w-full px-4 py-3 rounded-lg input-glass"
+                                            placeholder="••••••"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div class="text-xs text-slate-500 mt-2">
+                                    By registering, you agree to Phrost's
+                                    <a
+                                        href="#"
+                                        class="text-cyan-400 hover:underline"
+                                        >Terms</a
+                                    >
+                                    &
+                                    <a
+                                        href="#"
+                                        class="text-cyan-400 hover:underline"
+                                        >Privacy Policy</a
+                                    >.
+                                </div>
+
+                                <button
+                                    class="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:shadow-[0_0_25px_rgba(34,211,238,0.5)] mt-4"
+                                >
+                                    Create Account
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-center text-slate-600 text-sm mt-8">
+                    &copy; 2025 Phrost Technologies.
+                </p>
+            </div>
+        </main>
+
+        <!-- Scripts -->
+        <script>
+            // --- Tab Switch Logic ---
+            function switchTab(tab) {
+                const loginBtn = document.getElementById("tab-login");
+                const registerBtn = document.getElementById("tab-register");
+                const loginForm = document.getElementById("login-form");
+                const registerForm = document.getElementById("register-form");
+
+                if (tab === "login") {
+                    // Style Buttons
+                    loginBtn.classList.add(
+                        "bg-slate-800",
+                        "text-white",
+                        "shadow-lg",
+                    );
+                    loginBtn.classList.remove("text-slate-400");
+                    registerBtn.classList.remove(
+                        "bg-slate-800",
+                        "text-white",
+                        "shadow-lg",
+                    );
+                    registerBtn.classList.add("text-slate-400");
+
+                    // Toggle Forms
+                    loginForm.classList.remove("hidden-form");
+                    loginForm.classList.add("visible-form");
+                    registerForm.classList.add("hidden-form");
+                    registerForm.classList.remove("visible-form");
+                } else {
+                    // Style Buttons
+                    registerBtn.classList.add(
+                        "bg-slate-800",
+                        "text-white",
+                        "shadow-lg",
+                    );
+                    registerBtn.classList.remove("text-slate-400");
+                    loginBtn.classList.remove(
+                        "bg-slate-800",
+                        "text-white",
+                        "shadow-lg",
+                    );
+                    loginBtn.classList.add("text-slate-400");
+
+                    // Toggle Forms
+                    registerForm.classList.remove("hidden-form");
+                    registerForm.classList.add("visible-form");
+                    loginForm.classList.add("hidden-form");
+                    loginForm.classList.remove("visible-form");
+                }
+            }
+
+            // --- Particle Logic (Reused) ---
+            const canvas = document.getElementById("frostCanvas");
+            const ctx = canvas.getContext("2d");
+            let width,
+                height,
+                particles = [];
+
+            function resize() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener("resize", resize);
+            resize();
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+                reset() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height - height;
+                    this.size = Math.random() * 2 + 0.5;
+                    this.speed = Math.random() * 1 + 0.2;
+                    this.opacity = Math.random() * 0.5 + 0.1;
+                }
+                update() {
+                    this.y += this.speed;
+                    if (this.y > height) {
+                        this.reset();
+                        this.y = -10;
+                    }
+                }
+                draw() {
+                    ctx.fillStyle = `rgba(34, 211, 238, ${this.opacity})`;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function initParticles() {
+                particles = Array.from({ length: 60 }, () => new Particle());
+            }
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+                particles.forEach((p) => {
+                    p.update();
+                    p.draw();
+                });
+                requestAnimationFrame(animate);
+            }
+            initParticles();
+            animate();
+        </script>
+    </body>
+</html>

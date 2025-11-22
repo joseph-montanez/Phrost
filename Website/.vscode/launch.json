@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Website}/api",
+            "name": "Debug api (api)",
+            "target": "api",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug api (api)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Website}/api",
+            "name": "Release api (api)",
+            "target": "api",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release api (api)"
+        }
+    ]
+}

@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My Projects | Phrost Engine</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap");
+
+            :root {
+                --frost-glow: 0 0 20px rgba(34, 211, 238, 0.15);
+                --frost-border: rgba(34, 211, 238, 0.2);
+            }
+
+            body {
+                font-family: "Inter", sans-serif;
+                background-color: #030508;
+                color: #e0f2fe;
+                overflow-x: hidden;
+            }
+
+            .font-mono {
+                font-family: "JetBrains Mono", monospace;
+            }
+
+            .glass-panel {
+                background: rgba(15, 23, 42, 0.6);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid var(--frost-border);
+            }
+
+            /* Card Hover Effects */
+            .project-card {
+                transition: all 0.3s ease;
+            }
+            .project-card:hover {
+                transform: translateY(-4px);
+                border-color: rgba(34, 211, 238, 0.5);
+                box-shadow: 0 10px 30px -10px rgba(34, 211, 238, 0.2);
+            }
+
+            /* Delete Animation */
+            .fade-out-scale {
+                animation: fadeOutScale 0.4s ease-in forwards;
+            }
+
+            @keyframes fadeOutScale {
+                to {
+                    opacity: 0;
+                    transform: scale(0.9);
+                    height: 0;
+                    margin: 0;
+                    padding: 0;
+                }
+            }
+
+            /* Modal Backdrop */
+            .modal-backdrop {
+                background: rgba(3, 5, 8, 0.8);
+                backdrop-filter: blur(4px);
+            }
+
+            /* Dropdown Animation */
+            .dropdown-enter {
+                animation: dropdownEnter 0.2s ease-out forwards;
+            }
+            @keyframes dropdownEnter {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+        </style>
+    </head>
+    <body class="relative min-h-screen">
+        <!-- Background Particles -->
+        <canvas
+            id="frostCanvas"
+            class="fixed top-0 left-0 w-full h-full pointer-events-none z-0"
+        ></canvas>
+
+        <!-- Nav -->
+        <nav
+            class="fixed w-full z-50 top-0 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md"
+        >
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <a
+                        href="index.html"
+                        class="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    >
+                        <svg
+                            class="w-6 h-6 text-cyan-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 3v18M3 12h18M7.5 7.5L16.5 16.5M16.5 7.5L7.5 16.5"
+                            ></path>
+                        </svg>
+                        <span
+                            class="font-bold text-lg tracking-wider text-white"
+                            >PHROST
+                            <span class="text-slate-500 font-normal"
+                                >| DASHBOARD</span
+                            ></span
+                        >
+                    </a>
+                    <div class="flex items-center gap-6">
+                        <a
+                            href="publish.html"
+                            class="text-sm font-medium text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 4v16m8-8H4"
+                                />
+                            </svg>
+                            New Project
+                        </a>
+
+                        <!-- User Menu Container -->
+                        <div
+                            class="relative border-l border-slate-700 pl-6"
+                            id="user-menu-container"
+                        >
+                            <button
+                                id="user-menu-btn"
+                                class="flex items-center gap-3 focus:outline-none group"
+                            >
+                                <div class="text-right hidden sm:block">
+                                    <div
+                                        class="text-sm text-white font-medium group-hover:text-cyan-400 transition-colors"
+                                    >
+                                        DevOne
+                                    </div>
+                                    <div class="text-xs text-slate-500">
+                                        Indie License
+                                    </div>
+                                </div>
+                                <div
+                                    class="w-8 h-8 rounded-full bg-cyan-900 border border-cyan-500/50 flex items-center justify-center text-cyan-400 text-xs font-bold group-hover:border-cyan-400 transition-colors"
+                                >
+                                    DO
+                                </div>
+                            </button>
+
+                            <!-- Dropdown Menu -->
+                            <div
+                                id="user-dropdown"
+                                class="hidden absolute right-0 mt-3 w-56 glass-panel rounded-lg shadow-xl py-2 dropdown-enter transform origin-top-right z-50"
+                            >
+                                <div
+                                    class="px-4 py-3 border-b border-slate-700/50 mb-1"
+                                >
+                                    <p
+                                        class="text-xs text-slate-500 uppercase font-bold"
+                                    >
+                                        Signed in as
+                                    </p>
+                                    <p
+                                        class="text-sm font-medium text-white truncate"
+                                    >
+                                        dev@phrost.engine
+                                    </p>
+                                </div>
+
+                                <a
+                                    href="#"
+                                    class="block px-4 py-2 text-sm text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors flex items-center gap-2"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                        />
+                                    </svg>
+                                    Profile & Security
+                                </a>
+                                <a
+                                    href="#"
+                                    class="block px-4 py-2 text-sm text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors flex items-center gap-2"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                                        />
+                                    </svg>
+                                    Billing & License
+                                </a>
+                                <a
+                                    href="#"
+                                    class="block px-4 py-2 text-sm text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors flex items-center gap-2"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                        />
+                                    </svg>
+                                    Team Settings
+                                </a>
+                                <a
+                                    href="#"
+                                    class="block px-4 py-2 text-sm text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors flex items-center gap-2"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                                        />
+                                    </svg>
+                                    API Keys
+                                </a>
+
+                                <div
+                                    class="border-t border-slate-700/50 mt-2 pt-2"
+                                >
+                                    <a
+                                        href="login.html"
+                                        class="block px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors flex items-center gap-2"
+                                    >
+                                        <svg
+                                            class="w-4 h-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                                            />
+                                        </svg>
+                                        Sign Out
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="relative z-10 pt-28 pb-20 px-4">
+            <div class="max-w-7xl mx-auto">
+                <!-- Stats Header -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    <div
+                        class="glass-panel p-6 rounded-xl flex items-center gap-4"
+                    >
+                        <div
+                            class="w-12 h-12 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400"
+                        >
+                            <svg
+                                class="w-6 h-6"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                                ></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div
+                                class="text-2xl font-bold text-white"
+                                id="project-count"
+                            >
+                                3
+                            </div>
+                            <div class="text-sm text-slate-500">
+                                Active Projects
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="glass-panel p-6 rounded-xl flex items-center gap-4"
+                    >
+                        <div
+                            class="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400"
+                        >
+                            <svg
+                                class="w-6 h-6"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                ></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-white">
+                                1.2 GB
+                            </div>
+                            <div class="text-sm text-slate-500">
+                                Storage Used
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="glass-panel p-6 rounded-xl flex items-center gap-4"
+                    >
+                        <div
+                            class="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center text-green-400"
+                        >
+                            <svg
+                                class="w-6 h-6"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                                ></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-white">12k</div>
+                            <div class="text-sm text-slate-500">
+                                Total Downloads
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter / Actions -->
+                <div
+                    class="flex flex-col sm:flex-row justify-between items-end sm:items-center mb-6 gap-4"
+                >
+                    <h2 class="text-2xl font-bold text-white">My Games</h2>
+                    <div class="flex gap-3">
+                        <div class="relative">
+                            <input
+                                type="text"
+                                placeholder="Search projects..."
+                                class="bg-slate-900/50 border border-slate-700 text-sm rounded-lg px-4 py-2 w-64 focus:outline-none focus:border-cyan-500 text-white"
+                            />
+                            <svg
+                                class="w-4 h-4 text-slate-500 absolute right-3 top-2.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <a
+                            href="publish.html"
+                            class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-bold rounded-lg shadow-lg shadow-cyan-900/20 transition-all"
+                        >
+                            + Create
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Projects Grid -->
+                <div
+                    id="project-grid"
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                >
+                    <!-- Dynamic Content will load here -->
+                </div>
+
+                <!-- Empty State (Hidden by default) -->
+                <div
+                    id="empty-state"
+                    class="hidden glass-panel rounded-xl p-16 text-center border-dashed border-2 border-slate-700"
+                >
+                    <div
+                        class="w-20 h-20 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-6"
+                    >
+                        <svg
+                            class="w-10 h-10 text-slate-600"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                            />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">
+                        No Projects Yet
+                    </h3>
+                    <p class="text-slate-400 mb-8">
+                        Start building your legacy. Upload your first Phrost
+                        game today.
+                    </p>
+                    <a
+                        href="publish.html"
+                        class="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold rounded-lg transition-colors"
+                    >
+                        Upload First Project
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Delete Confirmation Modal -->
+        <div
+            id="delete-modal"
+            class="fixed inset-0 z-[100] hidden items-center justify-center"
+        >
+            <div
+                class="absolute inset-0 modal-backdrop"
+                onclick="closeDeleteModal()"
+            ></div>
+            <div
+                class="relative bg-slate-900 border border-red-500/30 rounded-xl p-8 max-w-md w-full mx-4 shadow-2xl shadow-red-900/20 transform transition-all scale-100"
+            >
+                <div
+                    class="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4 text-red-500"
+                >
+                    <svg
+                        class="w-6 h-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">
+                    Delete Project?
+                </h3>
+                <p class="text-slate-400 mb-6 text-sm">
+                    Are you sure you want to delete
+                    <span
+                        id="delete-target-name"
+                        class="text-white font-mono font-bold"
+                        >Game Name</span
+                    >? This action cannot be undone and will remove the build
+                    from all distribution nodes.
+                </p>
+                <div class="flex justify-end gap-3">
+                    <button
+                        onclick="closeDeleteModal()"
+                        class="px-4 py-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors text-sm font-medium"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        id="confirm-delete-btn"
+                        class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-bold shadow-lg shadow-red-900/30 transition-colors"
+                    >
+                        Delete Permanently
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // --- Dropdown Logic ---
+            const menuBtn = document.getElementById("user-menu-btn");
+            const dropdown = document.getElementById("user-dropdown");
+            const menuContainer = document.getElementById(
+                "user-menu-container",
+            );
+
+            menuBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle("hidden");
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener("click", (e) => {
+                if (!menuContainer.contains(e.target)) {
+                    dropdown.classList.add("hidden");
+                }
+            });
+
+            // --- Mock Data ---
+            const projects = [
+                {
+                    id: 1,
+                    name: "Neon Drift Legacy",
+                    package: "com.phrost.neondrift",
+                    version: "v0.9.4",
+                    status: "Live",
+                    updated: "2 days ago",
+                    iconColor: "bg-pink-500", // Mocking an image with color
+                    platforms: ["win", "linux"],
+                },
+                {
+                    id: 2,
+                    name: "Void Stalker",
+                    package: "com.phrost.voidstalker",
+                    version: "v1.2.0",
+                    status: "Live",
+                    updated: "1 week ago",
+                    iconColor: "bg-purple-600",
+                    platforms: ["win", "mac", "linux"],
+                },
+                {
+                    id: 3,
+                    name: "Cyber Chess 3000",
+                    package: "com.phrost.cyberchess",
+                    version: "v0.1.0-alpha",
+                    status: "Processing",
+                    updated: "5 mins ago",
+                    iconColor: "bg-cyan-600",
+                    platforms: ["win"],
+                },
+            ];
+
+            let targetDeleteId = null;
+
+            // --- Rendering ---
+            const grid = document.getElementById("project-grid");
+            const emptyState = document.getElementById("empty-state");
+            const countDisplay = document.getElementById("project-count");
+
+            function renderProjects() {
+                grid.innerHTML = "";
+
+                if (projects.length === 0) {
+                    grid.classList.add("hidden");
+                    emptyState.classList.remove("hidden");
+                    countDisplay.innerText = "0";
+                    return;
+                }
+
+                grid.classList.remove("hidden");
+                emptyState.classList.add("hidden");
+                countDisplay.innerText = projects.length;
+
+                projects.forEach((proj) => {
+                    const isProcessing = proj.status === "Processing";
+                    const statusColor = isProcessing
+                        ? "text-yellow-400 bg-yellow-400/10 border-yellow-400/20"
+                        : "text-green-400 bg-green-400/10 border-green-400/20";
+                    const statusDot = isProcessing ? "animate-pulse" : "";
+
+                    // Platform Icons SVGs
+                    let platformsHtml = "";
+                    if (proj.platforms.includes("win"))
+                        platformsHtml += `<svg class="w-4 h-4 text-slate-500" fill="currentColor" viewBox="0 0 24 24"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4h-13.051M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>`;
+                    if (proj.platforms.includes("mac"))
+                        platformsHtml += `<svg class="w-4 h-4 text-slate-500" fill="currentColor" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.8-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.21-1.98 1.07-3.11-1.06.05-2.31.71-3.06 1.48-.68.7-1.24 1.87-1.06 2.97 1.18.09 2.36-.51 3.05-1.34z"/></svg>`;
+                    if (proj.platforms.includes("linux"))
+                        platformsHtml += `<svg class="w-4 h-4 text-slate-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12.03 0L3 23h18L12.03 0z"/></svg>`;
+
+                    const html = `
+                    <div id="card-${proj.id}" class="glass-panel rounded-xl p-5 relative project-card group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-14 h-14 rounded-lg ${proj.iconColor} flex items-center justify-center shadow-lg">
+                                <span class="text-xl font-bold text-white opacity-50">${proj.name.charAt(0)}</span>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-xs font-medium border ${statusColor} flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-current ${statusDot}"></span>
+                                ${proj.status}
+                            </span>
+                        </div>
+
+                        <h3 class="text-lg font-bold text-white mb-0.5">${proj.name}</h3>
+                        <p class="text-xs font-mono text-slate-500 mb-4">${proj.package}</p>
+
+                        <div class="flex items-center justify-between border-t border-slate-800 pt-4 mt-2">
+                            <div class="flex gap-3">
+                                ${platformsHtml}
+                            </div>
+                            <div class="text-xs text-slate-500">${proj.updated}</div>
+                        </div>
+
+                        <!-- Action Buttons (Visible on hover) -->
+                        <div class="absolute bottom-5 right-5 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0">
+                            <button class="p-2 rounded-md bg-slate-800 text-cyan-400 hover:bg-cyan-900 transition-colors" title="Edit">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            </button>
+                            <button onclick="openDeleteModal(${proj.id}, '${proj.name}')" class="p-2 rounded-md bg-slate-800 text-red-400 hover:bg-red-900 transition-colors" title="Delete">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                    grid.innerHTML += html;
+                });
+            }
+
+            // --- Delete Logic ---
+            const modal = document.getElementById("delete-modal");
+            const confirmBtn = document.getElementById("confirm-delete-btn");
+
+            function openDeleteModal(id, name) {
+                targetDeleteId = id;
+                document.getElementById("delete-target-name").innerText = name;
+                modal.classList.remove("hidden");
+                modal.classList.add("flex");
+            }
+
+            function closeDeleteModal() {
+                modal.classList.add("hidden");
+                modal.classList.remove("flex");
+                targetDeleteId = null;
+            }
+
+            confirmBtn.addEventListener("click", () => {
+                if (targetDeleteId) {
+                    // 1. Find the card in DOM
+                    const card = document.getElementById(
+                        `card-${targetDeleteId}`,
+                    );
+
+                    // 2. Animate removal
+                    card.classList.add("fade-out-scale");
+
+                    // 3. Close modal immediately
+                    closeDeleteModal();
+
+                    // 4. Wait for animation then update data and re-render
+                    setTimeout(() => {
+                        const index = projects.findIndex(
+                            (p) => p.id === targetDeleteId,
+                        );
+                        if (index > -1) {
+                            projects.splice(index, 1);
+                        }
+                        renderProjects();
+                    }, 400);
+                }
+            });
+
+            // --- Particle Logic (Shared) ---
+            const canvas = document.getElementById("frostCanvas");
+            const ctx = canvas.getContext("2d");
+            let width,
+                height,
+                particles = [];
+
+            function resize() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener("resize", resize);
+            resize();
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+                reset() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height - height;
+                    this.size = Math.random() * 2 + 0.5;
+                    this.speed = Math.random() * 1 + 0.2;
+                    this.opacity = Math.random() * 0.5 + 0.1;
+                }
+                update() {
+                    this.y += this.speed;
+                    if (this.y > height) {
+                        this.reset();
+                        this.y = -10;
+                    }
+                }
+                draw() {
+                    ctx.fillStyle = `rgba(34, 211, 238, ${this.opacity})`;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function initParticles() {
+                particles = Array.from({ length: 60 }, () => new Particle());
+            }
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+                particles.forEach((p) => {
+                    p.update();
+                    p.draw();
+                });
+                requestAnimationFrame(animate);
+            }
+            initParticles();
+            animate();
+
+            // Initial Render
+            renderProjects();
+        </script>
+    </body>
+</html>

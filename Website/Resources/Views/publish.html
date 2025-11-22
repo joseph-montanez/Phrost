@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Publish | Phrost Engine</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap");
+
+            :root {
+                --frost-glow: 0 0 20px rgba(34, 211, 238, 0.15);
+                --frost-border: rgba(34, 211, 238, 0.2);
+            }
+
+            body {
+                font-family: "Inter", sans-serif;
+                background-color: #030508;
+                color: #e0f2fe;
+                overflow-x: hidden;
+            }
+
+            .font-mono {
+                font-family: "JetBrains Mono", monospace;
+            }
+
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: #0a0a0a;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #1e293b;
+                border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #22d3ee;
+            }
+
+            .glass-panel {
+                background: rgba(15, 23, 42, 0.6);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid var(--frost-border);
+            }
+
+            .input-glass {
+                background: rgba(2, 6, 23, 0.5);
+                border: 1px solid rgba(51, 65, 85, 0.5);
+                color: white;
+                transition: all 0.3s ease;
+            }
+
+            .input-glass:focus {
+                outline: none;
+                border-color: #22d3ee;
+                box-shadow: 0 0 15px rgba(34, 211, 238, 0.1);
+                background: rgba(2, 6, 23, 0.8);
+            }
+
+            /* Checkbox Logic */
+            .peer:checked + .custom-checkbox {
+                background-color: rgba(34, 211, 238, 0.1);
+                border-color: #22d3ee;
+                color: #22d3ee;
+            }
+
+            .peer:checked + .custom-checkbox svg {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            /* Dashed upload zone hover */
+            .upload-zone:hover {
+                border-color: #22d3ee;
+                background: rgba(34, 211, 238, 0.05);
+            }
+        </style>
+    </head>
+    <body class="relative min-h-screen">
+        <!-- Background Particles -->
+        <canvas
+            id="frostCanvas"
+            class="fixed top-0 left-0 w-full h-full pointer-events-none z-0"
+        ></canvas>
+
+        <!-- Nav -->
+        <nav
+            class="fixed w-full z-50 top-0 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md"
+        >
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <a
+                        href="index.html"
+                        class="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    >
+                        <svg
+                            class="w-6 h-6 text-cyan-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 3v18M3 12h18M7.5 7.5L16.5 16.5M16.5 7.5L7.5 16.5"
+                            ></path>
+                        </svg>
+                        <span
+                            class="font-bold text-lg tracking-wider text-white"
+                            >PHROST
+                            <span class="text-slate-500 font-normal"
+                                >| DEVELOPER</span
+                            ></span
+                        >
+                    </a>
+                    <div class="flex items-center gap-4">
+                        <span class="text-sm text-slate-400"
+                            >Logged in as
+                            <span class="text-white">DevOne</span></span
+                        >
+                        <div
+                            class="w-8 h-8 rounded-full bg-cyan-900 border border-cyan-500/50"
+                        ></div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="relative z-10 pt-28 pb-20 px-4">
+            <div class="max-w-4xl mx-auto">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-white mb-2">
+                        Publish New Build
+                    </h1>
+                    <p class="text-slate-400">
+                        Configure your build settings and upload your source.
+                        Phrost Cloud handles the compilation.
+                    </p>
+                </div>
+
+                <form
+                    id="publishForm"
+                    class="glass-panel rounded-2xl p-8 space-y-8"
+                >
+                    <!-- Section 1: Core Identity -->
+                    <div class="space-y-6">
+                        <h2
+                            class="text-xl font-semibold text-cyan-400 flex items-center gap-2"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"
+                                />
+                            </svg>
+                            Identity
+                        </h2>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Game Name -->
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-slate-300 mb-2"
+                                    >Game Name</label
+                                >
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Frost Walker"
+                                    class="w-full px-4 py-3 rounded-lg input-glass focus:ring-0"
+                                    required
+                                />
+                            </div>
+
+                            <!-- Executable Name -->
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-slate-300 mb-2"
+                                    >Executable Name (.exe)</label
+                                >
+                                <div class="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="FrostWalker"
+                                        class="w-full px-4 py-3 rounded-lg input-glass focus:ring-0 pr-16"
+                                        required
+                                    />
+                                    <span
+                                        class="absolute right-4 top-3.5 text-slate-500 text-sm font-mono"
+                                        >.exe</span
+                                    >
+                                </div>
+                            </div>
+
+                            <!-- Namespace -->
+                            <div class="md:col-span-2">
+                                <label
+                                    class="block text-sm font-medium text-slate-300 mb-2"
+                                    >Namespace / Package ID</label
+                                >
+                                <input
+                                    type="text"
+                                    placeholder="com.studio.gamename"
+                                    class="w-full px-4 py-3 rounded-lg input-glass focus:ring-0 font-mono text-sm"
+                                    required
+                                />
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Must be unique. Format: com.company.project
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-800" />
+
+                    <!-- Section 2: Visual Assets -->
+                    <div class="space-y-6">
+                        <h2
+                            class="text-xl font-semibold text-cyan-400 flex items-center gap-2"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
+                            </svg>
+                            Assets
+                        </h2>
+
+                        <div class="flex flex-col md:flex-row gap-8">
+                            <!-- Icon Upload -->
+                            <div class="flex-shrink-0">
+                                <label
+                                    class="block text-sm font-medium text-slate-300 mb-2"
+                                    >Icon (.ico/.png)</label
+                                >
+                                <div
+                                    class="relative group cursor-pointer w-32 h-32"
+                                >
+                                    <input
+                                        type="file"
+                                        id="iconInput"
+                                        accept="image/png, image/x-icon"
+                                        class="hidden"
+                                        onchange="previewIcon(this)"
+                                    />
+                                    <div
+                                        id="iconPreview"
+                                        class="w-full h-full rounded-xl border-2 border-dashed border-slate-700 flex items-center justify-center bg-slate-900/50 group-hover:border-cyan-500/50 transition-colors overflow-hidden"
+                                    >
+                                        <svg
+                                            class="w-8 h-8 text-slate-600 group-hover:text-cyan-400 transition-colors"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M12 4v16m8-8H4"
+                                            />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Screenshots -->
+                            <div class="flex-grow">
+                                <label
+                                    class="block text-sm font-medium text-slate-300 mb-2"
+                                    >Screenshots (Max 5)</label
+                                >
+                                <div
+                                    class="relative group w-full h-32 border-2 border-dashed border-slate-700 rounded-xl bg-slate-900/50 hover:border-cyan-500/50 transition-colors flex flex-col items-center justify-center cursor-pointer upload-zone"
+                                    onclick="document.getElementById('screenshotInput').click()"
+                                >
+                                    <input
+                                        type="file"
+                                        id="screenshotInput"
+                                        accept="image/*"
+                                        multiple
+                                        class="hidden"
+                                        onchange="handleScreenshots(this)"
+                                    />
+                                    <svg
+                                        class="w-8 h-8 text-slate-500 mb-2"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                                        />
+                                    </svg>
+                                    <span
+                                        class="text-sm text-slate-400"
+                                        id="screenshotText"
+                                        >Drag & drop or click to upload</span
+                                    >
+                                </div>
+                                <div
+                                    id="screenshotGallery"
+                                    class="flex gap-2 mt-4 overflow-x-auto pb-2"
+                                ></div>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div>
+                            <label
+                                class="block text-sm font-medium text-slate-300 mb-2"
+                                >Description</label
+                            >
+                            <textarea
+                                rows="4"
+                                class="w-full px-4 py-3 rounded-lg input-glass focus:ring-0 resize-none"
+                                placeholder="Describe your game..."
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-800" />
+
+                    <!-- Section 3: Build Configuration -->
+                    <div class="space-y-6">
+                        <h2
+                            class="text-xl font-semibold text-cyan-400 flex items-center gap-2"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                                />
+                            </svg>
+                            Target Platforms
+                        </h2>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <!-- Windows Checkbox -->
+                            <label class="cursor-pointer relative">
+                                <input
+                                    type="checkbox"
+                                    class="peer hidden"
+                                    checked
+                                />
+                                <div
+                                    class="custom-checkbox w-full p-4 rounded-xl border border-slate-700 bg-slate-900/50 hover:bg-slate-800 transition-all flex items-center gap-3 text-slate-400"
+                                >
+                                    <div
+                                        class="w-5 h-5 border border-slate-600 rounded flex items-center justify-center bg-black/40"
+                                    >
+                                        <svg
+                                            class="w-3 h-3 text-cyan-400 opacity-0 transition-opacity"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                        >
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clip-rule="evenodd"
+                                            ></path>
+                                        </svg>
+                                    </div>
+                                    <span class="font-semibold"
+                                        >Windows (x64)</span
+                                    >
+                                </div>
+                            </label>
+
+                            <!-- macOS Checkbox -->
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="peer hidden" />
+                                <div
+                                    class="custom-checkbox w-full p-4 rounded-xl border border-slate-700 bg-slate-900/50 hover:bg-slate-800 transition-all flex items-center gap-3 text-slate-400"
+                                >
+                                    <div
+                                        class="w-5 h-5 border border-slate-600 rounded flex items-center justify-center bg-black/40"
+                                    >
+                                        <svg
+                                            class="w-3 h-3 text-cyan-400 opacity-0 transition-opacity"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                        >
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clip-rule="evenodd"
+                                            ></path>
+                                        </svg>
+                                    </div>
+                                    <span class="font-semibold"
+                                        >macOS (Universal)</span
+                                    >
+                                </div>
+                            </label>
+
+                            <!-- Linux Checkbox -->
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="peer hidden" />
+                                <div
+                                    class="custom-checkbox w-full p-4 rounded-xl border border-slate-700 bg-slate-900/50 hover:bg-slate-800 transition-all flex items-center gap-3 text-slate-400"
+                                >
+                                    <div
+                                        class="w-5 h-5 border border-slate-600 rounded flex items-center justify-center bg-black/40"
+                                    >
+                                        <svg
+                                            class="w-3 h-3 text-cyan-400 opacity-0 transition-opacity"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                        >
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clip-rule="evenodd"
+                                            ></path>
+                                        </svg>
+                                    </div>
+                                    <span class="font-semibold"
+                                        >Linux (Ubuntu/Deb)</span
+                                    >
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-800" />
+
+                    <!-- Section 4: Source Upload -->
+                    <div class="space-y-6">
+                        <h2
+                            class="text-xl font-semibold text-cyan-400 flex items-center gap-2"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"
+                                />
+                            </svg>
+                            Source Code
+                        </h2>
+
+                        <div
+                            class="relative group w-full py-12 border-2 border-dashed border-slate-600 rounded-xl bg-slate-900/30 hover:border-cyan-500 hover:bg-cyan-900/10 transition-all flex flex-col items-center justify-center cursor-pointer"
+                            onclick="document.getElementById('folderInput').click()"
+                        >
+                            <!-- Note: webkitdirectory allows folder selection -->
+                            <input
+                                type="file"
+                                id="folderInput"
+                                webkitdirectory
+                                directory
+                                multiple
+                                class="hidden"
+                                onchange="handleFolderSelect(this)"
+                            />
+
+                            <div
+                                id="uploadIcon"
+                                class="mb-4 p-4 rounded-full bg-slate-800 group-hover:bg-cyan-500/20 transition-colors"
+                            >
+                                <svg
+                                    class="w-10 h-10 text-slate-400 group-hover:text-cyan-400"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                    />
+                                </svg>
+                            </div>
+
+                            <h3 class="text-lg font-medium text-white mb-1">
+                                Select Game Folder
+                            </h3>
+                            <p
+                                class="text-sm text-slate-400 mb-4"
+                                id="uploadText"
+                            >
+                                or drag and drop your root project folder here
+                            </p>
+                            <span
+                                class="px-3 py-1 bg-slate-800 rounded text-xs text-slate-500 font-mono"
+                                >Supports /src folder or .zip</span
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Submit Action -->
+                    <div class="pt-6 flex justify-end">
+                        <button
+                            type="submit"
+                            class="px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-lg shadow-lg shadow-cyan-500/20 transition-all transform hover:scale-[1.02] flex items-center gap-2"
+                        >
+                            <span>Publish Build</span>
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Scripts -->
+        <script>
+            // --- 1. Particle Logic (Reused for consistency) ---
+            const canvas = document.getElementById("frostCanvas");
+            const ctx = canvas.getContext("2d");
+            let width,
+                height,
+                particles = [];
+
+            function resize() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener("resize", resize);
+            resize();
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+                reset() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height - height;
+                    this.size = Math.random() * 2 + 0.5;
+                    this.speed = Math.random() * 1 + 0.2;
+                    this.opacity = Math.random() * 0.5 + 0.1;
+                }
+                update() {
+                    this.y += this.speed;
+                    if (this.y > height) {
+                        this.reset();
+                        this.y = -10;
+                    }
+                }
+                draw() {
+                    ctx.fillStyle = `rgba(34, 211, 238, ${this.opacity})`;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function initParticles() {
+                particles = Array.from({ length: 80 }, () => new Particle());
+            }
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+                particles.forEach((p) => {
+                    p.update();
+                    p.draw();
+                });
+                requestAnimationFrame(animate);
+            }
+            initParticles();
+            animate();
+
+            // --- 2. Form Logic ---
+
+            // Icon Preview
+            function previewIcon(input) {
+                if (input.files && input.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const previewDiv =
+                            document.getElementById("iconPreview");
+                        previewDiv.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                        previewDiv.classList.remove("border-dashed");
+                        previewDiv.classList.add(
+                            "border-solid",
+                            "border-cyan-500",
+                        );
+                    };
+                    reader.readAsDataURL(input.files[0]);
+                } else {
+                    // Reset logic if needed
+                    document.getElementById("iconPreview").innerHTML =
+                        `<svg class="w-8 h-8 text-slate-600 group-hover:text-cyan-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>`;
+                }
+            }
+
+            // Screenshot Gallery
+            function handleScreenshots(input) {
+                const gallery = document.getElementById("screenshotGallery");
+                const text = document.getElementById("screenshotText");
+                gallery.innerHTML = ""; // clear current
+
+                if (input.files.length > 0) {
+                    text.innerText = `${input.files.length} images selected`;
+
+                    Array.from(input.files).forEach((file) => {
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            const img = document.createElement("div");
+                            img.className =
+                                "flex-shrink-0 w-32 h-20 rounded-lg bg-cover bg-center border border-slate-600";
+                            img.style.backgroundImage = `url(${e.target.result})`;
+                            gallery.appendChild(img);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+            }
+
+            // Folder Upload Logic
+            function handleFolderSelect(input) {
+                const uploadText = document.getElementById("uploadText");
+                const uploadIcon = document.getElementById("uploadIcon");
+
+                if (input.files.length > 0) {
+                    // Heuristic: Check if likely a project folder
+                    const fileCount = input.files.length;
+                    uploadText.innerHTML = `<span class="text-cyan-400 font-bold">${fileCount} files</span> ready for upload.`;
+                    uploadIcon.className =
+                        "mb-4 p-4 rounded-full bg-cyan-900/50 border border-cyan-500";
+                    uploadIcon.innerHTML = `<svg class="w-10 h-10 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+                }
+            }
+
+            // Handle Click on Icon Div
+            document
+                .getElementById("iconPreview")
+                .parentElement.addEventListener("click", function () {
+                    document.getElementById("iconInput").click();
+                });
+
+            // Prevent Default Form for Demo
+            document
+                .getElementById("publishForm")
+                .addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    const btn = this.querySelector('button[type="submit"]');
+                    const originalText = btn.innerHTML;
+
+                    btn.disabled = true;
+                    btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Compiling...`;
+
+                    setTimeout(() => {
+                        alert("Build submitted to Phrost Cloud! (Demo)");
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }, 2000);
+                });
+        </script>
+    </body>
+</html>
