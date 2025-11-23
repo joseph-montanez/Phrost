@@ -313,7 +313,7 @@ function Phrost_Update(elapsed, dt, eventsBlob) {
     if (world.inputState[Keycode.LEFT]) targetVx = -1.0;
     if (world.inputState[Keycode.RIGHT]) targetVx = 1.0;
 
-    if (playerSprite.isLooping || !playerSprite.isPlaying) {
+    if (playerSprite.loops || !playerSprite.isPlaying) {
       if (targetVx !== 0.0) {
         playerSprite.play("run", true, false);
         playerSprite.setFlip(targetVx < 0);
