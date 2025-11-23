@@ -15,6 +15,10 @@ struct AppSettings: Codable {
     let watchDirectoryName: String  // Path to the hot-reload directory (e.g., "assets")
     let watchExclusions: [String]?  // Optional array of exclusion patterns
     let clientLogging: Bool?
+
+    // --- NEW: IPC Configuration ---
+    let ipcMode: String?  // "pipes" (default) or "sockets"
+    let ipcPort: Int?  // Default 8080
 }
 
 // --- Find App Directory ---
@@ -23,7 +27,8 @@ guard let wrapperURL = Bundle.main.executableURL else {
         """
         [Wrapper] Error: Could not find the wrapper's (PhrostBinary) own executable URL.
         This should not happen. Please try rebuilding the project.
-        """)
+        """
+    )
 }
 print("[Wrapper] Wrapper executable is at: \(wrapperURL.path)")
 
@@ -53,8 +58,14 @@ do {
         [Wrapper] Error: Failed to load or parse 'settings.json'.
         Make sure the file exists in \(appDirectoryURL.path) and is valid JSON.
         Error details: \(error.localizedDescription)
-        """)
+        """
+    )
 }
+
+// --- Extract IPC Settings Globally ---
+// We do this here so both the Server setup and the Client Relauncher can use them.
+let globalIpcMode = settings.ipcMode ?? "pipes"
+let globalIpcPort = settings.ipcPort ?? 8080
 
 // --- Find All Relative Paths ---
 
@@ -75,7 +86,8 @@ func findRelativeURL(forName name: String, isExecutable: Bool) -> URL {
             Could not find: \(name)
             Expected it to be in the app directory:
             \(appDirectoryURL.path)
-            """)
+            """
+        )
     }
 
     print("✅ [Wrapper] Found \(name) at: \(fileURL.path)")
@@ -89,11 +101,24 @@ let clientExecutableURL = findRelativeURL(
     forName: settings.clientInterpreterName, isExecutable: true)
 let clientScriptURL = findRelativeURL(forName: settings.clientScriptName, isExecutable: false)
 
-// --- Configure Processes ---
+// --- Configure Server Process ---
 let serverProcess = Process()
 serverProcess.executableURL = serverExecutableURL
-serverProcess.arguments = []
 
+// NEW: Pass IPC settings to Server
+var serverArgs = [String]()
+serverArgs.append("--mode")
+serverArgs.append(globalIpcMode)
+
+if globalIpcMode == "sockets" {
+    serverArgs.append("--port")
+    serverArgs.append(String(globalIpcPort))
+}
+
+serverProcess.arguments = serverArgs
+print("[Wrapper] Server arguments set to: \(serverArgs.joined(separator: " "))")
+
+// --- Configure Client Process ---
 var clientProcess = Process()
 clientProcess.executableURL = clientExecutableURL
 
@@ -102,7 +127,12 @@ var clientArgs = [String]()
 if let params = settings.clientInterpreterParams {
     clientArgs.append(contentsOf: params)
 }
-clientArgs.append(clientScriptURL.path)  // Add the script path as the last argument
+clientArgs.append(clientScriptURL.path)  // Add the script path
+
+// NEW: Pass IPC settings to Client Script (as arguments the script can read)
+clientArgs.append(globalIpcMode)
+clientArgs.append(String(globalIpcPort))
+
 clientProcess.arguments = clientArgs
 print("[Wrapper] Client arguments set to: \(clientArgs.joined(separator: " "))")
 
@@ -282,6 +312,11 @@ func launchNewClient() {
             newClientArgs.append(contentsOf: params)
         }
         newClientArgs.append(clientScriptURL.path)
+
+        // NEW: Pass IPC settings for Hot-Reloaded Client
+        newClientArgs.append(globalIpcMode)
+        newClientArgs.append(String(globalIpcPort))
+
         newClientProcess.arguments = newClientArgs
         print("[Watcher] Relaunching client with args: \(newClientArgs.joined(separator: " "))")
 

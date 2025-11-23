@@ -4,11 +4,11 @@ import SwiftSDL
 
 // Platform-specific imports
 #if os(Windows)
-    import WinSDK  // Core C APIs for Windows
+    import WinSDK
 #elseif os(Linux)
-    import Glibc  // Core C APIs for Linux
+    import Glibc
 #elseif os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-    import Darwin  // Core C APIs for Apple platforms
+    import Darwin
 #else
     #error("Unsupported platform for core C library import")
 #endif
@@ -26,859 +26,606 @@ import SwiftSDL
         }
         return pwstr
     }
+#endif
 
-    /// Reads a specific number of bytes from a Windows pipe HANDLE.
-    func readPipe(handle: HANDLE?, bytesToRead: Int) -> Data? {
-        guard let handle = handle else {
-            print("readPipe failed: handle is nil.")
-            return nil
-        }
-        guard bytesToRead >= 0 else {
-            print("readPipe failed: bytesToRead cannot be negative.")
-            return nil
-        }
-        if bytesToRead == 0 { return Data() }
+// --- Constants ---
+let DEFAULT_PIPE_NAME = "\\\\.\\pipe\\PhrostEngine" // Windows Named Pipe
+let DEFAULT_UNIX_SOCKET = "/tmp/PhrostEngine.socket" // Fallback for pipes on macOS/Linux
+let DEFAULT_TCP_PORT: UInt16 = 8080
 
-        var data = Data(capacity: bytesToRead)
-        var totalBytesRead: Int = 0
-        let bufferSize = 8192
-        var readBuffer = [UInt8](repeating: 0, count: bufferSize)
+// --- Unified Connection Abstraction ---
+// This allows us to use the same loop for Pipes (HANDLE/FD) and Sockets (SOCKET/FD)
+enum ConnectionHandle {
+    #if os(Windows)
+    case pipe(HANDLE)
+    case socket(SOCKET)
+    #else
+    case fd(CInt) // On macOS/Linux, both Sockets and Pipes are File Descriptors
+    #endif
+}
 
-        while totalBytesRead < bytesToRead {
-            let bytesRemaining = bytesToRead - totalBytesRead
-            let bytesToReadThisCall = min(bufferSize, bytesRemaining)
-            var bytesReadThisCall: DWORD = 0
-            let ok = readBuffer.withUnsafeMutableBufferPointer { bufPtr in
-                ReadFile(
-                    handle, bufPtr.baseAddress, DWORD(bytesToReadThisCall), &bytesReadThisCall, nil)
+// --- Low-Level Read/Write Helpers ---
+
+func rawRead(handle: ConnectionHandle, bytesToRead: Int) -> Data? {
+    if bytesToRead == 0 { return Data() }
+    var data = Data(capacity: bytesToRead)
+    var totalRead = 0
+
+    let bufferSize = 8192
+    var buffer = [UInt8](repeating: 0, count: bufferSize)
+
+    while totalRead < bytesToRead {
+        let toRead = min(bufferSize, bytesToRead - totalRead)
+        var bytesReadThisCall: Int = 0
+
+        #if os(Windows)
+        switch handle {
+        case .pipe(let hPipe):
+             // Original Named Pipe Logic
+             var readBytes: DWORD = 0
+             let ok = buffer.withUnsafeMutableBufferPointer {
+                 ReadFile(hPipe, $0.baseAddress, DWORD(toRead), &readBytes, nil)
+             }
+             if !ok || readBytes == 0 { return nil }
+             bytesReadThisCall = Int(readBytes)
+
+        case .socket(let sock):
+            // New TCP Socket Logic
+            let res = buffer.withUnsafeMutableBufferPointer {
+                recv(sock, $0.baseAddress, Int32(toRead), 0)
             }
-            let lastError = GetLastError()
-            if !ok || bytesReadThisCall == 0 {
-                print(
-                    "readPipe failed. Bytes read: \(bytesReadThisCall). Error: \(lastError). Client disconnected."
-                )
-                return nil
-            }
-            data.append(readBuffer, count: Int(bytesReadThisCall))
-            totalBytesRead += Int(bytesReadThisCall)
+            if res <= 0 { return nil }
+            bytesReadThisCall = Int(res)
         }
-        return data
+        #else
+        // POSIX (macOS/Linux) - Original Logic preserved (read works for both)
+        guard case .fd(let fd) = handle else { return nil }
+        let res = buffer.withUnsafeMutableBufferPointer {
+            read(fd, $0.baseAddress, toRead)
+        }
+        if res <= 0 { return nil }
+        bytesReadThisCall = res
+        #endif
+
+        data.append(buffer, count: bytesReadThisCall)
+        totalRead += bytesReadThisCall
     }
+    return data
+}
 
-    /// Writes Data to a Windows pipe HANDLE.
-    func writePipe(handle: HANDLE?, data: Data) -> Bool {
-        guard let handle = handle else {
-            print("writePipe failed: handle is nil.")
-            return false
-        }
-        if data.isEmpty { return true }
+func rawWrite(handle: ConnectionHandle, data: Data) -> Bool {
+    if data.isEmpty { return true }
+    var totalWritten = 0
+    let bytesToWrite = data.count
 
-        var totalBytesWritten: Int = 0
-        let bytesToWrite = data.count
-        while totalBytesWritten < bytesToWrite {
-            let bytesRemaining = bytesToWrite - totalBytesWritten
-            var bytesWrittenThisCall: DWORD = 0
-            let bytesToWriteThisCall = min(bytesRemaining, Int(DWORD.max))
-            if bytesToWriteThisCall <= 0 { break }
-            let ok = data.withUnsafeBytes { dataPtr in
-                let ptr = dataPtr.baseAddress!.advanced(by: totalBytesWritten)
-                return WriteFile(
-                    handle, ptr, DWORD(bytesToWriteThisCall), &bytesWrittenThisCall, nil)
+    while totalWritten < bytesToWrite {
+        let toWrite = bytesToWrite - totalWritten
+        var bytesWrittenThisCall: Int = 0
+
+        #if os(Windows)
+        switch handle {
+        case .pipe(let hPipe):
+            // Original Named Pipe Logic
+            var written: DWORD = 0
+            let ok = data.withUnsafeBytes {
+                let ptr = $0.baseAddress!.advanced(by: totalWritten)
+                return WriteFile(hPipe, ptr, DWORD(toWrite), &written, nil)
             }
-            let lastError = GetLastError()
-            if !ok {
-                print(
-                    "writePipe failed. Wrote \(bytesWrittenThisCall) bytes. Error: \(lastError). Client disconnected."
-                )
-                return false
+            if !ok { return false }
+            bytesWrittenThisCall = Int(written)
+
+        case .socket(let sock):
+            // New TCP Socket Logic
+            let res = data.withUnsafeBytes {
+                let ptr = $0.baseAddress!.advanced(by: totalWritten)
+                return send(sock, ptr.assumingMemoryBound(to: CChar.self), Int32(toWrite), 0)
             }
-            if bytesWrittenThisCall == 0 && bytesToWriteThisCall > 0 {
-                print("writePipe warning: WriteFile wrote 0 bytes unexpectedly.")
-                return false
-            }
-            totalBytesWritten += Int(bytesWrittenThisCall)
+            if res == SOCKET_ERROR { return false }
+            bytesWrittenThisCall = Int(res)
         }
-        return totalBytesWritten == bytesToWrite
+        #else
+        // POSIX (macOS/Linux) - Original Logic preserved
+        guard case .fd(let fd) = handle else { return false }
+        let res = data.withUnsafeBytes {
+            let ptr = $0.baseAddress!.advanced(by: totalWritten)
+            return write(fd, ptr, toWrite)
+        }
+        if res <= 0 { return false }
+        bytesWrittenThisCall = res
+        #endif
+
+        totalWritten += bytesWrittenThisCall
     }
-#endif  // os(Windows)
+    return true
+}
 
-// --- macOS-Specific Helpers ---
-#if os(macOS)
-    /// Reads a specific number of bytes from a POSIX file descriptor.
-    func readPipe(fd: CInt, bytesToRead: Int) -> Data? {
-        guard fd >= 0 else {
-            print("readPipe failed: invalid file descriptor.")
-            return nil
-        }
-        guard bytesToRead >= 0 else {
-            print("readPipe failed: bytesToRead cannot be negative.")
-            return nil
-        }
-        if bytesToRead == 0 { return Data() }
-
-        var data = Data(capacity: bytesToRead)
-        var totalBytesRead: Int = 0
-        let bufferSize = 8192
-        var readBuffer = [UInt8](repeating: 0, count: bufferSize)
-
-        while totalBytesRead < bytesToRead {
-            let bytesRemaining = bytesToRead - totalBytesRead
-            let bytesToReadThisCall = min(bufferSize, bytesRemaining)
-            var bytesReadThisCall: Int = 0
-
-            bytesReadThisCall = readBuffer.withUnsafeMutableBufferPointer { bufPtr in
-                Darwin.read(fd, bufPtr.baseAddress, bytesToReadThisCall)
-            }
-
-            if bytesReadThisCall < 0 {
-                // Error
-                print(
-                    "readPipe failed. Error: \(String(cString: strerror(errno))). Client disconnected."
-                )
-                return nil
-            } else if bytesReadThisCall == 0 {
-                // EOF (Client disconnected)
-                print("readPipe failed. Read 0 bytes (EOF). Client disconnected.")
-                return nil
-            }
-
-            data.append(readBuffer, count: Int(bytesReadThisCall))
-            totalBytesRead += Int(bytesReadThisCall)
-        }
-        return data
-    }
-
-    /// Writes Data to a POSIX file descriptor.
-    func writePipe(fd: CInt, data: Data) -> Bool {
-        guard fd >= 0 else {
-            print("writePipe failed: invalid file descriptor.")
-            return false
-        }
-        if data.isEmpty { return true }
-
-        var totalBytesWritten: Int = 0
-        let bytesToWrite = data.count
-        while totalBytesWritten < bytesToWrite {
-            let bytesRemaining = bytesToWrite - totalBytesWritten
-            var bytesWrittenThisCall: Int = 0
-
-            bytesWrittenThisCall = data.withUnsafeBytes { dataPtr in
-                let ptr = dataPtr.baseAddress!.advanced(by: totalBytesWritten)
-                return Darwin.write(fd, ptr, bytesRemaining)
-            }
-
-            if bytesWrittenThisCall <= 0 {
-                if bytesWrittenThisCall < 0 {
-                    print(
-                        "writePipe failed. Error: \(String(cString: strerror(errno))). Client disconnected."
-                    )
-                } else {
-                    print("writePipe warning: write wrote 0 bytes unexpectedly.")
-                }
-                return false
-            }
-
-            totalBytesWritten += Int(bytesWrittenThisCall)
-        }
-        return totalBytesWritten == bytesToWrite
-    }
-#endif  // os(macOS)
-
-// --- Manages the IPC Thread ---
+// --- IPC Server Class ---
 final class IPCServer: @unchecked Sendable {
 
-    // --- Platform-specific properties ---
-    #if os(Windows)
-        private let pipeName: String
-        private var pipeHandle: HANDLE?  // This is the persistent server pipe
-    #elseif os(macOS)
-        private let pipePath: String
-        private var listeningSocket: CInt = -1  // Server's persistent listening socket FD
-        private var clientSocket: CInt = -1  // Connected client's FD
-    #endif
+    enum Mode {
+        case pipes // Default (Named Pipes on Win, Unix Domain Sockets on Mac/Linux)
+        case sockets(port: UInt16) // New TCP Mode
+    }
 
-    // --- Platform-agnostic properties ---
+    private let mode: Mode
     private var serverThread: Thread?
 
-    // Condition for synchronizing frame data between threads
+    // Thread Sync
     private let frameCondition = NSCondition()
     private var eventDataToSend: Data?
     private var commandDataReceived: Data?
 
-    // Condition + flags for synchronizing server startup
+    // Startup Sync
     private let startupCondition = NSCondition()
-    private var serverReady: Bool = false  // Guarded by startupCondition
-    private var startupError: Bool = false  // Guarded by startupCondition
+    private var serverReady: Bool = false
+    private var startupError: Bool = false
 
-    private enum State {
-        case initializing
-        case waitingForClient
-        case connected
-        case closed
-    }
-
-    // Separate lock ONLY for runtime state changes after startup
+    // State
+    private enum State { case initializing, waitingForClient, connected, closed }
     private let stateLock = NSLock()
     private var _state: State = .initializing
-    private var state: State {
-        get {
-            stateLock.lock()
-            defer { stateLock.unlock() }
-            return _state
-        }
-        set {
-            stateLock.lock()
-            _state = newValue
-            stateLock.unlock()
-        }
+
+    // Platform Handles
+    #if os(Windows)
+    private var pipeHandle: HANDLE? // For Named Pipes
+    private var listenSocket: SOCKET = INVALID_SOCKET // For TCP
+    #else
+    private var listenFD: CInt = -1 // For both Unix Sockets and TCP
+    #endif
+
+    // Current Active Client
+    private var activeClient: ConnectionHandle?
+
+    init(mode: Mode) {
+        self.mode = mode
     }
 
-    public var isConnected: Bool { self.state == .connected }
-    public var hasStartupFailed: Bool {
-        startupCondition.lock()
-        defer { startupCondition.unlock() }
-        return self.startupError
+    var isConnected: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return _state == .connected
     }
 
-    /// Initializes the server with a platform-specific name.
-    /// - Parameter pipeName: On Windows: `\\.\pipe\MyPipe`. On macOS, this will be
-    ///   transformed to `/tmp/MyPipe.socket`.
-    init(pipeName: String) {
-        #if os(Windows)
-            self.pipeName = pipeName
-        #elseif os(macOS)
-            // Transform the Windows pipe name to a POSIX path
-            let baseName = pipeName.replacingOccurrences(of: "\\\\.\\pipe\\", with: "")
-            self.pipePath = "/tmp/\(baseName).socket"
-            print("[IPCServer] Using POSIX socket path: \(self.pipePath)")
-        #endif
-    }
-
-    /// Starts the server thread and waits until it's ready or fails.
-    /// Returns true if the server is ready, false on failure.
     func startAndWaitForReady() -> Bool {
-        print("[MainThread] Starting IPC server thread...")
-        startupCondition.lock()  // Lock startup BEFORE creating thread
+        startupCondition.lock()
+        self.serverThread = Thread { [weak self] in self?.runServerLoop() }
+        self.serverThread?.start()
 
-        let thread = Thread { [weak self] in
-            self?.runServerLoop()
-        }
-        self.serverThread = thread
-        thread.start()
-
-        print("[MainThread] Waiting for server thread to become ready...")
-        while !serverReady && !startupError {
-            startupCondition.wait()
-        }
-
-        let reportedError = self.startupError
-        let reportedReady = self.serverReady
-        print(
-            "[MainThread] Woke up from startup wait. Ready=\(reportedReady), Error=\(reportedError)"
-        )
-        startupCondition.unlock()  // Unlock AFTER checking flags
-
-        if reportedError || !reportedReady {
-            print("[MainThread] Server thread reported startup error or did not become ready.")
-            self.close()  // Ensure cleanup if startup failed
-            return false
-        }
-
-        print("[MainThread] Server thread is ready and waiting for client.")
-        return true
+        while !serverReady && !startupError { startupCondition.wait() }
+        let success = serverReady && !startupError
+        startupCondition.unlock()
+        return success
     }
 
-    /// Signals the server thread to close.
     func close() {
         stateLock.lock()
-        let currentState = self._state
-        guard currentState != .closed else {
-            stateLock.unlock()
-            print("Close called but already closed.")
-            return
-        }
-        print("Closing IPC server (current state: \(currentState))...")
-        self._state = .closed
+        guard _state != .closed else { stateLock.unlock(); return }
+        _state = .closed
         stateLock.unlock()
 
-        // Wake up threads waiting on conditions
-        frameCondition.lock()
-        frameCondition.signal()
-        frameCondition.unlock()
-        startupCondition.lock()
-        startupCondition.signal()
-        startupCondition.unlock()
+        // Wake up threads
+        frameCondition.lock(); frameCondition.signal(); frameCondition.unlock()
+        startupCondition.lock(); startupCondition.signal(); startupCondition.unlock()
 
-        // --- MODIFIED: Unblock the blocking call (ConnectNamedPipe / accept) ---
-        // The server loop is now responsible for its own handle/socket cleanup.
-        // We just need to unblock it so it can see the `.closed` state.
-        #if os(Windows)
-            // Unblock ConnectNamedPipe if it was waiting
-            if currentState == .waitingForClient || currentState == .initializing {
-                print("Attempting to unblock ConnectNamedPipe...")
-                let widePipeName = swiftStringToPWSTR(self.pipeName)
-                defer { widePipeName.deallocate() }
-                let hDummy = CreateFileW(
-                    widePipeName, DWORD(GENERIC_READ) | DWORD(GENERIC_WRITE), DWORD(0), nil,
-                    DWORD(OPEN_EXISTING), DWORD(0), nil)
-                if hDummy != INVALID_HANDLE_VALUE {
-                    CloseHandle(hDummy)
-                    print("Dummy client connected and closed.")
-                } else {
-                    print(
-                        "Could not create dummy client (Error: \(GetLastError())). This might be okay if already closed/connected."
-                    )
-                }
-            }
-        #elseif os(macOS)
-            // Unblock accept() if it was waiting
-            if currentState == .waitingForClient || currentState == .initializing {
-                print("Attempting to unblock accept() with a dummy connection...")
-                var dummyAddr = sockaddr_un()
-                dummyAddr.sun_family = sa_family_t(AF_UNIX)
-
-                let sunPathSize = MemoryLayout.size(ofValue: dummyAddr.sun_path)
-                _ = withUnsafeMutablePointer(to: &dummyAddr.sun_path.0) {
-                    strncpy($0, self.pipePath, sunPathSize - 1)
-                }
-
-                let addrLen = socklen_t(MemoryLayout<sockaddr_un>.size)
-
-                let hDummy = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
-                if hDummy >= 0 {
-                    _ = withUnsafePointer(to: &dummyAddr) {
-                        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { saPtr in
-                            Darwin.connect(hDummy, saPtr, addrLen)
-                        }
-                    }
-                    Darwin.close(hDummy)
-                    print("Dummy client connection attempt finished.")
-                } else {
-                    print("Could not create dummy client socket.")
-                }
-            }
-        #endif
-
-        print("IPC Server close actions finished.")
+        // Force unblock sockets/pipes
+        forceUnblockAccept()
     }
 
-    /// --- Called by the ENGINE (Main Thread) ---
-    /// This function blocks the main thread until the IPC thread
-    /// has successfully sent/received data from the client.
+    private func forceUnblockAccept() {
+        // Logic to create a dummy connection to self to break out of accept() calls
+        #if os(Windows)
+        switch mode {
+        case .sockets(let port):
+             // Create dummy TCP connection to localhost:port
+             var wsa: WSAData = WSAData()
+             let version: UInt16 = 0x0202 // MAKEWORD(2, 2) replacement
+             if WSAStartup(version, &wsa) == 0 {
+                 // FIXED: Cast rawValue to Int32 for socket()
+                 let sock = socket(AF_INET, Int32(SOCK_STREAM), Int32(IPPROTO_TCP.rawValue))
+                 if sock != INVALID_SOCKET {
+                     var addr = sockaddr_in()
+                     addr.sin_family = ADDRESS_FAMILY(AF_INET)
+                     addr.sin_port = port.bigEndian
+                     // 127.0.0.1 -> 16777343 (Little Endian representation of 7F 00 00 01)
+                     addr.sin_addr.S_un.S_addr = 16777343
+
+                     withUnsafePointer(to: &addr) {
+                         $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { sa in
+                             connect(sock, sa, Int32(MemoryLayout<sockaddr_in>.size))
+                         }
+                     }
+                     closesocket(sock)
+                 }
+             }
+        case .pipes:
+            // Dummy pipe open logic (CreateFile)
+            let pipeName = swiftStringToPWSTR(DEFAULT_PIPE_NAME)
+            defer { pipeName.deallocate() }
+            let h = CreateFileW(pipeName, DWORD(GENERIC_READ), 0, nil, DWORD(OPEN_EXISTING), 0, nil)
+            if h != INVALID_HANDLE_VALUE { CloseHandle(h) }
+        }
+        #else
+        // POSIX Unblocking
+        // We create a dummy socket to connect to ourselves to unblock 'accept()'
+        let sock = socket(AF_UNIX, SOCK_STREAM, 0)
+        if sock >= 0 {
+            var addr = sockaddr_un()
+            addr.sun_family = sa_family_t(AF_UNIX)
+            let path = DEFAULT_UNIX_SOCKET
+            let _ = withUnsafeMutablePointer(to: &addr.sun_path.0) {
+                 strncpy($0, path, 103)
+            }
+            let _ = withUnsafePointer(to: &addr) {
+                 $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { sa in
+                     connect(sock, sa, socklen_t(MemoryLayout<sockaddr_un>.size))
+                 }
+            }
+            close(sock)
+        }
+        #endif
+    }
+
     @MainActor
     func sendEventsAndGetCommands(eventData: Data, deltaSec: Double) -> Data {
-
-        // --- MODIFIED: Don't block if not connected ---
-        // If we aren't connected, we can't send. Return immediately.
-        // The server thread is busy waiting for a connection, not for our data.
-        if self.state != .connected {
-            return Data()
-        }
+        if !isConnected { return Data() }
 
         frameCondition.lock()
 
-        // Format: [Total Payload Length (UInt32)] + [Delta Sec (Double)] + [Event Data (Bytes)]
-        let payloadLength = MemoryLayout<Double>.size + eventData.count
-        var totalLength = UInt32(payloadLength)
-        var dataToSend = Data(capacity: MemoryLayout<UInt32>.size + payloadLength)
+        // Prepare Payload: [Len(4)][DT(8)][Events...]
+        var payload = Data()
+        let totalLen = UInt32(8 + eventData.count) // 8 bytes for Double dt
+        var lenBytes = totalLen
+        var dtBytes = deltaSec
 
-        // 1. Prepend the total length of the *following* data (dt + events)
-        dataToSend.append(Data(bytes: &totalLength, count: MemoryLayout<UInt32>.size))
-        // 2. Append the delta time (dt)
-        var dt = deltaSec
-        dataToSend.append(Data(bytes: &dt, count: MemoryLayout<Double>.size))
-        // 3. Append the actual event data
-        dataToSend.append(eventData)
+        payload.append(Data(bytes: &lenBytes, count: 4))
+        payload.append(Data(bytes: &dtBytes, count: 8))
+        payload.append(eventData)
 
-        // Give the fully constructed data to the IPC thread
-        self.eventDataToSend = dataToSend
-
-        // Signal the IPC thread that data is ready
+        self.eventDataToSend = payload
         frameCondition.signal()
 
-        // --- MODIFIED: Wait only while connected ---
-        // Wait for the IPC thread to signal back with command data
-        while self.commandDataReceived == nil && self.state == .connected {
+        while self.commandDataReceived == nil && isConnected {
             frameCondition.wait()
         }
 
-        // We were woken up. Get the command data.
-        let data = self.commandDataReceived ?? Data()
-        self.commandDataReceived = nil  // Clear it for the next frame
-
+        let result = self.commandDataReceived ?? Data()
+        self.commandDataReceived = nil
         frameCondition.unlock()
 
-        // If state changed to non-connected *while we were waiting*, return empty.
-        if self.state != .connected {
-            print("[MainThread][sendEvents] Client disconnected while waiting for command data.")
-            return Data()
+        return result
+    }
+
+    // --- Server Thread Logic ---
+    private func runServerLoop() {
+        print("[IPC] Server Thread Started. Mode: \(self.mode)")
+
+        #if os(macOS) || os(Linux)
+        signal(SIGPIPE, SIG_IGN)
+        #endif
+
+        #if os(Windows)
+        // Initialize Winsock if needed for Sockets mode
+        if case .sockets = mode {
+            var wsaData = WSAData()
+            let version: UInt16 = 0x0202 // MAKEWORD(2, 2) replacement
+            let res = WSAStartup(version, &wsaData)
+            if res != 0 {
+                print("[IPC] WSAStartup failed: \(res)")
+                failStartup(); return
+            }
+        }
+        #endif
+
+        // 1. Initialize Listener
+        if !setupListener() {
+            failStartup(); return
         }
 
-        return data
+        // Ready Signal
+        startupCondition.lock()
+        if _state != .closed { serverReady = true }
+        startupCondition.signal()
+        startupCondition.unlock()
+
+        // 2. Accept Loop
+        while true {
+            stateLock.lock()
+            if _state == .closed { stateLock.unlock(); break }
+            _state = .waitingForClient
+            stateLock.unlock()
+
+            print("[IPC] Waiting for client connection...")
+
+            guard let client = acceptConnection() else {
+                if isClosed() { break }
+                continue // Retry on error
+            }
+
+            print("[IPC] Client Connected!")
+
+            stateLock.lock()
+            self.activeClient = client
+            _state = .connected
+            stateLock.unlock()
+
+            // 3. Communication Loop
+            processClientLoop(client: client)
+
+            // Cleanup Client
+            print("[IPC] Client Disconnected.")
+            cleanupClient(client: client)
+
+            stateLock.lock()
+            self.activeClient = nil
+            stateLock.unlock()
+        }
+
+        cleanupServer()
     }
 
-    /// --- Unblocks the main thread on disconnect ---
-    /// This is called from runServerLoop when a read/write fails.
-    nonisolated private func handleClientDisconnect() {
-        print("[ServerThread] Client disconnected.")
-
-        // Set state back to waiting
-        self.state = .waitingForClient
-
-        // Unblock the main thread if it's waiting in sendEventsAndGetCommands
-        frameCondition.lock()
-        self.commandDataReceived = Data()  // Give it an empty response
-        frameCondition.signal()
-        frameCondition.unlock()
-
-        // Clean up the *client-specific* handles/sockets
-        #if os(Windows)
-            if let handle = self.pipeHandle {
-                DisconnectNamedPipe(handle)
-            }
-        #elseif os(macOS)
-            stateLock.lock()
-            if self.clientSocket >= 0 {
-                Darwin.close(self.clientSocket)
-                self.clientSocket = -1
-            }
-            stateLock.unlock()
-        #endif
+    private func isClosed() -> Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return _state == .closed
     }
 
-    /// --- Runs on the separate IPC THREAD ---
-    nonisolated private func runServerLoop() {
+    private func failStartup() {
+        startupCondition.lock()
+        startupError = true
+        startupCondition.signal()
+        startupCondition.unlock()
+    }
 
-        #if os(macOS)
-            // This prevents the server from crashing if a client disconnects while
-            // we are trying to write to the socket. The write() call will
-            // instead return -1, and errno will be set to EPIPE (Broken Pipe).
-            // Our readPipe/writePipe functions already handle this return value.
-            signal(SIGPIPE, SIG_IGN)
-        #endif
+    // --- Protocol Logic ---
 
-        #if os(Windows)
-            // --- Windows Server Loop Logic ---
-            let widePipeName = swiftStringToPWSTR(self.pipeName)
-            defer { widePipeName.deallocate() }
-
-            let pipeMode = PIPE_TYPE_BYTE | PIPE_WAIT
-            let bufferSize: DWORD = 1024 * 1024
-
-            print("[ServerThread] Creating named pipe...")
-            let hPipe = CreateNamedPipeW(
-                widePipeName, DWORD(PIPE_ACCESS_DUPLEX), DWORD(pipeMode), DWORD(1), bufferSize,
-                bufferSize, 0, nil)
-
-            if hPipe == INVALID_HANDLE_VALUE {
-                print("[ServerThread] Failed to create named pipe. Error: \(GetLastError())")
-                startupCondition.lock()
-                self.startupError = true
-                startupCondition.signal()
-                startupCondition.unlock()
-                return
-            }
-            print("[ServerThread] Named pipe created successfully (Handle: \(hPipe)).")
-
-            // --- MODIFIED: Store the persistent pipe handle ---
-            stateLock.lock()
-            self.pipeHandle = hPipe
-            stateLock.unlock()
-
-            // --- Signal readiness ---
-            startupCondition.lock()
-            if self.state != .closed {
-                print("[ServerThread] Signaling main thread: Server Ready.")
-                self.serverReady = true
-            } else {
-                print("[ServerThread] Server was closed during init. Cleaning up.")
-                self.startupError = true
-            }
-            startupCondition.signal()
-            startupCondition.unlock()
-
-            if self.startupError {
-                CloseHandle(hPipe)
-                return
-            }
-
-            // --- MODIFIED: Mega-loop to accept multiple connections ---
-            while self.state != .closed {
-                self.state = .waitingForClient
-                print("[ServerThread] Waiting for client connection...")
-
-                // --- 1. Block until client connects ---
-                if !ConnectNamedPipe(hPipe, nil) {
-                    let lastError = GetLastError()
-                    if self.state == .closed {
-                        print(
-                            "[ServerThread] Exiting: Closed while waiting for connection (ConnectNamedPipe returned false)."
-                        )
-                        break  // Exit mega-loop
-                    }
-                    if lastError != ERROR_PIPE_CONNECTED {
-                        print("[ServerThread] Failed to connect named pipe. Error: \(lastError)")
-                        // This is a server error, break the loop and exit thread
-                        self.state = .closed
-                        frameCondition.lock()
-                        frameCondition.signal()
-                        frameCondition.unlock()
-                        break  // Exit mega-loop
-                    }
-                    print(
-                        "[ServerThread] Client connected before ConnectNamedPipe call (ERROR_PIPE_CONNECTED)."
-                    )
-                }
-
-                if self.state == .closed {
-                    print("[ServerThread] Exiting: Closed immediately after client connection.")
-                    DisconnectNamedPipe(hPipe)
-                    break  // Exit mega-loop
-                }
-
-                print("[ServerThread] Client connected.")
-                self.state = .connected
-
-                // --- 2. Main Communication Loop (Inner) ---
-                while self.state == .connected {
-                    frameCondition.lock()
-                    while self.eventDataToSend == nil && self.state == .connected {
-                        frameCondition.wait()
-                    }
-
-                    if self.state != .connected {
-                        // Can be .closed (server shutdown) or .waitingForClient (disconnect)
-                        print("[ServerThread] Closing loop (state check after wait).")
-                        frameCondition.unlock()
-                        break  // Exit inner loop
-                    }
-
-                    guard let dataToSend = self.eventDataToSend else {
-                        frameCondition.unlock()
-                        continue
-                    }
-                    self.eventDataToSend = nil
-                    frameCondition.unlock()
-
-                    guard writePipe(handle: self.pipeHandle, data: dataToSend) else {
-                        handleClientDisconnect()
-                        break  // Exit inner loop
-                    }
-
-                    guard let lengthHeaderData = readPipe(handle: self.pipeHandle, bytesToRead: 4)
-                    else {
-                        handleClientDisconnect()
-                        break  // Exit inner loop
-                    }
-
-                    let commandLength = lengthHeaderData.withUnsafeBytes {
-                        $0.load(as: UInt32.self)
-                    }
-                    var commandData = Data()
-
-                    if commandLength > 0 {
-                        guard
-                            let data = readPipe(
-                                handle: self.pipeHandle, bytesToRead: Int(commandLength))
-                        else {
-                            handleClientDisconnect()
-                            break  // Exit inner loop
-                        }
-                        commandData = data
-                    }
-
-                    frameCondition.lock()
-                    if self.state == .connected {
-                        self.commandDataReceived = commandData
-                        frameCondition.signal()
-                    }
-                    frameCondition.unlock()
-                }  // End inner communication loop
-            }  // End mega-loop
-
-            // --- 3. Final Server Cleanup ---
-            print("[ServerThread] IPC Server thread loop finished.")
-            stateLock.lock()
-            if let handle = self.pipeHandle {
-                print("[ServerThread] Final cleanup: Closing pipe handle.")
-                DisconnectNamedPipe(handle)
-                CloseHandle(handle)
-                self.pipeHandle = nil
-            }
-            stateLock.unlock()
-
-        #elseif os(macOS)
-            // --- macOS Server Loop Logic ---
-
-            // 1. Clean up old socket file, if any
-            unlink(self.pipePath)  // Best effort, ignore error
-
-            // 2. Create socket
-            let localListeningSocket = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
-            guard localListeningSocket >= 0 else {
-                print(
-                    "[ServerThread] Failed to create socket. Error: \(String(cString: strerror(errno)))"
-                )
-                startupCondition.lock()
-                self.startupError = true
-                startupCondition.signal()
-                startupCondition.unlock()
-                return
-            }
-            print("[ServerThread] Socket created (FD: \(localListeningSocket)).")
-
-            // 3. Bind socket to path
-            var addr = sockaddr_un()
-            addr.sun_family = sa_family_t(AF_UNIX)
-
-            let sunPathSize = MemoryLayout.size(ofValue: addr.sun_path)
-            _ = withUnsafeMutablePointer(to: &addr.sun_path.0) {
-                strncpy($0, self.pipePath, sunPathSize - 1)
-            }
-
-            let addrLen = socklen_t(
-                MemoryLayout.size(ofValue: addr.sun_family) + strlen(self.pipePath) + 1)
-
-            let bindResult = withUnsafePointer(to: &addr) {
-                $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { saPtr in
-                    Darwin.bind(localListeningSocket, saPtr, addrLen)
-                }
-            }
-
-            guard bindResult == 0 else {
-                print(
-                    "[ServerThread] Failed to bind socket to \(self.pipePath). Error: \(String(cString: strerror(errno)))"
-                )
-                Darwin.close(localListeningSocket)
-                startupCondition.lock()
-                self.startupError = true
-                startupCondition.signal()
-                startupCondition.unlock()
-                return
-            }
-            print("[ServerThread] Socket bound to path.")
-
-            // 4. Listen for connections
-            guard Darwin.listen(localListeningSocket, 5) == 0 else {
-                print(
-                    "[ServerThread] Failed to listen on socket. Error: \(String(cString: strerror(errno)))"
-                )
-                Darwin.close(localListeningSocket)
-                unlink(self.pipePath)
-                startupCondition.lock()
-                self.startupError = true
-                startupCondition.signal()
-                startupCondition.unlock()
-                return
-            }
-
-            // 5. Signal main thread: Ready
-            startupCondition.lock()
-            if self.state != .closed {
-                print("[ServerThread] Signaling main thread: Server Ready.")
-                stateLock.lock()
-                self.listeningSocket = localListeningSocket  // Store the persistent FD
-                stateLock.unlock()
-                self.serverReady = true
-            } else {
-                print(
-                    "[ServerThread] Server state is closed immediately after listen. Cleaning up."
-                )
-                Darwin.close(localListeningSocket)
-                unlink(self.pipePath)
-                self.startupError = true
-                print("[ServerThread] Signaling main thread: Startup Error (was closed).")
-            }
-            startupCondition.signal()
-            startupCondition.unlock()
-
-            guard !self.startupError else {
-                print("[ServerThread] Exiting runServerLoop early due to closed state during init.")
-                return
-            }
-
-            // --- MODIFIED: Mega-loop to accept multiple connections ---
-            while self.state != .closed {
-
-                // --- 1. Block until client connects (accept) ---
-                self.state = .waitingForClient
-                print("[ServerThread] Waiting for client connection (accept)...")
-                let localClientSocket = Darwin.accept(localListeningSocket, nil, nil)
-
-                if localClientSocket < 0 {
-                    if self.state == .closed {
-                        print(
-                            "[ServerThread] Exiting: Closed while waiting for connection (accept failed, likely intended)."
-                        )
-                    } else {
-                        print(
-                            "[ServerThread] Failed to accept client connection. Error: \(String(cString: strerror(errno)))"
-                        )
-                        // This is a server error, break loop and exit thread
-                        self.state = .closed
-                        frameCondition.lock()
-                        frameCondition.signal()
-                        frameCondition.unlock()
-                    }
-                    break  // Exit mega-loop
-                }
-
-                if self.state == .closed {
-                    print("[ServerThread] Exiting: Closed immediately after client connection.")
-                    Darwin.close(localClientSocket)
-                    break  // Exit mega-loop
-                }
-
-                print("[ServerThread] Client connected (FD: \(localClientSocket)).")
-                stateLock.lock()
-                self.clientSocket = localClientSocket  // Store the client FD
-                stateLock.unlock()
-                self.state = .connected
-
-                // --- 2. Main Communication Loop (Inner) ---
-                while self.state == .connected {
-                    frameCondition.lock()
-                    while self.eventDataToSend == nil && self.state == .connected {
-                        frameCondition.wait()
-                    }
-
-                    if self.state != .connected {
-                        print("[ServerThread] Closing loop (state check after wait).")
-                        frameCondition.unlock()
-                        break  // Exit inner loop
-                    }
-
-                    guard let dataToSend = self.eventDataToSend else {
-                        frameCondition.unlock()
-                        continue
-                    }
-                    self.eventDataToSend = nil
-                    frameCondition.unlock()
-
-                    guard writePipe(fd: self.clientSocket, data: dataToSend) else {
-                        handleClientDisconnect()
-                        break  // Exit inner loop
-                    }
-
-                    guard let lengthHeaderData = readPipe(fd: self.clientSocket, bytesToRead: 4)
-                    else {
-                        handleClientDisconnect()
-                        break  // Exit inner loop
-                    }
-
-                    let commandLength = lengthHeaderData.withUnsafeBytes {
-                        $0.load(as: UInt32.self)
-                    }
-                    var commandData = Data()
-
-                    if commandLength > 0 {
-                        guard
-                            let data = readPipe(
-                                fd: self.clientSocket, bytesToRead: Int(commandLength))
-                        else {
-                            handleClientDisconnect()
-                            break  // Exit inner loop
-                        }
-                        commandData = data
-                    }
-
-                    frameCondition.lock()
-                    if self.state == .connected {
-                        self.commandDataReceived = commandData
-                        frameCondition.signal()
-                    }
-                    frameCondition.unlock()
-                }  // End inner communication loop
-            }  // End mega-loop
-
-            // --- 3. Final Server Cleanup ---
-            print("[ServerThread] IPC Server thread loop finished.")
-            stateLock.lock()
-            if self.clientSocket >= 0 {
-                print("[ServerThread] Final cleanup: Closing client socket.")
-                Darwin.close(self.clientSocket)
-                self.clientSocket = -1
-            }
-            if self.listeningSocket >= 0 {
-                print("[ServerThread] Final cleanup: Closing listening socket.")
-                Darwin.close(self.listeningSocket)
-                self.listeningSocket = -1
-            }
-            stateLock.unlock()
-            unlink(self.pipePath)  // Final file cleanup
-
-        #endif  // os(macOS)
-
-        // Final state update (platform-agnostic)
-        if self.state != .closed {
-            self.state = .closed
+    private func processClientLoop(client: ConnectionHandle) {
+        while true {
+            // Wait for Main Thread to give us data
             frameCondition.lock()
+            while eventDataToSend == nil && isConnected {
+                frameCondition.wait()
+            }
+
+            if !isConnected { frameCondition.unlock(); break }
+            let payload = eventDataToSend!
+            eventDataToSend = nil
+            frameCondition.unlock()
+
+            // Send
+            if !rawWrite(handle: client, data: payload) { break }
+
+            // Read Header (4 bytes len)
+            guard let header = rawRead(handle: client, bytesToRead: 4) else { break }
+            let cmdLen = header.withUnsafeBytes { $0.load(as: UInt32.self) }
+
+            var cmdData = Data()
+            if cmdLen > 0 {
+                guard let body = rawRead(handle: client, bytesToRead: Int(cmdLen)) else { break }
+                cmdData = body
+            }
+
+            // Return to Main Thread
+            frameCondition.lock()
+            commandDataReceived = cmdData
             frameCondition.signal()
             frameCondition.unlock()
         }
-        print("[ServerThread] runServerLoop finished.")
+
+        // If we broke out, ensure main thread is unblocked
+        frameCondition.lock()
+        if commandDataReceived == nil { commandDataReceived = Data() }
+        frameCondition.signal()
+        frameCondition.unlock()
+    }
+
+    // --- Platform Specific Setup ---
+
+    private func setupListener() -> Bool {
+        #if os(Windows)
+        switch mode {
+        case .pipes:
+            // --- ORIGINAL WINDOWS PIPE LOGIC ---
+            let pipeName = swiftStringToPWSTR(DEFAULT_PIPE_NAME)
+            defer { pipeName.deallocate() }
+
+            let hPipe = CreateNamedPipeW(
+                pipeName,
+                DWORD(PIPE_ACCESS_DUPLEX),
+                DWORD(PIPE_TYPE_BYTE | PIPE_WAIT),
+                DWORD(PIPE_UNLIMITED_INSTANCES),
+                1024*1024, 1024*1024, 0, nil
+            )
+            if hPipe == INVALID_HANDLE_VALUE { return false }
+            self.pipeHandle = hPipe
+            return true
+
+        case .sockets(let port):
+            // --- NEW WINDOWS SOCKET LOGIC ---
+            // FIXED: Use Int32(IPPROTO_TCP.rawValue)
+            let sock = socket(AF_INET, Int32(SOCK_STREAM), Int32(IPPROTO_TCP.rawValue))
+            if sock == INVALID_SOCKET { return false }
+
+            var addr = sockaddr_in()
+            addr.sin_family = ADDRESS_FAMILY(AF_INET)
+            addr.sin_port = port.bigEndian
+            addr.sin_addr.S_un.S_addr = 0 // INADDR_ANY
+
+            let bindRes = withUnsafePointer(to: &addr) {
+                $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { sa in
+                    bind(sock, sa, Int32(MemoryLayout<sockaddr_in>.size))
+                }
+            }
+
+            if bindRes == SOCKET_ERROR { return false }
+            if listen(sock, 5) == SOCKET_ERROR { return false }
+
+            self.listenSocket = sock
+            return true
+        }
+
+        #else
+        // POSIX Implementation
+        var fd: CInt = -1
+        var addr = sockaddr_in()
+        var addrLen = socklen_t(MemoryLayout<sockaddr_in>.size)
+
+        switch mode {
+        case .pipes:
+            // --- ORIGINAL UNIX SOCKET LOGIC ---
+            unlink(DEFAULT_UNIX_SOCKET)
+            fd = socket(AF_UNIX, SOCK_STREAM, 0)
+            if fd < 0 { return false }
+
+            var unAddr = sockaddr_un()
+            unAddr.sun_family = sa_family_t(AF_UNIX)
+            let path = DEFAULT_UNIX_SOCKET
+            _ = withUnsafeMutablePointer(to: &unAddr.sun_path.0) {
+                 strncpy($0, path, 103)
+            }
+            let unAddrLen = socklen_t(MemoryLayout<sockaddr_un>.size)
+
+            let bindRes = withUnsafePointer(to: &unAddr) {
+                $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                    bind(fd, $0, unAddrLen)
+                }
+            }
+            if bindRes < 0 { return false }
+            if listen(fd, 5) < 0 { return false }
+
+        case .sockets(let port):
+            // --- NEW POSIX TCP SOCKET LOGIC ---
+            fd = socket(AF_INET, SOCK_STREAM, 0)
+            if fd < 0 { return false }
+
+            addr.sin_family = sa_family_t(AF_INET)
+            addr.sin_port = port.bigEndian
+            #if os(Linux)
+            addr.sin_addr.s_addr = 0
+            #else
+            addr.sin_addr.s_addr = 0 // INADDR_ANY
+            #endif
+
+            let bindRes = withUnsafePointer(to: &addr) {
+                $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                    bind(fd, $0, addrLen)
+                }
+            }
+            if bindRes < 0 { return false }
+            if listen(fd, 5) < 0 { return false }
+        }
+        self.listenFD = fd
+        return true
+        #endif
+    }
+
+    private func acceptConnection() -> ConnectionHandle? {
+        #if os(Windows)
+        switch mode {
+        case .pipes:
+            // --- ORIGINAL WINDOWS PIPE ACCEPT ---
+            guard let h = self.pipeHandle else { return nil }
+            // Blocking wait for connection
+            if ConnectNamedPipe(h, nil) || GetLastError() == ERROR_PIPE_CONNECTED {
+                return .pipe(h)
+            }
+            return nil
+
+        case .sockets:
+            // --- NEW WINDOWS SOCKET ACCEPT ---
+            let clientSock = accept(self.listenSocket, nil, nil)
+            if clientSock == INVALID_SOCKET { return nil }
+
+            // Disable Nagle (TCP_NODELAY)
+            // FIXED: Use Int32 for flag instead of BOOL, cast IPPROTO_TCP.rawValue
+            var flag: Int32 = 1
+            let flagSize = Int32(MemoryLayout<Int32>.size)
+
+            _ = withUnsafePointer(to: &flag) { flagPtr in
+                flagPtr.withMemoryRebound(to: CChar.self, capacity: Int(flagSize)) { charPtr in
+                    setsockopt(clientSock, Int32(IPPROTO_TCP.rawValue), Int32(TCP_NODELAY), charPtr, flagSize)
+                }
+            }
+
+            return .socket(clientSock)
+        }
+        #else
+        // POSIX (Accept works for both Unix Domain Sockets and TCP)
+        let clientFD = accept(self.listenFD, nil, nil)
+        if clientFD < 0 { return nil }
+        return .fd(clientFD)
+        #endif
+    }
+
+    private func cleanupClient(client: ConnectionHandle) {
+        #if os(Windows)
+        switch client {
+        case .pipe(let h):
+            DisconnectNamedPipe(h)
+        case .socket(let s):
+            closesocket(s)
+        }
+        #else
+        if case .fd(let f) = client {
+            close(f)
+        }
+        #endif
+    }
+
+    private func cleanupServer() {
+        #if os(Windows)
+        if let h = pipeHandle { CloseHandle(h) }
+        if listenSocket != INVALID_SOCKET { closesocket(listenSocket) }
+        if case .sockets = mode { WSACleanup() }
+        #else
+        if listenFD >= 0 { close(listenFD) }
+        if case .pipes = mode { unlink(DEFAULT_UNIX_SOCKET) }
+        #endif
     }
 }
 
-// --- Main Entry Point --- (Completely platform-agnostic)
 @main
 struct PhrostIPC {
-
     @MainActor
     static func main() {
-        print("[MainThread] Application started.")
+        print("[Main] Starting PhrostIPC...")
 
-        // This name is now handled conditionally by the IPCServer's init
-        let server = IPCServer(pipeName: "\\\\.\\pipe\\PhrostEngine")
+        // --- CLI Argument Parsing ---
+        let args = CommandLine.arguments
+        var ipcMode = IPCServer.Mode.pipes // Default
 
-        guard server.startAndWaitForReady() else {
-            print("[MainThread] IPC Server failed to start or was closed during startup. Exiting.")
+        for i in 0..<args.count {
+            if args[i] == "--mode" && i + 1 < args.count {
+                let val = args[i+1]
+                if val == "sockets" {
+                    var port: UInt16 = 8080
+                    // Look for --port
+                    if let pIdx = args.firstIndex(of: "--port"), pIdx + 1 < args.count {
+                        port = UInt16(args[pIdx+1]) ?? 8080
+                    }
+                    ipcMode = .sockets(port: port)
+                }
+            }
+        }
+
+        let server = IPCServer(mode: ipcMode)
+
+        if !server.startAndWaitForReady() {
+            print("[Main] Server failed to start.")
             return
         }
 
-        print("[MainThread] Initializing Phrost Engine...")
-        guard
-            let engine = PhrostEngine(
-                title: "Phrost Engine (IPC Server)",
-                width: 640,
-                height: 480,
-                flags: 0
-            )
-        else {
-            print("[MainThread] Failed to initialize Phrost Engine. Closing server.")
+        print("[Main] Initializing Engine...")
+        guard let engine = PhrostEngine(title: "Phrost Engine", width: 640, height: 480, flags: 0) else {
             server.close()
             return
         }
-        print("[MainThread] Phrost Engine Initialized Successfully.")
 
         let updateCallback = { (frameCount: Int, deltaSec: Double, eventData: Data) -> Data in
-            // Wait for connection if we just started
-            if !server.isConnected {
-                // Don't burn CPU, just wait a bit for a client to connect
-                Thread.sleep(forTimeInterval: 0.1)
-                // return Data() // We'll let sendEventsAndGetCommands handle this
-            }
-
-            // This call is blocking (if connected) or non-blocking (if disconnected)
-            let commandData = server.sendEventsAndGetCommands(
-                eventData: eventData, deltaSec: deltaSec)
-
-            // --- MODIFIED: Do NOT stop the engine on disconnect ---
-            // The server is now waiting for a new client, so the engine should keep running.
-            if !server.isConnected {
-                // Optional: Log that we are waiting
-                if frameCount % 60 == 0 {  // Log once per second
-                    print("[MainThread] Waiting for client to connect...")
-                }
-            }
-            return commandData
+            if !server.isConnected { Thread.sleep(forTimeInterval: 0.1) }
+            return server.sendEventsAndGetCommands(eventData: eventData, deltaSec: deltaSec)
         }
 
-        print("[MainThread] Starting engine run loop...")
         engine.run(updateCallback: updateCallback)
-
-        print("[MainThread] Engine loop finished. PhrostIPC shutting down.")
         server.close()
-        print("[MainThread] PhrostIPC main function finished.")
     }
 }

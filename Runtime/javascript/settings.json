@@ -1,0 +1,9 @@
+{
+  "serverExecutableName": "engine/PhrostIPC",
+  "clientInterpreterName": "runtime/node",
+  "clientScriptName": "game/main.js",
+  "clientInterpreterParams": [],
+  "watchDirectoryName": "game",
+  "watchExclusions": ["/**/node_modules"],
+  "clientLogging": true
+}
