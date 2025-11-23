@@ -271,7 +271,7 @@
                 >
                     Phrost is a language-agnostic game engine built for dynamic
                     workflows. Pipeline your events across threads and write
-                    game logic in PHP, Python, or Lua with instant
+                    game logic in PHP, Python, JavaScript, or Lua with instant
                     hot-reloading.
                 </p>
 

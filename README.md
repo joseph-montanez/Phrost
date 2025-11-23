@@ -24,7 +24,8 @@ This table shows which languages can use which integration mode.
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **PHP** | ✅ | ✅ | ✅ | | ✅ |
 | **Python** | (WIP) | | ✅ | | |
-| **JavaScript** | (Planned) | | ✅ | | |
+| **JavaScript** | (WIP) | | ✅ | | |
+| **Lua** | (WIP) | | ✅ | | |
 | **Rust** | | | | ✅ | |
 | **Zig** | | | | ✅ | |
 | **C** | | | | ✅ | |
