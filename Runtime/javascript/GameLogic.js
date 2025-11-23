@@ -93,22 +93,17 @@ function Phrost_Wake(data) {
       // For this demo, if it has 'animations' prop, it's a Warrior/SpriteAnimated.
       if (spriteData.animations || key === world.playerKey) {
         // It's our Warrior
-        // JSON saves numbers as regular numbers. Our IDs need to be BigInt for the ID class?
-        // Actually, the constructor takes numbers.
-        // However, Id.generate() returns BigInts.
-        // If saved as string/number in JSON, we might need conversion.
-        // Let's assume standard number safety for now or strings.
         sprite = new Warrior(
-          BigInt(spriteData.id0),
-          BigInt(spriteData.id1),
+          Id.asUnsigned(spriteData.id0),
+          Id.asUnsigned(spriteData.id1),
           false,
         );
         sprite.hydrate(spriteData);
       } else {
         // Standard Tile Sprite
         sprite = new Sprite(
-          BigInt(spriteData.id0),
-          BigInt(spriteData.id1),
+          Id.asUnsigned(spriteData.id0),
+          Id.asUnsigned(spriteData.id1),
           false,
         );
         Object.assign(sprite, spriteData);
@@ -124,15 +119,15 @@ function Phrost_Wake(data) {
 
       if (key === world.playerKey) {
         body = new WarriorBody(
-          BigInt(bodyData.id0),
-          BigInt(bodyData.id1),
+          Id.asUnsigned(bodyData.id0),
+          Id.asUnsigned(bodyData.id1),
           false,
         );
         body.hydrate(bodyData);
       } else {
         body = new WarriorBody(
-          BigInt(bodyData.id0),
-          BigInt(bodyData.id1),
+          Id.asUnsigned(bodyData.id0),
+          Id.asUnsigned(bodyData.id1),
           false,
         );
         Object.assign(body, bodyData);
@@ -266,11 +261,8 @@ function Phrost_Update(elapsed, dt, eventsBlob) {
     if (event.type === Events.SPRITE_TEXTURE_SET) {
       // Texture ID set logic
       if (event.id1 && event.id2 && event.textureId) {
-        // FIX: Cast to Unsigned to prevent RangeError on large IDs
-        const k = Id.toHex([
-          BigInt.asUintN(64, BigInt(event.id1)),
-          BigInt.asUintN(64, BigInt(event.id2)),
-        ]);
+        // Updated to use the safe Id.toHex method
+        const k = Id.toHex([event.id1, event.id2]);
         if (world.sprites[k]) {
           world.sprites[k].setTextureId(event.textureId);
         }
@@ -278,10 +270,8 @@ function Phrost_Update(elapsed, dt, eventsBlob) {
     }
 
     if (event.type === Events.PHYSICS_SYNC_TRANSFORM) {
-      const k = Id.toHex([
-        BigInt.asUintN(64, BigInt(event.id1)),
-        BigInt.asUintN(64, BigInt(event.id2)),
-      ]);
+      // Updated to use the safe Id.toHex method
+      const k = Id.toHex([event.id1, event.id2]);
 
       if (world.physicsBodies[k]) {
         const body = world.physicsBodies[k];
@@ -323,7 +313,7 @@ function Phrost_Update(elapsed, dt, eventsBlob) {
     if (world.inputState[Keycode.LEFT]) targetVx = -1.0;
     if (world.inputState[Keycode.RIGHT]) targetVx = 1.0;
 
-    if (playerSprite.isLooping() || !playerSprite.isPlaying()) {
+    if (playerSprite.isLooping || !playerSprite.isPlaying) {
       if (targetVx !== 0.0) {
         playerSprite.play("run", true, false);
         playerSprite.setFlip(targetVx < 0);

@@ -45,28 +45,26 @@ class WarriorBody extends PhysicsBody {
    * @param {Object} allBodies - Map of all physics bodies
    */
   processCollisionEvent(event, allBodies) {
-    // event structure: id1_A, id2_A, id1_B, id2_B
+    // Standardize all Event IDs to Unsigned 64-bit BigInts
+    const id0_A = Id.asUnsigned(event.id1_A);
+    const id1_A = Id.asUnsigned(event.id2_A);
+    const id0_B = Id.asUnsigned(event.id1_B);
+    const id1_B = Id.asUnsigned(event.id2_B);
 
-    // In JS, large integers might be strings if coming from JSON,
-    // or BigInts if from our Packer. Our Id class uses BigInts.
-    // We need to ensure strict comparison works.
-    // The event data from PackFormat.unpack contains BigInts for 'q'/'J' types.
+    // Standardize our own IDs (in case they are stored as signed/negative)
+    const myId0 = Id.asUnsigned(this.id0);
+    const myId1 = Id.asUnsigned(this.id1);
 
-    const id0_A = BigInt(event.id1_A);
-    const id1_A = BigInt(event.id2_A);
-    const id0_B = BigInt(event.id1_B);
-    const id1_B = BigInt(event.id2_B);
-
-    const isPlayerA = id0_A === BigInt(this.id0) && id1_A === BigInt(this.id1);
-    const isPlayerB = id0_B === BigInt(this.id0) && id1_B === BigInt(this.id1);
+    // Compare to check if we are Entity A or Entity B
+    const isPlayerA = id0_A === myId0 && id1_A === myId1;
+    const isPlayerB = id0_B === myId0 && id1_B === myId1;
 
     if (isPlayerA || isPlayerB) {
-      let otherKey;
-      if (isPlayerA) {
-        otherKey = Id.toHex([id0_B, id1_B]);
-      } else {
-        otherKey = Id.toHex([id0_A, id1_A]);
-      }
+      // Get the ID of the OTHER entity
+      // Note: We can pass the BigInts directly to Id.toHex() now.
+      const otherKey = isPlayerA
+        ? Id.toHex([id0_B, id1_B])
+        : Id.toHex([id0_A, id1_A]);
 
       if (allBodies[otherKey]) {
         this.onCollision(allBodies[otherKey]);

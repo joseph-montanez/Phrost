@@ -248,12 +248,31 @@ class PackFormat {
         offset += filenameLength + strPadding;
 
         events.push({ type: eventType, id1, id2, filenameLength, filename });
-      } else if (
-        eventType === Events.PLUGIN_LOAD ||
-        eventType === Events.AUDIO_LOAD
-      ) {
-        // V(4) + x4(4) = 8 bytes
+      } else if (eventType === Events.PLUGIN_LOAD) {
+        // Map: VchannelNo/VpathLength/a*path
+        // V(4) + V(4) = 8 bytes
         const fixedPartSize = 8;
+        if (offset + fixedPartSize > blobLength) break;
+
+        const channelNo = eventsBlob.readUInt32LE(offset);
+        const pathLength = eventsBlob.readUInt32LE(offset + 4);
+        offset += fixedPartSize;
+
+        const strPadding = (8 - (pathLength % 8)) % 8;
+        if (offset + pathLength + strPadding > blobLength) break;
+
+        let pathStr = "";
+        if (pathLength > 0) {
+          pathStr = eventsBlob.toString("utf8", offset, offset + pathLength);
+        }
+        offset += pathLength + strPadding;
+
+        events.push({ type: eventType, channelNo, pathLength, path: pathStr });
+      } else if (eventType === Events.AUDIO_LOAD) {
+        // Map: VpathLength/a*path
+        // V(4) = 4 bytes. NO PADDING defined in map between Length and String.
+        // However, we must align the *string* after reading it.
+        const fixedPartSize = 4;
         if (offset + fixedPartSize > blobLength) break;
 
         const pathLength = eventsBlob.readUInt32LE(offset);

@@ -18,14 +18,25 @@ class Id {
   }
 
   /**
+   * Helper to force a BigInt (or number/string) into an Unsigned 64-bit range.
+   * This fixes issues where binary unpacking results in negative Signed 64-bit integers.
+   * * @param {bigint|number|string} val
+   * @returns {bigint} The value as an unsigned 64-bit integer.
+   */
+  static asUnsigned(val) {
+    return BigInt.asUintN(64, BigInt(val));
+  }
+
+  /**
    * Converts the 2-part integer array back into a 16-byte buffer.
    * * @param {Array<bigint>} ints - Array of two BigInts.
    * @returns {Buffer} The 16-byte buffer.
    */
   static toBytes(ints) {
     const buffer = Buffer.alloc(16);
-    buffer.writeBigUInt64BE(ints[0], 0);
-    buffer.writeBigUInt64BE(ints[1], 8);
+    // We use asUnsigned() here to safely handle inputs that Node usually interprets as negative
+    buffer.writeBigUInt64BE(this.asUnsigned(ints[0]), 0);
+    buffer.writeBigUInt64BE(this.asUnsigned(ints[1]), 8);
     return buffer;
   }
 
