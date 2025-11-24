@@ -55,10 +55,6 @@ jobs:
           New-Item -ItemType Directory -Path $env:DEPS_DIR -Force | Out-Null
           Set-Location $env:DEPS_DIR
 
-          # Create folder and extract
-          New-Item -ItemType Directory -Path $PHP_FOLDER_NAME -Force | Out-Null
-          tar -xf php-arm64.7z -C $PHP_FOLDER_NAME
-
           # --- B. SDL3 ---
           Write-Host "Downloading SDL3..."
           $SdlUrl = "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-16/SDL3-arm64-2025-11-16.zip"
