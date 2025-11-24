@@ -3,18 +3,18 @@ const fs = require("fs");
 const os = require("os");
 
 // --- Imports ---
-const Window = require("./Window");
-const Camera = require("./Camera");
-const ChannelPacker = require("./ChannelPacker");
-const PackFormat = require("./PackFormat");
-const LiveReload = require("./LiveReload");
-const Id = require("./Id");
-const { Events, Channels } = require("./Events");
-const Keycode = require("./Keycode");
-const Mod = require("./Mod");
-const Sprite = require("./Sprite");
-const Text = require("./Text");
-const Audio = require("./Audio");
+const Window = require("./Phrost/Window");
+const Camera = require("./Phrost/Camera");
+const ChannelPacker = require("./Phrost/ChannelPacker");
+const { PackFormat } = require("./Phrost/PackFormat");
+const LiveReload = require("./Phrost/LiveReload");
+const Id = require("./Phrost/Id");
+const { Events, Channels } = require("./Phrost/Events");
+const Keycode = require("./Phrost/Keycode");
+const Mod = require("./Phrost/Mod");
+const Sprite = require("./Phrost/Sprite");
+const Text = require("./Phrost/Text");
+const Audio = require("./Phrost/Audio");
 
 // --- Constants ---
 const FPS_SAMPLE_SIZE = 60;

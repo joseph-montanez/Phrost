@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const IPCClient = require("./Phrost/IPClient");
-const { Phrost_Update, Phrost_Wake } = require("./GameLogic");
+const { Phrost_Update, Phrost_Wake } = require("./game-logic");
 
 // --- Main Entry Point ---
 
