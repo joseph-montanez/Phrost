@@ -74,7 +74,7 @@ class LiveReload {
           console.log("Hard reset detected. Skipping save and unloading.");
           // Unloading signal
           console.log("unloading");
-          process.exit(10); // Exit code 10 for reload/shutdown
+          process.exit(0); // Exit code 10 for reload/shutdown
         } else {
           console.log("Saving state before unloading...");
           if (typeof global.Phrost_Sleep === "function") {
@@ -83,7 +83,7 @@ class LiveReload {
           }
 
           console.log("unloading");
-          process.exit(10);
+          process.exit(0);
         }
       } catch (e) {
         console.error("Error processing shutdown flag:", e);
