@@ -27,6 +27,7 @@ Here is the complete step-by-step process for managing the camera.
 ### Step 1: Initialization (in `game-logic.php`)
 
 You typically create your `Camera` object once when your script initializes and store it in the global `$world` array.
+
 ```php
 <?php
 use Phrost\Camera;

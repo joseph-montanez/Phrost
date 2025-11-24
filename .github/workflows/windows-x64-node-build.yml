@@ -1,0 +1,114 @@
+name: Build Phrost Engine (Windows x64 - Node)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  build:
+    name: Build on Windows 11 x64 (Node)
+    # Standard GitHub runner for x64
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: powershell
+
+    steps:
+      # 1. Checkout Code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          path: Phrost
+
+      # 2. Setup Directory Vars
+      - name: Set Directory Vars
+        run: |
+          $ROOT_DIR = Get-Location
+          $REPO_DIR = "$ROOT_DIR\Phrost"
+
+          echo "DEPS_DIR=$REPO_DIR\Engine\deps" >> $env:GITHUB_ENV
+          echo "REPO_DIR=$REPO_DIR" >> $env:GITHUB_ENV
+
+      # 3. Setup Swift (x64)
+      - name: Setup Swift
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "6.2.1"
+
+      # 4. Cache Dependencies
+      - name: Cache Deps
+        id: cache-deps
+        uses: actions/cache@v3
+        with:
+          path: Phrost/Engine/deps
+          # Unique key for x64 Node deps
+          key: ${{ runner.os }}-x64-node-deps-v1
+
+      # 5. Setup Dependencies
+      - name: Download and Setup Dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          New-Item -ItemType Directory -Path $env:DEPS_DIR -Force | Out-Null
+          Set-Location $env:DEPS_DIR
+
+          # --- B. SDL3 (x64) ---
+          Write-Host "Downloading SDL3 x64..."
+          $SdlUrl = "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-11/SDL3-x64-2025-11-16.zip"
+          curl.exe -L -o "SDL3-x64.zip" $SdlUrl
+
+          # Extract to temp, rename to 'SDL3-x64'
+          Expand-Archive -Path "SDL3-x64.zip" -DestinationPath "sdl_temp" -Force
+          $InnerFolder = Get-ChildItem -Path "sdl_temp" -Directory | Select-Object -First 1
+          Move-Item -Path $InnerFolder.FullName -Destination "SDL3-x64" -Force
+          Remove-Item "sdl_temp" -Recurse -Force
+
+          # --- C. Chipmunk2D (x64) ---
+          Write-Host "Downloading Chipmunk2D x64..."
+          $ChipmunkUrl = "https://github.com/joseph-montanez/Phrost/releases/download/v0.01/chipmunk_x64-windows.zip"
+
+          $VcpkgPackagesDir = Join-Path $env:DEPS_DIR "vcpkg\packages"
+          New-Item -ItemType Directory -Path $VcpkgPackagesDir -Force | Out-Null
+
+          curl.exe -L -o "chipmunk.zip" $ChipmunkUrl
+          Expand-Archive -Path "chipmunk.zip" -DestinationPath $VcpkgPackagesDir -Force
+
+          # --- D. Node.js (x64) ---
+          Write-Host "Downloading Node.js x64..."
+          # Using the specific URL you provided
+          $NodeUrl = "https://nodejs.org/dist/v25.2.1/node-v25.2.1-win-x64.zip"
+          curl.exe -L -o "node-x64.zip" $NodeUrl
+
+          # Extract to temp, find inner folder (usually node-vXX-win-x64), rename to 'node-x64'
+          Expand-Archive -Path "node-x64.zip" -DestinationPath "node_temp" -Force
+          $InnerNodeFolder = Get-ChildItem -Path "node_temp" -Directory | Select-Object -First 1
+          Move-Item -Path $InnerNodeFolder.FullName -Destination "node-x64" -Force
+          Remove-Item "node_temp" -Recurse -Force
+
+          Write-Host "Dependencies setup complete."
+
+      # 6. Run Build Script
+      - name: Run Build Script
+        run: |
+          swift --version
+
+          $ProjectRoot = Join-Path $env:REPO_DIR "Engine\PhrostEngineV2"
+          Set-Location $ProjectRoot
+          Write-Host "Current Working Directory: $(Get-Location)"
+
+          # Invoking the Node x64 specific script
+          # Ensure you have created 'scripts\win_node_x64.ps1'
+          $ScriptPath = Join-Path $ProjectRoot "scripts\win_node_x64.ps1"
+          Write-Host "Invoking script: $ScriptPath"
+
+          & $ScriptPath
+
+      # 7. Upload Artifacts
+      - name: Upload Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: Phrost-Windows-x64-Node
+          path: Phrost/Release
