@@ -2,7 +2,11 @@
   "serverExecutableName": "engine/PhrostIPC",
   "clientInterpreterName": "runtime/node",
   "clientScriptName": "game/main.js",
-  "clientInterpreterParams": [],
+  "clientInterpreterParams": [
+    "--max-old-space-size=8192",
+    "--min-semi-space-size=128",
+    "--heapsnapshot-near-heap-limit=0"
+  ],
   "watchDirectoryName": "game",
   "watchExclusions": ["/**/node_modules"],
   "clientLogging": true

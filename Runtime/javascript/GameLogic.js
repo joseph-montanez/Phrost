@@ -1,143 +1,151 @@
 const path = require("path");
 const fs = require("fs");
+const os = require("os");
 
-// Import Engine Classes
+// --- Imports ---
 const Window = require("./Phrost/Window");
 const Camera = require("./Phrost/Camera");
 const ChannelPacker = require("./Phrost/ChannelPacker");
 const { PackFormat } = require("./Phrost/PackFormat");
 const LiveReload = require("./Phrost/LiveReload");
-const Tiled = require("./Phrost/Tiled");
 const Id = require("./Phrost/Id");
-const { Events } = require("./Phrost/Events");
+const { Events, Channels } = require("./Phrost/Events");
 const Keycode = require("./Phrost/Keycode");
 const Mod = require("./Phrost/Mod");
 const Sprite = require("./Phrost/Sprite");
-const SpriteAnimated = require("./Phrost/SpriteAnimated");
+const Text = require("./Phrost/Text");
+const Audio = require("./Phrost/Audio");
 
-// Import Game Classes
-const Warrior = require("./src/Warrior");
-const WarriorBody = require("./src/WarriorBody");
+// --- Constants ---
+const FPS_SAMPLE_SIZE = 60;
 
 // --- Global State Initialization ---
 const SHUTDOWN_FLAG_PATH = path.join(__dirname, "../shutdown.flag");
 const SAVE_PATH = path.join(__dirname, "../save.data");
 
+const fontPath = path.join(__dirname, "assets/Roboto-Regular.ttf");
+const audioPath = path.join(__dirname, "assets/snoozy beats - neon dreams.wav");
+
+// Create Text objects
+const fpsTextId = Id.generate(); // [BigInt, BigInt]
+const fpsText = new Text(fpsTextId[0], fpsTextId[1]);
+fpsText.setFont(fontPath, 24.0);
+fpsText.setText("FPS: ...", false);
+fpsText.setPosition(10.0, 10.0, 100.0, false);
+fpsText.setColor(255, 255, 255, 255, false);
+
+const logicTextId = Id.generate();
+const logicText = new Text(logicTextId[0], logicTextId[1]);
+logicText.setFont(fontPath, 24.0);
+logicText.setText("Logic: JS", false);
+logicText.setPosition(10.0, 40.0, 100.0, false);
+logicText.setColor(255, 255, 255, 255, false);
+
+// Create Audio object
+const musicTrack = new Audio(audioPath);
+
 // The main world state object
 let world = {
-  window: new Window("Animation Demo (JS)", 800, 450),
-  camera: new Camera(800.0, 450.0),
+  window: new Window("Bunny Benchmark (JS)", 800, 450),
+  camera: new Camera(800.0 / 2, 450.0 / 2),
   sprites: {}, // Map<stringHex, Sprite>
-  physicsBodies: {}, // Map<stringHex, PhysicsBody>
-  assetsLoaded: false,
-  mapInfo: {},
-  playerKey: null,
+  textObjects: {
+    fps: fpsText,
+    logic: logicText,
+  },
+  musicTrack: musicTrack,
+  spritesCount: 0,
+  activeLogic: "JS",
+  pluginLoaded: false,
+  chunkSize: 0,
   inputState: {},
+  mouseX: 0,
+  mouseY: 0,
+  fps: 0.0,
+  smoothed_fps: 0.0,
+  fps_samples: [],
+  musicPlaying: false,
+  assetsLoaded: false,
+  eventStacking: true,
   liveReload: new LiveReload(SHUTDOWN_FLAG_PATH, SAVE_PATH),
-  __initial_packer: new ChannelPacker(), // Initial setup packer
+  __initial_packer: new ChannelPacker(),
 };
 
-// Pack initial window setup immediately
+// Pack initial window setup
 world.window.setResizable(true);
 world.window.packDirtyEvents(world.__initial_packer);
 
 /**
- * Called to save state.
+ * Called by Phrost when the state is about to be saved.
  * * @returns {string} JSON string of world state
  */
 function Phrost_Sleep() {
-  delete world.__initial_packer; // Don't save the packer
+  const worldToSave = { ...world };
+  delete worldToSave.__initial_packer; // Don't save the packer
 
-  // We need to tag objects with their class type so we can hydrate them later.
-  // JSON.stringify won't save class info.
-  const state = JSON.stringify(world, (key, value) => {
-    // Custom replacer could go here if needed, but for now standard JSON is fine
-    // provided we handle hydration in Wake.
-    // Note: We add a _className property to our classes if we want automatic detection,
-    // or we rely on knowing where specific objects live (like world.sprites).
-    return value;
-  });
-  return state;
+  // We use a custom replacer or just rely on standard serialization.
+  // Since JS classes lose methods on JSON.stringify, we hydrate them in Wake.
+  return JSON.stringify(worldToSave);
 }
 
 /**
- * Called to restore state.
+ * Called by Phrost to restore the state.
  * * @param {string} data - JSON string
  */
 function Phrost_Wake(data) {
   try {
     const savedWorld = JSON.parse(data);
 
-    // Restore primitive properties
-    world.assetsLoaded = savedWorld.assetsLoaded;
-    world.mapInfo = savedWorld.mapInfo;
-    world.playerKey = savedWorld.playerKey;
+    // Restore primitives
+    world.spritesCount = savedWorld.spritesCount || 0;
+    world.activeLogic = savedWorld.activeLogic || "JS";
+    world.pluginLoaded = savedWorld.pluginLoaded;
+    world.chunkSize = savedWorld.chunkSize;
     world.inputState = savedWorld.inputState || {};
+    world.mouseX = savedWorld.mouseX;
+    world.mouseY = savedWorld.mouseY;
+    world.musicPlaying = savedWorld.musicPlaying;
+    world.assetsLoaded = savedWorld.assetsLoaded;
+    world.eventStacking = savedWorld.eventStacking;
 
-    // Restore Window & Camera
-    if (savedWorld.window) {
-      Object.assign(world.window, savedWorld.window);
-      // Re-initialize flags object if it was flattened
-    }
-    if (savedWorld.camera) {
-      Object.assign(world.camera, savedWorld.camera);
+    // Hydrate Window
+    if (savedWorld.window) Object.assign(world.window, savedWorld.window);
+    // Hydrate Camera
+    if (savedWorld.camera) Object.assign(world.camera, savedWorld.camera);
+
+    // Hydrate Audio
+    if (savedWorld.musicTrack) {
+      Object.assign(world.musicTrack, savedWorld.musicTrack);
+      // Re-set prototype to Audio class
+      Object.setPrototypeOf(world.musicTrack, Audio.prototype);
     }
 
-    // --- Hydrate Sprites ---
+    // Hydrate Text Objects
+    if (savedWorld.textObjects) {
+      if (savedWorld.textObjects.fps) {
+        Object.assign(world.textObjects.fps, savedWorld.textObjects.fps);
+        Object.setPrototypeOf(world.textObjects.fps, Text.prototype);
+      }
+      if (savedWorld.textObjects.logic) {
+        Object.assign(world.textObjects.logic, savedWorld.textObjects.logic);
+        Object.setPrototypeOf(world.textObjects.logic, Text.prototype);
+      }
+    }
+
+    // Hydrate Sprites
     world.sprites = {};
     for (const key in savedWorld.sprites) {
-      const spriteData = savedWorld.sprites[key];
-      let sprite;
-
-      // Heuristic to determine type. In a real engine, save a "type" field.
-      // For this demo, if it has 'animations' prop, it's a Warrior/SpriteAnimated.
-      if (spriteData.animations || key === world.playerKey) {
-        // It's our Warrior
-        sprite = new Warrior(
-          Id.asUnsigned(spriteData.id0),
-          Id.asUnsigned(spriteData.id1),
-          false,
-        );
-        sprite.hydrate(spriteData);
-      } else {
-        // Standard Tile Sprite
-        sprite = new Sprite(
-          Id.asUnsigned(spriteData.id0),
-          Id.asUnsigned(spriteData.id1),
-          false,
-        );
-        Object.assign(sprite, spriteData);
-      }
+      const sData = savedWorld.sprites[key];
+      // Convert ID strings back to BigInt if necessary (Id class expects BigInt internally mostly)
+      // Constructor takes whatever, usually numbers/BigInts.
+      const sprite = new Sprite(BigInt(sData.id0), BigInt(sData.id1), false);
+      Object.assign(sprite, sData);
       world.sprites[key] = sprite;
-    }
-
-    // --- Hydrate Physics Bodies ---
-    world.physicsBodies = {};
-    for (const key in savedWorld.physicsBodies) {
-      const bodyData = savedWorld.physicsBodies[key];
-      let body;
-
-      if (key === world.playerKey) {
-        body = new WarriorBody(
-          Id.asUnsigned(bodyData.id0),
-          Id.asUnsigned(bodyData.id1),
-          false,
-        );
-        body.hydrate(bodyData);
-      } else {
-        body = new WarriorBody(
-          Id.asUnsigned(bodyData.id0),
-          Id.asUnsigned(bodyData.id1),
-          false,
-        );
-        Object.assign(body, bodyData);
-      }
-      world.physicsBodies[key] = body;
     }
 
     console.log("World state restored.");
   } catch (e) {
-    console.error("Failed to parse save data. Starting fresh.", e);
+    console.error("Failed to parse saved data. Starting fresh.", e);
     if (fs.existsSync(SAVE_PATH)) {
       fs.unlinkSync(SAVE_PATH);
     }
@@ -148,23 +156,39 @@ function Phrost_Wake(data) {
 }
 
 /**
- * Main game loop function.
+ * Main game loop.
  * * @param {number} elapsed
  * @param {number} dt
  * @param {Buffer} eventsBlob
- * @returns {Buffer} Command blob
+ * @returns {Buffer}
  */
 function Phrost_Update(elapsed, dt, eventsBlob) {
-  const liveReload = world.liveReload;
-  liveReload.poll(world.assetsLoaded);
+  // -- Live reloading feature ---
+  const live_reload = world.liveReload;
+  live_reload.poll(world.assetsLoaded);
 
   const window = world.window;
   const camera = world.camera;
+  const music = world.musicTrack;
+  const fpsText = world.textObjects.fps;
+  const logicText = world.textObjects.logic;
 
-  // Unpack events (Buffer -> Array of Objects)
-  const events = PackFormat.unpack(eventsBlob); // unpack needs to handle Buffer
+  // --- FPS Calculation ---
+  if (dt > 0) {
+    world.fps = 1.0 / dt;
+    world.fps_samples.push(dt);
+    if (world.fps_samples.length > FPS_SAMPLE_SIZE) {
+      world.fps_samples.shift();
+    }
+    const sum = world.fps_samples.reduce((a, b) => a + b, 0);
+    const average_dt = sum / world.fps_samples.length;
+    world.smoothed_fps = 1.0 / average_dt;
+  }
 
-  // Setup Packer
+  const maxSprite = 50000;
+  const events = PackFormat.unpack(eventsBlob); // Handle Buffer
+
+  // --- Packer Setup ---
   let packer;
   if (world.__initial_packer) {
     packer = world.__initial_packer;
@@ -173,84 +197,162 @@ function Phrost_Update(elapsed, dt, eventsBlob) {
     packer = new ChannelPacker();
   }
 
-  // Check pending reset
-  if (liveReload.isResetPending()) {
-    console.log("Executing deferred reset.");
-    liveReload.reset(world, packer);
+  // Check for deferred reset
+  if (live_reload.isResetPending()) {
+    console.log("Executing deferred reset. Sending remove commands.");
+    live_reload.reset(world, packer);
     return packer.finalize();
   }
 
   // --- Initial Asset Loading ---
   if (!world.assetsLoaded) {
-    // Load Map
-    Tiled.loadMap(world, packer, path.join(__dirname, "assets/map.tmx"));
+    console.log("Requesting audio load...");
+    music.load();
+    music.packDirtyEvents(packer);
 
-    // Create Warrior
-    const id = Id.generate(); // [BigInt, BigInt]
-    const warrior = new Warrior(id[0], id[1]);
-    warrior.setPosition(100.0, 40.0, 0.0);
-    warrior.setSize(64, 44);
-    warrior.setTexturePath(
-      path.join(__dirname, "assets/Warrior_Sheet-Effect.png"),
-    );
-
-    warrior.initializeAnimations();
-    warrior.play("idle", true);
-
-    const key = Id.toHex(id);
-    world.sprites[key] = warrior;
-    warrior.packDirtyEvents(packer);
-
-    // Create Physics Body
-    const warriorBody = new WarriorBody(id[0], id[1]);
-    warriorBody.setConfig(0, 0, 1.0, 0.2, 0.0, 1); // Dynamic, Box, Mass 1, Friction 0.2, Elasticity 0, LockRot
-    warriorBody.setShape(32.0, 40.0);
-    warriorBody.setPosition(100.0, 40.0, false);
-
-    world.physicsBodies[key] = warriorBody;
-    world.playerKey = key;
-    warriorBody.packDirtyEvents(packer);
+    console.log("Creating text sprites...");
+    fpsText.packDirtyEvents(packer);
+    logicText.packDirtyEvents(packer);
 
     window.setSize(800, 450);
     window.packDirtyEvents(packer);
 
     world.assetsLoaded = true;
-    console.log("Assets loaded successfully!");
   }
 
-  // --- Player Lookup ---
-  const playerKey = world.playerKey;
-  const playerBody = playerKey ? world.physicsBodies[playerKey] : null;
-  const playerSprite = playerKey ? world.sprites[playerKey] : null;
+  // --- Window Title & Text Update ---
+  if (world.activeLogic === "JS") {
+    window.setTitle(
+      `Bunny Benchmark (JS) | Sprites: ${world.spritesCount} | FPS: ${world.smoothed_fps.toFixed(0)}`,
+    );
+  }
 
-  window.setTitle("Warrior Animation Demo (JS) - 'I' Idle, 'A' Attack");
+  fpsText.setText(`FPS: ${world.smoothed_fps.toFixed(0)}`);
+  fpsText.packDirtyEvents(packer);
+
+  logicText.setText("Logic: " + world.activeLogic);
+  logicText.packDirtyEvents(packer);
+
   window.packDirtyEvents(packer);
 
   // --- Input Event Handling ---
   for (const event of events) {
     if (event.type === undefined) continue;
 
+    // --- Mouse Events ---
+    if (event.type === Events.INPUT_MOUSEMOTION) {
+      world.mouseX = event.x || 0;
+      world.mouseY = event.y || 0;
+    }
+    if (event.type === Events.INPUT_MOUSEDOWN) {
+      world.inputState["MOUSE_LEFT"] = true;
+    }
+    if (event.type === Events.INPUT_MOUSEUP) {
+      delete world.inputState["MOUSE_LEFT"];
+    }
+
+    // --- Window Resize Event ---
     if (event.type === Events.WINDOW_RESIZE) {
       window.setSize(event.w, event.h);
     }
 
+    // --- Keyboard Events ---
     if (event.type === Events.INPUT_KEYDOWN) {
+      if (event.keycode === undefined) continue;
+
       world.inputState[event.keycode] = true;
 
-      liveReload.resetOnEvent(event, Keycode.R, Mod.CTRL);
-      liveReload.shutdownOnEvent(event, Keycode.Q, Mod.NONE);
+      live_reload.resetOnEvent(event, Keycode.R, Mod.CTRL);
+      live_reload.shutdownOnEvent(event, Keycode.Q, Mod.NONE);
 
-      if (event.keycode === Keycode.I) {
-        for (const key in world.sprites) {
-          const s = world.sprites[key];
-          if (s instanceof SpriteAnimated) s.play("idle", true, true);
+      // --- Toggles ---
+
+      // Toggle Event Stacking
+      if (event.keycode === Keycode.B) {
+        world.eventStacking = !world.eventStacking;
+        console.log(
+          "Turning PLUGIN_EVENT_STACKING " +
+            (world.eventStacking ? "ON" : "OFF"),
+        );
+        packer.add(Channels.PLUGIN, Events.PLUGIN_EVENT_STACKING, [
+          world.eventStacking ? 1 : 0,
+        ]);
+      }
+
+      // Audio Controls
+      if (
+        event.keycode === Keycode.P &&
+        music.isLoaded &&
+        !world.musicPlaying
+      ) {
+        music.play();
+        music.packDirtyEvents(packer);
+        world.musicPlaying = true;
+      }
+      if (event.keycode === Keycode.O) {
+        Audio.stopAll(packer);
+        world.musicPlaying = false;
+      }
+
+      // Toggle Logic (JS / Zig)
+      if (event.keycode === Keycode.D) {
+        if (world.activeLogic === "Zig") {
+          world.activeLogic = "JS";
+        } else {
+          world.activeLogic = "Zig";
+        }
+        // Load Zig plugin if needed
+        if (!world.pluginLoaded) {
+          // Note: In Node.js, we'd use process.platform to determine lib name
+          // But Node loads .node files via require, or FFI.
+          // We send the path to the engine, which loads the native DLL/Dylib.
+          let libExtension;
+          if (os.platform() === "darwin")
+            libExtension = "libzig_phrost_plugin.dylib";
+          else if (os.platform() === "linux")
+            libExtension = "libzig_phrost_plugin.so";
+          else libExtension = "zig_phrost_plugin.dll";
+
+          const libPath = path.join(__dirname, libExtension);
+          const pathLen = Buffer.byteLength(libPath, "utf8");
+
+          packer.add(Channels.PLUGIN, Events.PLUGIN_LOAD, [pathLen, libPath]);
+          world.pluginLoaded = true;
         }
       }
-      if (event.keycode === Keycode.A) {
-        for (const key in world.sprites) {
-          const s = world.sprites[key];
-          if (s instanceof SpriteAnimated) s.play("attack", false, true);
+
+      // Load Rust
+      if (event.keycode === Keycode.R && !(event.mod & Mod.CTRL)) {
+        console.log("Loading Rust Plugin...");
+        let libName;
+        if (os.platform() === "darwin") libName = "librust_phrost_plugin.dylib";
+        else if (os.platform() === "linux")
+          libName = "librust_phrost_plugin.so";
+        else libName = "rust_phrost_plugin.dll";
+
+        const libPath = path.join(__dirname, libName);
+        if (!fs.existsSync(libPath)) {
+          console.error("Error: Could not find Rust plugin.");
+        } else {
+          const pathLen = Buffer.byteLength(libPath, "utf8");
+          packer.add(Channels.PLUGIN, Events.PLUGIN_LOAD, [pathLen, libPath]);
+          world.pluginLoaded = true;
+          world.activeLogic = "Rust";
         }
+      }
+
+      // Unload Plugin
+      if (event.keycode === Keycode.M) {
+        packer.add(Channels.PLUGIN, Events.PLUGIN_UNLOAD, [1]);
+        world.activeLogic = "JS";
+      }
+
+      // Debug Keys
+      if (event.keycode === Keycode.G) {
+        world.chunkSize += 10;
+      }
+      if (event.keycode === Keycode.H) {
+        world.chunkSize = Math.max(0, world.chunkSize - 10);
       }
     }
 
@@ -258,86 +360,125 @@ function Phrost_Update(elapsed, dt, eventsBlob) {
       delete world.inputState[event.keycode];
     }
 
+    // --- Texture Handling ---
     if (event.type === Events.SPRITE_TEXTURE_SET) {
-      // Texture ID set logic
       if (event.id1 && event.id2 && event.textureId) {
-        // Updated to use the safe Id.toHex method
-        const k = Id.toHex([event.id1, event.id2]);
-        if (world.sprites[k]) {
-          world.sprites[k].setTextureId(event.textureId);
+        const key = Id.toHex([BigInt(event.id1), BigInt(event.id2)]);
+        if (world.sprites[key]) {
+          world.sprites[key].setTextureId(event.textureId);
         }
       }
     }
 
-    if (event.type === Events.PHYSICS_SYNC_TRANSFORM) {
-      // Updated to use the safe Id.toHex method
-      const k = Id.toHex([event.id1, event.id2]);
-
-      if (world.physicsBodies[k]) {
-        const body = world.physicsBodies[k];
-        body.setVelocity(event.velocityX, event.velocityY, false);
-        body.setRotation(event.angle, false);
-        body.setAngularVelocity(event.angularVelocity, false);
-        body.setIsSleeping(event.isSleeping === 1, false);
-
-        // Camera follow player
-        if (k === world.playerKey) {
-          camera.setPosition(event.positionX, event.positionY);
-        }
-      }
-
-      if (world.sprites[k]) {
-        const sprite = world.sprites[k];
-        const oldPos = sprite.getPosition();
-        const oldRot = sprite.getRotation();
-        sprite.setPosition(event.positionX, event.positionY, oldPos.z);
-        sprite.setRotate(oldRot.x, oldRot.y, event.angle);
-      }
+    // --- Audio Loaded ---
+    if (event.type === Events.AUDIO_LOADED) {
+      music.setLoadedId(event.audioId);
+      console.log("Audio loaded with ID: " + event.audioId);
     }
 
-    if (event.type === Events.PHYSICS_COLLISION_BEGIN) {
-      if (playerBody) {
-        playerBody.processCollisionEvent(event, world.physicsBodies);
+    // --- External Movement (e.g. from Plugins) ---
+    if (event.type === Events.SPRITE_MOVE) {
+      const key = Id.toHex([BigInt(event.id1), BigInt(event.id2)]);
+      if (world.sprites[key]) {
+        world.sprites[key].setPosition(
+          event.positionX,
+          event.positionY,
+          event.positionZ,
+          false,
+        );
       }
     }
-  }
+  } // End foreach events
 
-  // --- Player Update ---
-  if (playerBody) {
-    playerBody.update(world.inputState, packer);
-  }
+  // --- Main Game Logic ---
 
-  // --- Animation Logic ---
-  if (playerSprite && playerBody) {
-    let targetVx = 0.0;
-    if (world.inputState[Keycode.LEFT]) targetVx = -1.0;
-    if (world.inputState[Keycode.RIGHT]) targetVx = 1.0;
+  // 1. Add Sprites
+  if (world.activeLogic === "JS") {
+    const shouldAdd =
+      world.inputState[Keycode.A] || world.inputState["MOUSE_LEFT"];
 
-    if (playerSprite.loops || !playerSprite.isPlaying) {
-      if (targetVx !== 0.0) {
-        playerSprite.play("run", true, false);
-        playerSprite.setFlip(targetVx < 0);
-      } else {
-        playerSprite.play("idle", true, false);
+    if (shouldAdd && world.spritesCount < maxSprite) {
+      const x = world.mouseX;
+      const y = world.mouseY;
+      const texturePath = path.join(__dirname, "assets/wabbit_alpha.png");
+
+      for (let i = 0; i < 1000; i++) {
+        const id = Id.generate();
+        const sprite = new Sprite(id[0], id[1]);
+        sprite.setPosition(x, y, 0.0);
+        sprite.setSize(32.0, 32.0);
+        sprite.setColor(
+          Math.floor(Math.random() * (240 - 50) + 50),
+          Math.floor(Math.random() * (240 - 80) + 80),
+          Math.floor(Math.random() * (240 - 100) + 100),
+          255,
+        );
+        sprite.setSpeed(Math.random() * 500 - 250, Math.random() * 500 - 250);
+        sprite.setTexturePath(texturePath);
+
+        const key = Id.toHex(id);
+        world.sprites[key] = sprite;
+        sprite.packDirtyEvents(packer);
       }
+      world.spritesCount += 1000;
     }
-  }
 
-  // --- Main Loop ---
-  for (const key in world.sprites) {
-    const sprite = world.sprites[key];
-    if (sprite instanceof SpriteAnimated) {
+    // 2. Update Sprite Positions (Bunny Benchmark Logic)
+    const size = window.getSize();
+    const boundary_left = 12;
+    const boundary_right = size.width - 12;
+    const boundary_top = 16;
+    const boundary_bottom = size.height - 16;
+    const hotspot_offset_x = 16;
+    const hotspot_offset_y = 16;
+
+    for (const key in world.sprites) {
+      const sprite = world.sprites[key];
       sprite.update(dt);
+
+      const pos = sprite.getPosition();
+      const speed = sprite.getSpeed();
+      let newSpeedX = speed.x;
+      let newSpeedY = speed.y;
+      let newPosX = pos.x;
+      let newPosY = pos.y;
+
+      const hotspot_x = pos.x + hotspot_offset_x;
+      const hotspot_y = pos.y + hotspot_offset_y;
+
+      if (hotspot_x > boundary_right) {
+        newSpeedX *= -1;
+        newPosX = boundary_right - hotspot_offset_x;
+      } else if (hotspot_x < boundary_left) {
+        newSpeedX *= -1;
+        newPosX = boundary_left - hotspot_offset_x;
+      }
+
+      if (hotspot_y > boundary_bottom) {
+        newSpeedY *= -1;
+        newPosY = boundary_bottom - hotspot_offset_y;
+      } else if (hotspot_y < boundary_top) {
+        newSpeedY *= -1;
+        newPosY = boundary_top - hotspot_offset_y;
+      }
+
+      if (newSpeedX !== speed.x || newSpeedY !== speed.y) {
+        sprite.setSpeed(newSpeedX, newSpeedY, true);
+      }
+      if (newPosX !== pos.x || newPosY !== pos.y) {
+        sprite.setPosition(newPosX, newPosY, pos.z, true);
+      }
       sprite.packDirtyEvents(packer);
     }
   }
 
+  // --- Camera Update ---
   camera.packDirtyEvents(packer);
 
+  // --- Finalize & Return ---
   return packer.finalize();
 }
 
-// Export the global methods for the Main entry point
 module.exports = {
   Phrost_Update,
   Phrost_Sleep,

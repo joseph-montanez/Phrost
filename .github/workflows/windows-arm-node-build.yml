@@ -1,0 +1,126 @@
+name: Build Phrost Engine (Windows Arm64 - Node)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  build:
+    name: Build on Windows 11 Arm64 (Node)
+    runs-on: windows-11-arm
+
+    defaults:
+      run:
+        shell: powershell
+
+    steps:
+      # 1. Checkout Code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          path: Phrost
+
+      # 2. Setup Directory Vars
+      - name: Set Directory Vars
+        run: |
+          $ROOT_DIR = Get-Location
+          $REPO_DIR = "$ROOT_DIR\Phrost"
+
+          echo "DEPS_DIR=$REPO_DIR\Engine\deps" >> $env:GITHUB_ENV
+          echo "REPO_DIR=$REPO_DIR" >> $env:GITHUB_ENV
+
+      # 3. Setup Swift (Using the Action)
+      - name: Setup Swift
+        uses: SwiftyLab/setup-swift@v1
+        with:
+          swift-version: "6.2.1"
+
+      # 4. Cache Dependencies
+      - name: Cache Deps
+        id: cache-deps
+        uses: actions/cache@v3
+        with:
+          path: Phrost/Engine/deps
+          # Reusing v8 key since deps are identical to the main build.
+          # If you remove PHP from this file later, change this key (e.g. to v8-node).
+          key: ${{ runner.os }}-arm64-deps-v8
+
+      # 5. Setup Dependencies
+      - name: Download and Setup Dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          New-Item -ItemType Directory -Path $env:DEPS_DIR -Force | Out-Null
+          Set-Location $env:DEPS_DIR
+
+          # --- A. PHP SDK (Experimental Arm64) ---
+          $PHP_FOLDER_NAME = "php-8.4.10-nts-Win32-vs17-arm64"
+          $PhpUrl = "https://github.com/hyh19962008/php-windows-arm64/releases/download/8.4.10/php-8.4.10-nts-Win32-vs17-arm64-experimental.7z"
+
+          Write-Host "Downloading Experimental PHP Arm64..."
+          curl.exe -L -o "php-arm64.7z" $PhpUrl
+
+          # Create folder and extract
+          New-Item -ItemType Directory -Path $PHP_FOLDER_NAME -Force | Out-Null
+          tar -xf php-arm64.7z -C $PHP_FOLDER_NAME
+
+          # --- B. SDL3 ---
+          Write-Host "Downloading SDL3..."
+          $SdlUrl = "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-16/SDL3-arm64-2025-11-16.zip"
+          curl.exe -L -o "SDL3-arm64.zip" $SdlUrl
+
+          # Extract to temp, find inner folder, and rename to 'SDL3-arm64'
+          Expand-Archive -Path "SDL3-arm64.zip" -DestinationPath "sdl_temp" -Force
+          $InnerFolder = Get-ChildItem -Path "sdl_temp" -Directory | Select-Object -First 1
+          Move-Item -Path $InnerFolder.FullName -Destination "SDL3-arm64" -Force
+          Remove-Item "sdl_temp" -Recurse -Force
+
+          # --- C. Chipmunk2D ---
+          Write-Host "Downloading Chipmunk2D..."
+          $ChipmunkUrl = "https://github.com/joseph-montanez/Phrost/releases/download/v0.01/chipmunk_arm64-windows.zip"
+
+          $VcpkgPackagesDir = Join-Path $env:DEPS_DIR "vcpkg\packages"
+          New-Item -ItemType Directory -Path $VcpkgPackagesDir -Force | Out-Null
+
+          curl.exe -L -o "chipmunk.zip" $ChipmunkUrl
+          Expand-Archive -Path "chipmunk.zip" -DestinationPath $VcpkgPackagesDir -Force
+
+          # --- D. Node.js (Arm64) ---
+          Write-Host "Downloading Node.js Arm64..."
+          $NodeUrl = "https://nodejs.org/dist/v25.2.1/node-v25.2.1-win-arm64.zip"
+          curl.exe -L -o "node-arm64.zip" $NodeUrl
+
+          # Extract to temp, find inner folder (usually node-vXX...), rename to 'node-arm64'
+          Expand-Archive -Path "node-arm64.zip" -DestinationPath "node_temp" -Force
+          $InnerNodeFolder = Get-ChildItem -Path "node_temp" -Directory | Select-Object -First 1
+          Move-Item -Path $InnerNodeFolder.FullName -Destination "node-arm64" -Force
+          Remove-Item "node_temp" -Recurse -Force
+
+          Write-Host "Dependencies setup complete."
+
+      # 6. Run Build Script
+      - name: Run Build Script
+        run: |
+          swift --version
+
+          # Define the Project Root
+          $ProjectRoot = Join-Path $env:REPO_DIR "Engine\PhrostEngineV2"
+
+          # Change Directory to Project Root
+          Set-Location $ProjectRoot
+          Write-Host "Current Working Directory: $(Get-Location)"
+
+          # Run the Node specific script
+          $ScriptPath = Join-Path $ProjectRoot "scripts\win_node_arm64.ps1"
+          Write-Host "Invoking script: $ScriptPath"
+
+          & $ScriptPath
+
+      # 7. Upload Artifacts
+      - name: Upload Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: Phrost-Windows-Arm64-Node
+          path: Phrost/Release
