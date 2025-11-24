@@ -12,7 +12,7 @@ $env:CLIENT_TYPE = "node"
 
 # --- Node.js Paths ---
 # Path adjusted to match your provided structure: Engine\deps\node-v25.2.1-win-arm64
-$env:NODE_ROOT = (Join-Path $SCRIPT_DIR "..\..\deps\node-v25.2.1-win-arm64" | Resolve-Path)
+$env:NODE_ROOT = (Join-Path $SCRIPT_DIR "..\..\deps\node-arm64" | Resolve-Path)
 $NODE_BIN = Join-Path $env:NODE_ROOT "node.exe"
 $NPM_BIN = Join-Path $env:NODE_ROOT "npm.cmd" # Usually npm is a cmd shim on Windows in the node dir
 

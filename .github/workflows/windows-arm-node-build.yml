@@ -55,13 +55,6 @@ jobs:
           New-Item -ItemType Directory -Path $env:DEPS_DIR -Force | Out-Null
           Set-Location $env:DEPS_DIR
 
-          # --- A. PHP SDK (Experimental Arm64) ---
-          $PHP_FOLDER_NAME = "php-8.4.10-nts-Win32-vs17-arm64"
-          $PhpUrl = "https://github.com/hyh19962008/php-windows-arm64/releases/download/8.4.10/php-8.4.10-nts-Win32-vs17-arm64-experimental.7z"
-
-          Write-Host "Downloading Experimental PHP Arm64..."
-          curl.exe -L -o "php-arm64.7z" $PhpUrl
-
           # Create folder and extract
           New-Item -ItemType Directory -Path $PHP_FOLDER_NAME -Force | Out-Null
           tar -xf php-arm64.7z -C $PHP_FOLDER_NAME
