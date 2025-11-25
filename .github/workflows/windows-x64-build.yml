@@ -86,7 +86,7 @@ jobs:
 
           # --- B. SDL3 (x64) ---
           Write-Host "Downloading SDL3 x64..."
-          $SdlUrl = "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-11/SDL3-x64-2025-11-16.zip"
+          $SdlUrl = "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-11/SDL3-x64-2025-11-23.zip"
           curl.exe -L -o "SDL3-x64.zip" $SdlUrl
 
           # Extract to temp, rename to 'SDL3-x64'
