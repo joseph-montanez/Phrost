@@ -12,6 +12,7 @@ public final class PhysicsManager: @unchecked Sendable {
 
     private let space: UnsafeMutablePointer<cpSpace>
     private let spriteManager: SpriteManager
+    public var isDebugDrawEnabled: Bool = false
 
     private var physicsLinks:
         [SpriteID: (
@@ -43,6 +44,68 @@ public final class PhysicsManager: @unchecked Sendable {
         }
         cpSpaceFree(OpaquePointer(space))
         print("PhysicsManager Cleaned up.")
+    }
+
+    public func setDebugMode(_ enabled: Bool) {
+        self.isDebugDrawEnabled = enabled
+        print("Physics Debug Mode set to: \(enabled)")
+    }
+
+    public func debugDraw(
+        renderer: OpaquePointer,
+        camX: Double,
+        camY: Double,
+        camZoom: Double,
+        screenW: Double,
+        screenH: Double
+    ) {
+        guard isDebugDrawEnabled else { return }
+
+        // Set Draw Color to Bright Green for visibility
+        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255)
+
+        let halfScreenX = screenW / 2.0
+        let halfScreenY = screenH / 2.0
+
+        // Helper to transform World -> Screen
+        func toScreen(x: Double, y: Double) -> (Float, Float) {
+            let relX = (x - camX) * camZoom
+            let relY = (y - camY) * camZoom
+            return (Float(relX + halfScreenX), Float(relY + halfScreenY))
+        }
+
+        // Iterate over all tracked bodies
+        for (_, tuple) in physicsLinks {
+            let body = tuple.body
+            let shape = tuple.shape
+
+            // 1. Draw Bounding Box (AABB)
+            let bb = cpShapeGetBB(OpaquePointer(shape))
+
+            let (tlX, tlY) = toScreen(x: bb.l, y: bb.t)  // Top-Left
+            let (brX, brY) = toScreen(x: bb.r, y: bb.b)  // Bottom-Right
+
+            // Calculate width/height based on screen coordinates
+            let w = brX - tlX
+            let h = brY - tlY
+
+            var rect = SDL_FRect(x: tlX, y: tlY, w: w, h: h)
+            SDL_RenderRect(renderer, &rect)
+
+            // 2. Draw Rotation Vector (Line from center to show angle)
+            let pos = cpBodyGetPosition(OpaquePointer(body))
+            let angle = cpBodyGetAngle(OpaquePointer(body))
+
+            // Calculate a point 20 units away in the direction of rotation
+            let lineLen: Double = 20.0
+            let endX = pos.x + cos(angle) * lineLen
+            let endY = pos.y + sin(angle) * lineLen
+
+            let (startX, startY) = toScreen(x: pos.x, y: pos.y)
+            let (screenEndX, screenEndY) = toScreen(x: endX, y: endY)
+
+            SDL_RenderLine(renderer, startX, startY, screenEndX, screenEndY)
+        }
     }
 
     /// Called from Engine.swift's run loop

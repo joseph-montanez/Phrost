@@ -65,6 +65,7 @@ pub enum Events {
     physicsCollisionBegin = 550,
     physicsCollisionSeparate = 551,
     physicsSyncTransform = 552,
+    physicsSetDebugMode = 553,
 
     plugin = 1000,
     pluginLoad = 1001,
@@ -135,6 +136,7 @@ impl Events {
             550 => Some(Events::physicsCollisionBegin),
             551 => Some(Events::physicsCollisionSeparate),
             552 => Some(Events::physicsSyncTransform),
+            553 => Some(Events::physicsSetDebugMode),
             1000 => Some(Events::plugin),
             1001 => Some(Events::pluginLoad),
             1002 => Some(Events::pluginUnload),
@@ -447,6 +449,14 @@ pub struct PackedPhysicsCollisionEvent {
 pub struct PackedPhysicsRemoveBodyEvent {
     pub id1: i64, // Primary ID of body to remove.
     pub id2: i64, // Secondary ID of body to remove.
+}
+
+/// Payload to toggle physics debug rendering.
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct PackedPhysicsSetDebugModeEvent {
+    pub enabled: u8, // 1 to enable debug drawing, 0 to disable.
+    pub _padding: [u8; 3], // Padding for 4-byte alignment.
 }
 
 /// Payload to teleport a body to a new position.

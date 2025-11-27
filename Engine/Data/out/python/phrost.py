@@ -64,6 +64,7 @@ class Events(enum.IntEnum):
     PHYSICS_COLLISION_BEGIN = 550
     PHYSICS_COLLISION_SEPARATE = 551
     PHYSICS_SYNC_TRANSFORM = 552
+    PHYSICS_SET_DEBUG_MODE = 553
 
     PLUGIN = 1000
     PLUGIN_LOAD = 1001
@@ -658,6 +659,15 @@ class PhysicsPackFormats:
     # Size: 72 bytes
     UNPACK_PHYSICS_SYNC_TRANSFORM: Tuple[str, int] = ("<qqddddddB7x", 72)
 
+    """
+    Maps to Swift: `PackedPhysicsSetDebugModeEvent`
+    - enabled: u8 (1 to enable debug drawing, 0 to disable.)
+    - _padding: u8 (Padding for 4-byte alignment.)
+    """
+    # Format: <B3x
+    # Size: 4 bytes
+    PACK_PHYSICS_SET_DEBUG_MODE: Tuple[str, int] = ("<B3x", 4)
+
 class PluginPackFormats:
     """
     Maps to Swift: `PackedPluginOnEvent`
@@ -844,6 +854,7 @@ class PackFormat:
         Events.PHYSICS_COLLISION_BEGIN.value: PhysicsPackFormats.UNPACK_PHYSICS_COLLISION,
         Events.PHYSICS_COLLISION_SEPARATE.value: PhysicsPackFormats.UNPACK_PHYSICS_COLLISION,
         Events.PHYSICS_SYNC_TRANSFORM.value: PhysicsPackFormats.UNPACK_PHYSICS_SYNC_TRANSFORM,
+        Events.PHYSICS_SET_DEBUG_MODE.value: PhysicsPackFormats.PACK_PHYSICS_SET_DEBUG_MODE,
         Events.PLUGIN.value: PluginPackFormats.PACK_PLUGIN,
         Events.PLUGIN_LOAD.value: PluginPackFormats.PACK_PLUGIN_LOAD,
         Events.PLUGIN_UNLOAD.value: PluginPackFormats.PACK_PLUGIN_UNLOAD,
@@ -910,6 +921,7 @@ class PackFormat:
         550: ['id1_A', 'id2_A', 'id1_B', 'id2_B'],
         551: ['id1_A', 'id2_A', 'id1_B', 'id2_B'],
         552: ['id1', 'id2', 'positionX', 'positionY', 'angle', 'velocityX', 'velocityY', 'angularVelocity', 'isSleeping'],
+        553: ['enabled'],
         1000: ['eventId'],
         1001: ['channelNo', 'pathLength'],
         1002: ['pluginId'],

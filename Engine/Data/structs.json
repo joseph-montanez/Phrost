@@ -1322,6 +1322,26 @@
       ]
     },
     {
+      "name": "PackedPhysicsSetDebugModeEvent",
+      "eventId": 553,
+      "enumName": "PHYSICS_SET_DEBUG_MODE",
+      "isDynamic": false,
+      "comment": "Payload to toggle physics debug rendering.",
+      "members": [
+        {
+          "name": "enabled",
+          "type": "u8",
+          "comment": "1 to enable debug drawing, 0 to disable."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "count": 3,
+          "comment": "Padding for 4-byte alignment."
+        }
+      ]
+    },
+    {
       "name": "PackedPluginOnEvent",
       "eventId": 1000,
       "enumName": "PLUGIN",

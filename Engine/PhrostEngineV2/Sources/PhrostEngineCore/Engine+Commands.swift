@@ -27,7 +27,7 @@ extension UnsafeRawBufferPointer {
 
         // 1. Fast Path: Check alignment
         if Int(bitPattern: srcPtr) % MemoryLayout<T>.alignment == 0 {
-             return self.load(fromByteOffset: offset, as: T.self)
+            return self.load(fromByteOffset: offset, as: T.self)
         }
 
         // 2. Slow Path: Unaligned Copy
@@ -47,7 +47,9 @@ extension PhrostEngine {
         let size = MemoryLayout<T>.size
         let currentOffset = offset
         guard currentOffset + size <= data.count else {
-            print("Unpack Error (\(label)): Not enough data for \(T.self). Offset=\(currentOffset), Need=\(size), Have=\(data.count - currentOffset)")
+            print(
+                "Unpack Error (\(label)): Not enough data for \(T.self). Offset=\(currentOffset), Need=\(size), Have=\(data.count - currentOffset)"
+            )
             return nil
         }
 
@@ -73,7 +75,9 @@ extension PhrostEngine {
 
     // MARK: - Core Command Processor
 
-    internal func processCommands(_ commandData: Data) -> (generatedEvents: Data, eventCount: UInt32) {
+    internal func processCommands(_ commandData: Data) -> (
+        generatedEvents: Data, eventCount: UInt32
+    ) {
         // Pre-allocate with a large capacity
         var generatedEvents = Data(capacity: 10 * 1024 * 1024)
         var generatedEventCount: UInt32 = 0
@@ -113,12 +117,15 @@ extension PhrostEngine {
             offset += 4
 
             guard let eventType = Events(rawValue: eventTypeRaw) else {
-                print("Loop \(i)/\(commandCount): Unknown event type \(eventTypeRaw). Breaking loop.")
+                print(
+                    "Loop \(i)/\(commandCount): Unknown event type \(eventTypeRaw). Breaking loop.")
                 break
             }
 
             guard let payloadSize = eventPayloadSizes[eventType.rawValue] else {
-                print("Loop \(i)/\(commandCount): No registered size for \(eventType). Breaking loop.")
+                print(
+                    "Loop \(i)/\(commandCount): No registered size for \(eventType). Breaking loop."
+                )
                 break
             }
 
@@ -133,7 +140,9 @@ extension PhrostEngine {
                 let caseOffsetStart = offset
                 guard caseOffsetStart + payloadSize <= commandData.count else { break }
 
-                guard let header: PackedTextureLoadHeaderEvent = localUnpack(label: "TexLoadHeader", as: PackedTextureLoadHeaderEvent.self)
+                guard
+                    let header: PackedTextureLoadHeaderEvent = localUnpack(
+                        label: "TexLoadHeader", as: PackedTextureLoadHeaderEvent.self)
                 else { break }
 
                 let filenameLength = Int(header.filenameLength)
@@ -144,7 +153,8 @@ extension PhrostEngine {
                 if offset + filenameLength + strPadding <= commandData.count {
                     let filenameData = commandData.subdata(in: offset..<(offset + filenameLength))
                     if let filename = String(data: filenameData, encoding: .utf8) {
-                        let (events, count) = handleTextureLoadCommand(header: header, filename: filename)
+                        let (events, count) = handleTextureLoadCommand(
+                            header: header, filename: filename)
                         generatedEvents.append(events)
                         generatedEventCount &+= count
                     }
@@ -157,7 +167,9 @@ extension PhrostEngine {
                 let caseOffsetStart = offset
                 guard caseOffsetStart + payloadSize <= commandData.count else { break }
 
-                guard let header: PackedTextAddEvent = localUnpack(label: "TextAddHeader", as: PackedTextAddEvent.self)
+                guard
+                    let header: PackedTextAddEvent = localUnpack(
+                        label: "TextAddHeader", as: PackedTextAddEvent.self)
                 else { break }
 
                 let fontPathLength = Int(header.fontPathLength)
@@ -168,17 +180,18 @@ extension PhrostEngine {
                 guard offset + fontPathLength + fontPadding <= commandData.count else { break }
 
                 let fontPathData = commandData.subdata(in: offset..<(offset + fontPathLength))
-                offset += fontPathLength + fontPadding // Advance past font + padding
+                offset += fontPathLength + fontPadding  // Advance past font + padding
 
                 // 2. Read Text + Padding
                 let textPadding = (8 - (textLength % 8)) % 8
                 guard offset + textLength + textPadding <= commandData.count else { break }
 
                 let textData = commandData.subdata(in: offset..<(offset + textLength))
-                offset += textLength + textPadding // Advance past text + padding
+                offset += textLength + textPadding  // Advance past text + padding
 
                 if let fontPath = String(data: fontPathData, encoding: .utf8),
-                   let textString = String(data: textData, encoding: .utf8) {
+                    let textString = String(data: textData, encoding: .utf8)
+                {
                     handleTextAddCommand(header: header, fontPath: fontPath, textString: textString)
                 }
 
@@ -189,7 +202,9 @@ extension PhrostEngine {
                 let caseOffsetStart = offset
                 guard caseOffsetStart + payloadSize <= commandData.count else { break }
 
-                guard let header: PackedTextSetStringEvent = localUnpack(label: "TextSetStringHeader", as: PackedTextSetStringEvent.self)
+                guard
+                    let header: PackedTextSetStringEvent = localUnpack(
+                        label: "TextSetStringHeader", as: PackedTextSetStringEvent.self)
                 else { break }
 
                 let textLength = Int(header.textLength)
@@ -213,7 +228,9 @@ extension PhrostEngine {
                 let caseOffsetStart = offset
                 guard caseOffsetStart + payloadSize <= commandData.count else { break }
 
-                guard let header: PackedPluginLoadHeaderEvent = localUnpack(label: "PluginLoadHeader", as: PackedPluginLoadHeaderEvent.self)
+                guard
+                    let header: PackedPluginLoadHeaderEvent = localUnpack(
+                        label: "PluginLoadHeader", as: PackedPluginLoadHeaderEvent.self)
                 else { break }
 
                 let pathLength = Int(header.pathLength)
@@ -225,7 +242,8 @@ extension PhrostEngine {
                 offset += pathLength + strPadding
 
                 if let pathString = String(data: pathData, encoding: .utf8) {
-                    let (events, count) = self.loadPlugin(channelNo: header.channelNo, path: pathString)
+                    let (events, count) = self.loadPlugin(
+                        channelNo: header.channelNo, path: pathString)
                     generatedEvents.append(events)
                     generatedEventCount &+= count
                 }
@@ -236,7 +254,9 @@ extension PhrostEngine {
                 let caseOffsetStart = offset
                 guard caseOffsetStart + payloadSize <= commandData.count else { break }
 
-                guard let header: PackedAudioLoadEvent = localUnpack(label: "AudioLoadHeader", as: PackedAudioLoadEvent.self)
+                guard
+                    let header: PackedAudioLoadEvent = localUnpack(
+                        label: "AudioLoadHeader", as: PackedAudioLoadEvent.self)
                 else { break }
 
                 // FIX: Skip the 4 bytes of padding that align the header to 8 bytes
@@ -263,73 +283,107 @@ extension PhrostEngine {
             // FIXED SIZE COMMANDS (Standard Unpack)
             // =========================================================================
             case .spriteAdd:
-                guard let event = localUnpack(label: "SpriteAdd", as: PackedSpriteAddEvent.self) else { break }
+                guard let event = localUnpack(label: "SpriteAdd", as: PackedSpriteAddEvent.self)
+                else { break }
                 spriteManager.addSprite(event)
-                generatedEventCount &+= 1 // Note: Pass-through logic simplified for brevity, assume logic executed
+                generatedEventCount &+= 1  // Note: Pass-through logic simplified for brevity, assume logic executed
 
             case .spriteRemove:
-                guard let event = localUnpack(label: "SpriteRemove", as: PackedSpriteRemoveEvent.self) else { break }
+                guard
+                    let event = localUnpack(label: "SpriteRemove", as: PackedSpriteRemoveEvent.self)
+                else { break }
                 spriteManager.removeSprite(id: SpriteID(id1: event.id1, id2: event.id2))
                 generatedEventCount &+= 1
 
             case .spriteMove:
-                guard let event = localUnpack(label: "SpriteMove", as: PackedSpriteMoveEvent.self) else { break }
-                spriteManager.moveSprite(SpriteID(id1: event.id1, id2: event.id2), (event.positionX, event.positionY, event.positionZ))
+                guard let event = localUnpack(label: "SpriteMove", as: PackedSpriteMoveEvent.self)
+                else { break }
+                spriteManager.moveSprite(
+                    SpriteID(id1: event.id1, id2: event.id2),
+                    (event.positionX, event.positionY, event.positionZ))
                 generatedEventCount &+= 1
 
             case .spriteScale:
-                guard let event = localUnpack(label: "SpriteScale", as: PackedSpriteScaleEvent.self) else { break }
-                spriteManager.scaleSprite(SpriteID(id1: event.id1, id2: event.id2), (event.scaleX, event.scaleY, event.scaleZ))
+                guard let event = localUnpack(label: "SpriteScale", as: PackedSpriteScaleEvent.self)
+                else { break }
+                spriteManager.scaleSprite(
+                    SpriteID(id1: event.id1, id2: event.id2),
+                    (event.scaleX, event.scaleY, event.scaleZ))
                 generatedEventCount &+= 1
 
             case .spriteResize:
-                guard let event = localUnpack(label: "SpriteResize", as: PackedSpriteResizeEvent.self) else { break }
-                spriteManager.resizeSprite(SpriteID(id1: event.id1, id2: event.id2), (event.sizeH, event.sizeW))
+                guard
+                    let event = localUnpack(label: "SpriteResize", as: PackedSpriteResizeEvent.self)
+                else { break }
+                spriteManager.resizeSprite(
+                    SpriteID(id1: event.id1, id2: event.id2), (event.sizeH, event.sizeW))
                 generatedEventCount &+= 1
 
             case .spriteRotate:
-                guard let event = localUnpack(label: "SpriteRotate", as: PackedSpriteRotateEvent.self) else { break }
-                spriteManager.rotateSprite(SpriteID(id1: event.id1, id2: event.id2), (event.rotationX, event.rotationY, event.rotationZ))
+                guard
+                    let event = localUnpack(label: "SpriteRotate", as: PackedSpriteRotateEvent.self)
+                else { break }
+                spriteManager.rotateSprite(
+                    SpriteID(id1: event.id1, id2: event.id2),
+                    (event.rotationX, event.rotationY, event.rotationZ))
                 generatedEventCount &+= 1
 
             case .spriteColor:
-                guard let event = localUnpack(label: "SpriteColor", as: PackedSpriteColorEvent.self) else { break }
-                spriteManager.colorSprite(SpriteID(id1: event.id1, id2: event.id2), (event.r, event.g, event.b, event.a))
+                guard let event = localUnpack(label: "SpriteColor", as: PackedSpriteColorEvent.self)
+                else { break }
+                spriteManager.colorSprite(
+                    SpriteID(id1: event.id1, id2: event.id2), (event.r, event.g, event.b, event.a))
                 generatedEventCount &+= 1
 
             case .spriteSpeed:
-                guard let event = localUnpack(label: "SpriteSpeed", as: PackedSpriteSpeedEvent.self) else { break }
-                spriteManager.speedSprite(SpriteID(id1: event.id1, id2: event.id2), (event.speedX, event.speedY))
+                guard let event = localUnpack(label: "SpriteSpeed", as: PackedSpriteSpeedEvent.self)
+                else { break }
+                spriteManager.speedSprite(
+                    SpriteID(id1: event.id1, id2: event.id2), (event.speedX, event.speedY))
                 generatedEventCount &+= 1
 
             case .spriteTextureSet:
-                guard let event = localUnpack(label: "SpriteTextureSet", as: PackedSpriteTextureSetEvent.self) else { break }
+                guard
+                    let event = localUnpack(
+                        label: "SpriteTextureSet", as: PackedSpriteTextureSetEvent.self)
+                else { break }
                 // Logic handled elsewhere or pass-through
                 generatedEventCount &+= 1
 
             case .spriteSetSourceRect:
-                guard let event = localUnpack(label: "SpriteSetSourceRect", as: PackedSpriteSetSourceRectEvent.self) else { break }
-                spriteManager.setSourceRect(SpriteID(id1: event.id1, id2: event.id2), (event.x, event.y, event.w, event.h))
+                guard
+                    let event = localUnpack(
+                        label: "SpriteSetSourceRect", as: PackedSpriteSetSourceRectEvent.self)
+                else { break }
+                spriteManager.setSourceRect(
+                    SpriteID(id1: event.id1, id2: event.id2), (event.x, event.y, event.w, event.h))
                 generatedEventCount &+= 1
 
             // --- GEOMETRY ---
             case .geomAddPoint:
-                guard let event = localUnpack(label: "GeomAddPoint", as: PackedGeomAddPointEvent.self) else { break }
+                guard
+                    let event = localUnpack(label: "GeomAddPoint", as: PackedGeomAddPointEvent.self)
+                else { break }
                 geometryManager.addPoint(event: event)
                 generatedEventCount &+= 1
 
             case .geomAddLine:
-                guard let event = localUnpack(label: "GeomAddLine", as: PackedGeomAddLineEvent.self) else { break }
+                guard let event = localUnpack(label: "GeomAddLine", as: PackedGeomAddLineEvent.self)
+                else { break }
                 geometryManager.addLine(event: event)
                 generatedEventCount &+= 1
 
             case .geomAddRect:
-                guard let event = localUnpack(label: "GeomAddRect", as: PackedGeomAddRectEvent.self) else { break }
+                guard let event = localUnpack(label: "GeomAddRect", as: PackedGeomAddRectEvent.self)
+                else { break }
                 geometryManager.addRect(event: event, isFilled: false)
                 generatedEventCount &+= 1
 
             case .geomAddFillRect:
-                guard let event = localUnpack(label: "GeomAddFillRect", as: PackedGeomAddRectEvent.self) else { break }
+                guard
+                    let event = localUnpack(
+                        label: "GeomAddFillRect", as: PackedGeomAddRectEvent.self)
+                else { break }
                 geometryManager.addRect(event: event, isFilled: true)
                 generatedEventCount &+= 1
 
@@ -339,7 +393,10 @@ extension PhrostEngine {
                 // The header tells us type and count. The DATA is immediately following.
                 let caseOffsetStart = offset
                 guard caseOffsetStart + payloadSize <= commandData.count else { break }
-                guard let header: PackedGeomAddPackedHeaderEvent = localUnpack(label: "GeomAddPacked", as: PackedGeomAddPackedHeaderEvent.self) else { break }
+                guard
+                    let header: PackedGeomAddPackedHeaderEvent = localUnpack(
+                        label: "GeomAddPacked", as: PackedGeomAddPackedHeaderEvent.self)
+                else { break }
 
                 guard let type = PrimitiveType(rawValue: header.primitiveType) else { break }
                 let count = Int(header.count)
@@ -363,34 +420,44 @@ extension PhrostEngine {
                 generatedEventCount &+= 1
 
             case .geomRemove:
-                guard let event = localUnpack(label: "GeomRemove", as: PackedGeomRemoveEvent.self) else { break }
+                guard let event = localUnpack(label: "GeomRemove", as: PackedGeomRemoveEvent.self)
+                else { break }
                 geometryManager.removePrimitive(id: SpriteID(id1: event.id1, id2: event.id2))
                 generatedEventCount &+= 1
 
             case .geomSetColor:
-                guard let event = localUnpack(label: "GeomSetColor", as: PackedGeomSetColorEvent.self) else { break }
-                geometryManager.setPrimitiveColor(id: SpriteID(id1: event.id1, id2: event.id2), color: (event.r, event.g, event.b, event.a))
+                guard
+                    let event = localUnpack(label: "GeomSetColor", as: PackedGeomSetColorEvent.self)
+                else { break }
+                geometryManager.setPrimitiveColor(
+                    id: SpriteID(id1: event.id1, id2: event.id2),
+                    color: (event.r, event.g, event.b, event.a))
                 generatedEventCount &+= 1
 
             // --- WINDOW ---
             case .windowTitle:
-                guard let event = localUnpack(label: "WindowTitle", as: PackedWindowTitleEvent.self) else { break }
+                guard let event = localUnpack(label: "WindowTitle", as: PackedWindowTitleEvent.self)
+                else { break }
                 handleWindowTitleCommand(event: event)
                 generatedEventCount &+= 1
 
             case .windowResize:
-                guard let event = localUnpack(label: "WindowResize", as: PackedWindowResizeEvent.self) else { break }
+                guard
+                    let event = localUnpack(label: "WindowResize", as: PackedWindowResizeEvent.self)
+                else { break }
                 SDL_SetWindowSize(window, event.w, event.h)
                 generatedEventCount &+= 1
 
             case .windowFlags:
-                guard let event = localUnpack(label: "WindowFlags", as: PackedWindowFlagsEvent.self) else { break }
+                guard let event = localUnpack(label: "WindowFlags", as: PackedWindowFlagsEvent.self)
+                else { break }
                 handleWindowFlagsCommand(event: event)
                 generatedEventCount &+= 1
 
             // --- AUDIO ---
             case .audioPlay:
-                guard let event = localUnpack(label: "AudioPlay", as: PackedAudioPlayEvent.self) else { break }
+                guard let event = localUnpack(label: "AudioPlay", as: PackedAudioPlayEvent.self)
+                else { break }
                 handleAudioPlayCommand(event: event)
                 generatedEventCount &+= 1
 
@@ -400,27 +467,36 @@ extension PhrostEngine {
                 generatedEventCount &+= 1
 
             case .audioSetMasterVolume:
-                guard let event = localUnpack(label: "AudioSetMasterVol", as: PackedAudioSetMasterVolumeEvent.self) else { break }
+                guard
+                    let event = localUnpack(
+                        label: "AudioSetMasterVol", as: PackedAudioSetMasterVolumeEvent.self)
+                else { break }
                 ma_engine_set_volume(&self.maEngine, event.volume)
                 generatedEventCount &+= 1
 
             case .audioPause:
-                guard let event = localUnpack(label: "AudioPause", as: PackedAudioPauseEvent.self) else { break }
+                guard let event = localUnpack(label: "AudioPause", as: PackedAudioPauseEvent.self)
+                else { break }
                 handleAudioPauseCommand(event: event)
                 generatedEventCount &+= 1
 
             case .audioStop:
-                guard let event = localUnpack(label: "AudioStop", as: PackedAudioStopEvent.self) else { break }
+                guard let event = localUnpack(label: "AudioStop", as: PackedAudioStopEvent.self)
+                else { break }
                 handleAudioStopCommand(event: event)
                 generatedEventCount &+= 1
 
             case .audioUnload:
-                guard let event = localUnpack(label: "AudioUnload", as: PackedAudioUnloadEvent.self) else { break }
+                guard let event = localUnpack(label: "AudioUnload", as: PackedAudioUnloadEvent.self)
+                else { break }
                 unloadAudio(audioId: event.audioId)
                 generatedEventCount &+= 1
 
             case .audioSetVolume:
-                guard let event = localUnpack(label: "AudioSetVolume", as: PackedAudioSetVolumeEvent.self) else { break }
+                guard
+                    let event = localUnpack(
+                        label: "AudioSetVolume", as: PackedAudioSetVolumeEvent.self)
+                else { break }
                 handleAudioSetVolumeCommand(event: event)
                 generatedEventCount &+= 1
 
@@ -430,98 +506,162 @@ extension PhrostEngine {
 
             // --- PHYSICS ---
             case .physicsAddBody:
-                guard let event = localUnpack(label: "PhysAddBody", as: PackedPhysicsAddBodyEvent.self) else { break }
+                guard
+                    let event = localUnpack(
+                        label: "PhysAddBody", as: PackedPhysicsAddBodyEvent.self)
+                else { break }
                 handlePhysicsAddBodyCommand(event: event)
                 generatedEventCount &+= 1
 
             case .physicsRemoveBody:
-                guard let event = localUnpack(label: "PhysRemoveBody", as: PackedPhysicsRemoveBodyEvent.self) else { break }
+                guard
+                    let event = localUnpack(
+                        label: "PhysRemoveBody", as: PackedPhysicsRemoveBodyEvent.self)
+                else { break }
                 physicsManager.removeBody(id: SpriteID(id1: event.id1, id2: event.id2))
                 generatedEventCount &+= 1
 
             case .physicsApplyForce:
-                guard let event = localUnpack(label: "PhysApplyForce", as: PackedPhysicsApplyForceEvent.self) else { break }
-                physicsManager.applyForce(id: SpriteID(id1: event.id1, id2: event.id2), force: cpVect(x: event.forceX, y: event.forceY))
+                guard
+                    let event = localUnpack(
+                        label: "PhysApplyForce", as: PackedPhysicsApplyForceEvent.self)
+                else { break }
+                physicsManager.applyForce(
+                    id: SpriteID(id1: event.id1, id2: event.id2),
+                    force: cpVect(x: event.forceX, y: event.forceY))
                 generatedEventCount &+= 1
 
             case .physicsApplyImpulse:
-                guard let event = localUnpack(label: "PhysApplyImpulse", as: PackedPhysicsApplyImpulseEvent.self) else { break }
-                physicsManager.applyImpulse(id: SpriteID(id1: event.id1, id2: event.id2), impulse: cpVect(x: event.impulseX, y: event.impulseY))
+                guard
+                    let event = localUnpack(
+                        label: "PhysApplyImpulse", as: PackedPhysicsApplyImpulseEvent.self)
+                else { break }
+                physicsManager.applyImpulse(
+                    id: SpriteID(id1: event.id1, id2: event.id2),
+                    impulse: cpVect(x: event.impulseX, y: event.impulseY))
                 generatedEventCount &+= 1
 
             case .physicsSetVelocity:
-                guard let event = localUnpack(label: "PhysSetVel", as: PackedPhysicsSetVelocityEvent.self) else { break }
-                physicsManager.setVelocity(id: SpriteID(id1: event.id1, id2: event.id2), velocity: cpVect(x: event.velocityX, y: event.velocityY))
+                guard
+                    let event = localUnpack(
+                        label: "PhysSetVel", as: PackedPhysicsSetVelocityEvent.self)
+                else { break }
+                physicsManager.setVelocity(
+                    id: SpriteID(id1: event.id1, id2: event.id2),
+                    velocity: cpVect(x: event.velocityX, y: event.velocityY))
                 generatedEventCount &+= 1
 
             case .physicsSetPosition:
-                guard let event = localUnpack(label: "PhysSetPos", as: PackedPhysicsSetPositionEvent.self) else { break }
-                physicsManager.setPosition(id: SpriteID(id1: event.id1, id2: event.id2), position: cpVect(x: event.positionX, y: event.positionY))
+                guard
+                    let event = localUnpack(
+                        label: "PhysSetPos", as: PackedPhysicsSetPositionEvent.self)
+                else { break }
+                physicsManager.setPosition(
+                    id: SpriteID(id1: event.id1, id2: event.id2),
+                    position: cpVect(x: event.positionX, y: event.positionY))
                 generatedEventCount &+= 1
 
             case .physicsSetRotation:
-                guard let event = localUnpack(label: "PhysSetRot", as: PackedPhysicsSetRotationEvent.self) else { break }
-                physicsManager.setRotation(id: SpriteID(id1: event.id1, id2: event.id2), angleInRadians: event.angleInRadians)
+                guard
+                    let event = localUnpack(
+                        label: "PhysSetRot", as: PackedPhysicsSetRotationEvent.self)
+                else { break }
+                physicsManager.setRotation(
+                    id: SpriteID(id1: event.id1, id2: event.id2),
+                    angleInRadians: event.angleInRadians)
                 generatedEventCount &+= 1
 
             case .physicsCollisionBegin, .physicsCollisionSeparate, .physicsSyncTransform:
                 // Feedback, skip payload
                 offset += payloadSize
 
+            case .physicsSetDebugMode:
+                guard
+                    let event = localUnpack(
+                        label: "PhysDebug", as: PackedPhysicsSetDebugModeEvent.self)
+                else { break }
+                handlePhysicsSetDebugModeCommand(event: event)
+                generatedEventCount &+= 1
+
             // --- PLUGIN ---
             case .pluginUnload:
-                guard let event = localUnpack(label: "PluginUnload", as: PackedPluginUnloadEvent.self) else { break }
+                guard
+                    let event = localUnpack(label: "PluginUnload", as: PackedPluginUnloadEvent.self)
+                else { break }
                 self.unloadPlugin(id: event.pluginId)
                 generatedEventCount &+= 1
 
             case .plugin:
-                guard let event = localUnpack(label: "PluginOn", as: PackedPluginOnEvent.self) else { break }
+                guard let event = localUnpack(label: "PluginOn", as: PackedPluginOnEvent.self)
+                else { break }
                 self.pluginOn = (event.eventId == 1)
                 generatedEventCount &+= 1
 
             case .pluginEventStacking:
-                guard let event = localUnpack(label: "PluginEventStacking", as: PackedPluginEventStackingEvent.self) else { break }
+                guard
+                    let event = localUnpack(
+                        label: "PluginEventStacking", as: PackedPluginEventStackingEvent.self)
+                else { break }
                 self.eventStackingOn = (event.eventId == 1)
                 generatedEventCount &+= 1
 
             case .pluginSubscribeEvent:
-                guard let event = localUnpack(label: "PluginSub", as: PackedPluginSubscribeEvent.self) else { break }
+                guard
+                    let event = localUnpack(label: "PluginSub", as: PackedPluginSubscribeEvent.self)
+                else { break }
                 self.subscribePlugin(pluginId: event.pluginId, channelId: event.channelNo)
                 generatedEventCount &+= 1
 
             case .pluginUnsubscribeEvent:
-                guard let event = localUnpack(label: "PluginUnsub", as: PackedPluginUnsubscribeEvent.self) else { break }
+                guard
+                    let event = localUnpack(
+                        label: "PluginUnsub", as: PackedPluginUnsubscribeEvent.self)
+                else { break }
                 self.unsubscribePlugin(pluginId: event.pluginId, channelId: event.channelNo)
                 generatedEventCount &+= 1
 
             case .pluginSet:
-                guard localUnpack(label: "PluginSet", as: PackedPluginSetEvent.self) != nil else { break }
+                guard localUnpack(label: "PluginSet", as: PackedPluginSetEvent.self) != nil else {
+                    break
+                }
                 generatedEventCount &+= 1
 
             // --- CAMERA ---
             case .cameraSetPosition:
-                guard let event = localUnpack(label: "CamSetPos", as: PackedCameraSetPositionEvent.self) else { break }
+                guard
+                    let event = localUnpack(
+                        label: "CamSetPos", as: PackedCameraSetPositionEvent.self)
+                else { break }
                 self.cameraOffset = (x: event.positionX, y: event.positionY)
                 generatedEventCount &+= 1
 
             case .cameraMove:
-                guard let event = localUnpack(label: "CamMove", as: PackedCameraMoveEvent.self) else { break }
+                guard let event = localUnpack(label: "CamMove", as: PackedCameraMoveEvent.self)
+                else { break }
                 self.cameraOffset.x += event.deltaX
                 self.cameraOffset.y += event.deltaY
                 generatedEventCount &+= 1
 
             case .cameraSetZoom:
-                guard let event = localUnpack(label: "CamSetZoom", as: PackedCameraSetZoomEvent.self) else { break }
+                guard
+                    let event = localUnpack(label: "CamSetZoom", as: PackedCameraSetZoomEvent.self)
+                else { break }
                 self.cameraZoom = event.zoom
                 generatedEventCount &+= 1
 
             case .cameraSetRotation:
-                guard let event = localUnpack(label: "CamSetRot", as: PackedCameraSetRotationEvent.self) else { break }
+                guard
+                    let event = localUnpack(
+                        label: "CamSetRot", as: PackedCameraSetRotationEvent.self)
+                else { break }
                 self.cameraRotation = event.angleInRadians
                 generatedEventCount &+= 1
 
             case .cameraFollowEntity:
-                guard let event = localUnpack(label: "CamFollow", as: PackedCameraFollowEntityEvent.self) else { break }
+                guard
+                    let event = localUnpack(
+                        label: "CamFollow", as: PackedCameraFollowEntityEvent.self)
+                else { break }
                 self.cameraFollowTarget = SpriteID(id1: event.id1, id2: event.id2)
                 generatedEventCount &+= 1
 
@@ -532,12 +672,17 @@ extension PhrostEngine {
 
             // --- SCRIPT ---
             case .scriptSubscribe:
-                guard let event = localUnpack(label: "ScriptSub", as: PackedScriptSubscribeEvent.self) else { break }
+                guard
+                    let event = localUnpack(label: "ScriptSub", as: PackedScriptSubscribeEvent.self)
+                else { break }
                 self.phpSubscribedChannels.insert(event.channelNo)
                 generatedEventCount &+= 1
 
             case .scriptUnsubscribe:
-                guard let event = localUnpack(label: "ScriptUnsub", as: PackedScriptUnsubscribeEvent.self) else { break }
+                guard
+                    let event = localUnpack(
+                        label: "ScriptUnsub", as: PackedScriptUnsubscribeEvent.self)
+                else { break }
                 self.phpSubscribedChannels.remove(event.channelNo)
                 generatedEventCount &+= 1
 
@@ -551,7 +696,9 @@ extension PhrostEngine {
             alignOffset(&offset)
 
             if offset > commandData.count {
-                print("Loop \(i)/\(commandCount): !!! CRITICAL ERROR: Offset (\(offset)) exceeded data length. Breaking.")
+                print(
+                    "Loop \(i)/\(commandCount): !!! CRITICAL ERROR: Offset (\(offset)) exceeded data length. Breaking."
+                )
                 break
             }
         }

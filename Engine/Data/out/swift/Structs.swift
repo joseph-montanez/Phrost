@@ -218,6 +218,11 @@ import Foundation
     public var id2: Int64
 }
 
+@frozen public struct PackedPhysicsSetDebugModeEvent: Sendable {
+    public var enabled: UInt8
+    public var _padding: (UInt8, UInt8, UInt8)
+}
+
 @frozen public struct PackedPhysicsSetPositionEvent: Sendable {
     public var id1: Int64
     public var id2: Int64

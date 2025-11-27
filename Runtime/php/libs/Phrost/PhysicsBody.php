@@ -214,6 +214,20 @@ class PhysicsBody
         return $this->isSleeping;
     }
 
+    /**
+     * Toggles the physics engine's debug rendering mode (green bounding boxes).
+     */
+    public static function setDebugMode(
+        ChannelPacker $packer,
+        bool $enabled,
+    ): void {
+        // Maps to PACK_PHYSICS_SET_DEBUG_MODE = "Cenabled/x3_padding"
+        // The packer handles the padding automatically via the format map.
+        $packer->add(Channels::PHYSICS->value, Events::PHYSICS_SET_DEBUG_MODE, [
+            $enabled ? 1 : 0,
+        ]);
+    }
+
     public function packDirtyEvents(ChannelPacker $packer): void
     {
         if ($this->isNew) {

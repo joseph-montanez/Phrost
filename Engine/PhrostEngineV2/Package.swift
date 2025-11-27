@@ -155,7 +155,7 @@ if buildPHPExtension {
     targets.append(contentsOf: [
         .target(
             name: "PHPCore",
-            dependencies: [ "CSwiftPHP" ],
+            dependencies: ["CSwiftPHP"],
             path: "Sources/PHPCore",
             cSettings: [
                 .unsafeFlags(["-UHAVE_BUILTIN_CONSTANT_P"], .when(configuration: .release)),
@@ -168,7 +168,8 @@ if buildPHPExtension {
                 .define("NTS_SWIFT", .when(platforms: [.windows, .macOS])),
             ],
             swiftSettings: [
-                .unsafeFlags(["-Xcc", "-UHAVE_BUILTIN_CONSTANT_P"], .when(configuration: .release)),
+                .unsafeFlags(
+                    ["-Xcc", "-UHAVE_BUILTIN_CONSTANT_P"], .when(configuration: .release)),
                 .define("NDEBUG", .when(configuration: .release)),
                 .define("NTS_SWIFT", .when(platforms: [.windows, .macOS])),
                 .unsafeFlags(
@@ -207,7 +208,8 @@ if buildPHPExtension {
                     ], .when(platforms: [.windows])),
             ],
             swiftSettings: [
-                .unsafeFlags(["-Xcc", "-UHAVE_BUILTIN_CONSTANT_P"], .when(configuration: .release)),
+                .unsafeFlags(
+                    ["-Xcc", "-UHAVE_BUILTIN_CONSTANT_P"], .when(configuration: .release)),
                 .define("NDEBUG", .when(configuration: .release)),
                 .define("NTS_SWIFT", .when(platforms: [.windows, .macOS, .iOS])),
                 .define("ZEND_WIN32", .when(platforms: [.windows])),
@@ -251,7 +253,8 @@ if buildPHPExtension {
                     ], .when(platforms: [.windows])),
             ],
             swiftSettings: [
-                .unsafeFlags(["-Xcc", "-UHAVE_BUILTIN_CONSTANT_P"], .when(configuration: .release)),
+                .unsafeFlags(
+                    ["-Xcc", "-UHAVE_BUILTIN_CONSTANT_P"], .when(configuration: .release)),
                 .define("NDEBUG", .when(configuration: .release)),
                 .define("NTS_SWIFT", .when(platforms: [.windows, .macOS, .iOS])),
                 .define("ZEND_WIN32", .when(platforms: [.windows])),
@@ -272,8 +275,12 @@ if buildPHPExtension {
                         "-L\(phpLib)",
                         "\(phpLib)/php8.lib",
                     ], .when(platforms: [.windows])),
+                .unsafeFlags(
+                    ["-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup"],
+                    .when(platforms: [.macOS])
+                ),
             ]
-        )
+        ),
     ])
 }
 
@@ -290,7 +297,8 @@ var products: [Product] = [
 
 // Only add the PHP extension library product if building for PHP
 if buildPHPExtension {
-    products.append(.library(name: "php_phrostengine", type: .dynamic, targets: ["SwiftPHPExtension"]))
+    products.append(
+        .library(name: "php_phrostengine", type: .dynamic, targets: ["SwiftPHPExtension"]))
 }
 
 let package = Package(

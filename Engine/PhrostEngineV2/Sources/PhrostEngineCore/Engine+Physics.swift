@@ -29,4 +29,8 @@ extension PhrostEngine {
             lockRotation: event.lockRotation
         )
     }
+
+    internal func handlePhysicsSetDebugModeCommand(event: PackedPhysicsSetDebugModeEvent) {
+        self.physicsManager.setDebugMode(event.enabled > 0)
+    }
 }

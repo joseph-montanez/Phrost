@@ -151,6 +151,7 @@ public final class PhrostEngine {
         Events.physicsCollisionBegin.rawValue: MemoryLayout<PackedPhysicsCollisionEvent>.size,
         Events.physicsCollisionSeparate.rawValue: MemoryLayout<PackedPhysicsCollisionEvent>.size,
         Events.physicsSyncTransform.rawValue: MemoryLayout<PackedPhysicsSyncTransformEvent>.size,
+        Events.physicsSetDebugMode.rawValue: MemoryLayout<PackedPhysicsSetDebugModeEvent>.size,
         // --- PLUGIN ---
         Events.plugin.rawValue: MemoryLayout<PackedPluginOnEvent>.size,
         Events.pluginLoad.rawValue: MemoryLayout<PackedPluginLoadHeaderEvent>.size,

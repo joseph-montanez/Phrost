@@ -14,6 +14,7 @@ use Phrost\Sprite;
 use Phrost\SpriteAnimated;
 use Phrost\Tiled;
 use Phrost\Window;
+use Phrost\PhysicsBody;
 
 // --- Global State Initialization ---
 global $world, $shutdown_flag_path, $save_path;
@@ -30,6 +31,7 @@ $world = [
     "mapInfo" => [],
     "playerKey" => null,
     "inputState" => [],
+    "physicsDebug" => false,
     "liveReload" => new LiveReload($shutdown_flag_path, $save_path),
 ];
 
@@ -244,6 +246,17 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
                 }
             }
             // --- End Animation Toggles ---
+            if ($event["keycode"] === Keycode::D) {
+                // 1. Toggle state
+                $world["physicsDebug"] = !$world["physicsDebug"];
+
+                // 2. Send command to engine
+                PhysicsBody::setDebugMode($packer, $world["physicsDebug"]);
+
+                echo "Physics Debug: " .
+                    ($world["physicsDebug"] ? "ON" : "OFF") .
+                    "\n";
+            }
         } // End KeyDown
 
         if ($event["type"] === Events::INPUT_KEYUP->value) {

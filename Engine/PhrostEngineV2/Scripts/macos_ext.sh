@@ -5,6 +5,9 @@ set -e
 
 SCRIPT_DIR=$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")
 
+# export CHIPMUNK2D__INCLUDE="$SCRIPT_DIR/../../deps/SDL/include"
+# export CHIPMUNK2D__LIB="$SCRIPT_DIR/../../deps/SDL/build/Release"
+
 export SDL3_INCLUDE="$SCRIPT_DIR/../../deps/SDL/include"
 export SDL3_LIB="$SCRIPT_DIR/../../deps/SDL/build/Release"
 

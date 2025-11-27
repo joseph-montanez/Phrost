@@ -56,6 +56,7 @@ public enum Events: UInt32 {
     case physicsCollisionBegin = 550
     case physicsCollisionSeparate = 551
     case physicsSyncTransform = 552
+    case physicsSetDebugMode = 553
 
     case plugin = 1000
     case pluginLoad = 1001

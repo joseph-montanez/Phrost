@@ -251,6 +251,11 @@ import Foundation
     public var _padding: (UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8)
 }
 
+@frozen public struct PackedPhysicsSetDebugModeEvent: Sendable {
+    public var enabled: UInt8
+    public var _padding: (UInt8, UInt8, UInt8)  // Align to 4 bytes
+}
+
 @frozen public struct PackedPluginEventStackingEvent: Sendable {
     public var eventId: UInt8
     public var _padding: UInt8

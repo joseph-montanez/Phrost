@@ -60,6 +60,7 @@ enum Events: int
     case PHYSICS_COLLISION_BEGIN = 550;
     case PHYSICS_COLLISION_SEPARATE = 551;
     case PHYSICS_SYNC_TRANSFORM = 552;
+    case PHYSICS_SET_DEBUG_MODE = 553;
 
     case PLUGIN = 1000;
     case PLUGIN_LOAD = 1001;
@@ -573,6 +574,13 @@ class PhysicsPackFormats
      * - _padding: u8 (Aligns struct to 64-bit boundary.)
      */
     public const UNPACK_PHYSICS_SYNC_TRANSFORM = "qid1/qid2/epositionX/epositionY/eangle/evelocityX/evelocityY/eangularVelocity/CisSleeping/x7_padding";
+
+    /**
+     * Maps to Swift: `PackedPhysicsSetDebugModeEvent`
+     * - enabled: u8 (1 to enable debug drawing, 0 to disable.)
+     * - _padding: u8 (Padding for 4-byte alignment.)
+     */
+    public const PACK_PHYSICS_SET_DEBUG_MODE = "Cenabled/x3_padding";
 }
 
 class PluginPackFormats

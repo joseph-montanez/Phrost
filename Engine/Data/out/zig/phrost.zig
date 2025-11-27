@@ -56,6 +56,7 @@ pub const Events = enum(u32) {
     physicsCollisionBegin = 550,
     physicsCollisionSeparate = 551,
     physicsSyncTransform = 552,
+    physicsSetDebugMode = 553,
 
     plugin = 1000,
     pluginLoad = 1001,
@@ -279,6 +280,11 @@ pub const PackedPhysicsCollisionEvent = extern struct {
 pub const PackedPhysicsRemoveBodyEvent = extern struct {
     id1: i64, // Primary ID of body to remove.
     id2: i64, // Secondary ID of body to remove.
+};
+
+pub const PackedPhysicsSetDebugModeEvent = extern struct {
+    enabled: u8, // 1 to enable debug drawing, 0 to disable.
+    _padding: [3]u8, // Padding for 4-byte alignment.
 };
 
 pub const PackedPhysicsSetPositionEvent = extern struct {
@@ -553,6 +559,7 @@ pub const event_payload_list = [_]KVPair{
     .{ "physicsCollisionBegin", @sizeOf(PackedPhysicsCollisionEvent) },
     .{ "physicsCollisionSeparate", @sizeOf(PackedPhysicsCollisionEvent) },
     .{ "physicsSyncTransform", @sizeOf(PackedPhysicsSyncTransformEvent) },
+    .{ "physicsSetDebugMode", @sizeOf(PackedPhysicsSetDebugModeEvent) },
 
     // Plugin Events
     .{ "plugin", @sizeOf(PackedPluginOnEvent) },
