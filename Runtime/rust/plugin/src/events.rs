@@ -78,6 +78,7 @@ pub enum Events {
     physicsCollisionBegin = 550,
     physicsCollisionSeparate = 551,
     physicsSyncTransform = 552,
+    physicsSetDebugMode = 553,
 
     plugin = 1000,
     pluginLoad = 1001,
@@ -148,6 +149,7 @@ impl Events {
             550 => Some(Events::physicsCollisionBegin),
             551 => Some(Events::physicsCollisionSeparate),
             552 => Some(Events::physicsSyncTransform),
+            553 => Some(Events::physicsSetDebugMode),
             1000 => Some(Events::plugin),
             1001 => Some(Events::pluginLoad),
             1002 => Some(Events::pluginUnload),
@@ -460,6 +462,14 @@ pub struct PackedPhysicsCollisionEvent {
 pub struct PackedPhysicsRemoveBodyEvent {
     pub id1: i64, // Primary ID of body to remove.
     pub id2: i64, // Secondary ID of body to remove.
+}
+
+/// Payload to toggle physics debug rendering.
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct PackedPhysicsSetDebugModeEvent {
+    pub enabled: u8,       // 1 to enable debug drawing, 0 to disable.
+    pub _padding: [u8; 3], // Padding for 4-byte alignment.
 }
 
 /// Payload to teleport a body to a new position.
@@ -980,8 +990,8 @@ impl CommandPacker {
         self.buffer.write_all(header_bytes)?;
         // AudioLoad is special: Struct is 4 bytes. Swift expects 4 bytes skip (padding)
         // before reading the string to align the string to 8 bytes.
-        self.buffer.write_u32::<LittleEndian>(0)?; 
-        
+        self.buffer.write_u32::<LittleEndian>(0)?;
+
         self.write_padded_string(path)?;
         self.pad_to_boundary();
         self.command_count += 1;
@@ -1069,7 +1079,7 @@ impl<'a> EventUnpacker<'a> {
         let timestamp = self.cursor.read_u64::<LittleEndian>()?;
         // Skip 4 bytes header padding
         self.cursor.seek(SeekFrom::Current(4))?;
-        
+
         let event_type = Events::from_u32(event_type_id).ok_or_else(|| {
             std::io::Error::new(std::io::ErrorKind::InvalidData, "Unknown event type ID")
         })?;
@@ -1097,7 +1107,7 @@ impl<'a> EventUnpacker<'a> {
         self.cursor.seek(SeekFrom::Current(n as i64))?;
         Ok(())
     }
-    
+
     /// Skips a string of length `len` and its associated padding.
     pub fn skip_string_aligned(&mut self, len: u32) -> std::io::Result<()> {
         self.skip(len)?;
@@ -1107,13 +1117,13 @@ impl<'a> EventUnpacker<'a> {
         }
         Ok(())
     }
-    
+
     /// Aligns the cursor to the specified byte boundary (e.g., 8).
     pub fn align_to(&mut self, alignment: u64) -> std::io::Result<()> {
         let current = self.cursor.position();
         let padding = (alignment - (current % alignment)) % alignment;
         if padding > 0 {
-             self.cursor.seek(SeekFrom::Current(padding as i64))?;
+            self.cursor.seek(SeekFrom::Current(padding as i64))?;
         }
         Ok(())
     }

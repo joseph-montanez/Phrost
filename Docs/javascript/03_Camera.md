@@ -20,7 +20,11 @@ Similar to `Window`, the `Camera` tracks state changes.
 How to Use
 ----------
 
+Here is the complete step-by-step process for managing the camera.
+
 ### Step 1: Initialization
+
+You typically create your `Camera` object once when your script initializes and store it in the global `$world` array.
 
 ```JavaScript
     import { Camera } from 'phrost/camera';

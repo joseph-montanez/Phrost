@@ -205,7 +205,7 @@ int main() {
     setup_base_path();
 
     // --- 1. Start the PHP Logic Thread (PIPELINED) ---
-    bool use_threading = false; // Enable Pipelining
+    bool use_threading = true; // Enable Pipelining
 
     if (php_thread_start(&g_thread_bridge, g_base_path, use_threading) != 0) {
         printf("CRITICAL: Failed to start PHP engine.\n");

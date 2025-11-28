@@ -320,6 +320,22 @@ pub const PackedPhysicsSyncTransformEvent = extern struct {
     _padding: [7]u8, // Aligns struct to 64-bit boundary.
 };
 
+pub const PackedPhysicsAddBodyEvent = extern struct {
+    id1: i64,
+    id2: i64,
+    positionX: f64,
+    positionY: f64,
+    bodyType: u8,
+    shapeType: u8,
+    lockRotation: u8,
+    _padding: [5]u8,
+    mass: f64,
+    friction: f64,
+    elasticity: f64,
+    width: f64,
+    height: f64,
+};
+
 pub const PackedPluginEventStackingEvent = extern struct {
     eventId: u8, // 1 to enable stacking, 0 to disable.
     _padding: u8, // Padding for alignment.
@@ -654,7 +670,8 @@ pub const CommandPacker = struct {
 
     pub fn packTextAdd(
         self: *CommandPacker,
-        id1: i64, id2: i64,
+        id1: i64,
+        id2: i64,
         pos: [3]f64,
         color: [4]u8,
         font_size: f32,

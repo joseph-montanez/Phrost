@@ -65,6 +65,7 @@ typedef enum {
     EVENT_PHYSICS_COLLISION_BEGIN = 550,
     EVENT_PHYSICS_COLLISION_SEPARATE = 551,
     EVENT_PHYSICS_SYNC_TRANSFORM = 552,
+    EVENT_PHYSICS_SET_DEBUG_MODE = 553,
 
     EVENT_PLUGIN = 1000,
     EVENT_PLUGIN_LOAD = 1001,
@@ -322,6 +323,12 @@ typedef struct {
     int64_t id1; // Primary ID of body to remove.
     int64_t id2; // Secondary ID of body to remove.
 } PackedPhysicsRemoveBodyEvent;
+
+// Payload to toggle physics debug rendering.
+typedef struct {
+    uint8_t enabled; // 1 to enable debug drawing, 0 to disable.
+    uint8_t _padding[3]; // Padding for 4-byte alignment.
+} PackedPhysicsSetDebugModeEvent;
 
 // Payload to teleport a body to a new position.
 typedef struct {

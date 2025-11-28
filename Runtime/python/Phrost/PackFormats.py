@@ -586,6 +586,15 @@ class PhysicsPackFormats:
     # Size: 72 bytes
     UNPACK_PHYSICS_SYNC_TRANSFORM: Tuple[str, int] = ("<qqddddddB7x", 72)
 
+    """
+    Maps to Swift: `PackedPhysicsSetDebugModeEvent`
+    - enabled: u8 (1 to enable debug drawing, 0 to disable.)
+    - _padding: u8 (Padding for 4-byte alignment.)
+    """
+    # Format: <B3x
+    # Size: 4 bytes
+    PACK_PHYSICS_SET_DEBUG_MODE: Tuple[str, int] = ("<B3x", 4)
+
 
 class PluginPackFormats:
     """

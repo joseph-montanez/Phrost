@@ -210,6 +210,7 @@ fn get_payload_size(event: Events) -> Option<u32> {
         Events::physicsCollisionBegin => mem::size_of::<PackedPhysicsCollisionEvent>() as u32,
         Events::physicsCollisionSeparate => mem::size_of::<PackedPhysicsCollisionEvent>() as u32,
         Events::physicsSyncTransform => mem::size_of::<PackedPhysicsSyncTransformEvent>() as u32,
+        Events::physicsSetDebugMode => mem::size_of::<PackedPhysicsSetDebugModeEvent>() as u32,
         Events::plugin => mem::size_of::<PackedPluginOnEvent>() as u32,
         Events::pluginLoad => mem::size_of::<PackedPluginLoadHeaderEvent>() as u32,
         Events::pluginUnload => mem::size_of::<PackedPluginUnloadEvent>() as u32,
@@ -427,63 +428,83 @@ pub extern "C" fn Phrost_Update(
                 Events::spriteTextureLoad => {
                     if let Ok(header) = unpacker.read_payload::<PackedTextureLoadHeaderEvent>() {
                         let _ = unpacker.skip_string_aligned(header.filename_length);
-                    } else { break; }
+                    } else {
+                        break;
+                    }
                 }
                 Events::textSetString => {
                     if let Ok(header) = unpacker.read_payload::<PackedTextSetStringEvent>() {
                         let _ = unpacker.skip_string_aligned(header.text_length);
-                    } else { break; }
+                    } else {
+                        break;
+                    }
                 }
                 Events::textAdd => {
                     if let Ok(header) = unpacker.read_payload::<PackedTextAddEvent>() {
                         let _ = unpacker.skip_string_aligned(header.font_path_length);
                         let _ = unpacker.skip_string_aligned(header.text_length);
-                    } else { break; }
+                    } else {
+                        break;
+                    }
                 }
                 Events::pluginLoad => {
-                     if let Ok(header) = unpacker.read_payload::<PackedPluginLoadHeaderEvent>() {
+                    if let Ok(header) = unpacker.read_payload::<PackedPluginLoadHeaderEvent>() {
                         let _ = unpacker.skip_string_aligned(header.path_length);
-                    } else { break; }
+                    } else {
+                        break;
+                    }
                 }
                 Events::audioLoad => {
                     // Special case: struct 4 bytes, skip 4 padding, then read string
                     if let Ok(header) = unpacker.read_payload::<PackedAudioLoadEvent>() {
-                         let _ = unpacker.skip(4);
-                         let _ = unpacker.skip_string_aligned(header.path_length);
-                    } else { break; }
+                        let _ = unpacker.skip(4);
+                        let _ = unpacker.skip_string_aligned(header.path_length);
+                    } else {
+                        break;
+                    }
                 }
-                
+
                 // Fixed length events
                 Events::windowTitle => {
-                     let _ = unpacker.skip(payload_size);
+                    let _ = unpacker.skip(payload_size);
                 }
                 Events::inputMousemotion => {
                     if let Ok(event) = unpacker.read_payload::<PackedMouseMotionEvent>() {
                         world.mouse_x = event.x;
                         world.mouse_y = event.y;
-                    } else { break; }
+                    } else {
+                        break;
+                    }
                 }
                 Events::inputMousedown => {
                     if let Ok(_) = unpacker.read_payload::<PackedMouseButtonEvent>() {
                         add_sprites = true;
-                    } else { break; }
+                    } else {
+                        break;
+                    }
                 }
                 Events::inputKeydown => {
                     if let Ok(event) = unpacker.read_payload::<PackedKeyEvent>() {
-                        if event.keycode == 97 { add_sprites = true; }
-                    } else { break; }
+                        if event.keycode == 97 {
+                            add_sprites = true;
+                        }
+                    } else {
+                        break;
+                    }
                 }
                 Events::windowResize => {
                     if let Ok(event) = unpacker.read_payload::<PackedWindowResizeEvent>() {
                         world.window_width = event.w;
                         world.window_height = event.h;
-                    } else { break; }
+                    } else {
+                        break;
+                    }
                 }
                 _ => {
                     let _ = unpacker.skip(payload_size);
                 }
             }
-            
+
             // ALIGNMENT: Ensure next header starts at 8-byte boundary
             let _ = unpacker.align_to(8);
         }

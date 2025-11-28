@@ -67,6 +67,7 @@ class PackFormat:
         Events.PHYSICS_COLLISION_BEGIN.value: PhysicsPackFormats.UNPACK_PHYSICS_COLLISION,
         Events.PHYSICS_COLLISION_SEPARATE.value: PhysicsPackFormats.UNPACK_PHYSICS_COLLISION,
         Events.PHYSICS_SYNC_TRANSFORM.value: PhysicsPackFormats.UNPACK_PHYSICS_SYNC_TRANSFORM,
+        Events.PHYSICS_SET_DEBUG_MODE.value: PhysicsPackFormats.PACK_PHYSICS_SET_DEBUG_MODE,
         Events.PLUGIN.value: PluginPackFormats.PACK_PLUGIN,
         Events.PLUGIN_LOAD.value: PluginPackFormats.PACK_PLUGIN_LOAD,
         Events.PLUGIN_UNLOAD.value: PluginPackFormats.PACK_PLUGIN_UNLOAD,
