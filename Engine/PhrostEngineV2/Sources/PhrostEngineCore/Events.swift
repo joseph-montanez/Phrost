@@ -83,5 +83,5 @@ public enum Events: UInt32 {
     case uiButton = 4003
 
     // --- UI Feedback (Swift -> PHP) ---
-    case uiElementClicked = 4050
+    case uiElementClicked = 4500
 }

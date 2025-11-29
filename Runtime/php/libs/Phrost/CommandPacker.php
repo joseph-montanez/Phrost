@@ -109,6 +109,43 @@ class CommandPacker
             $packedFixedPart = pack("qqVx4", $data[0], $data[1], $data[2]);
             $this->eventStream .= $packedFixedPart;
             $this->eventStream .= $this->packStringAligned($data[3]);
+        } elseif ($type === Events::UI_BEGIN_WINDOW) {
+            // Header: ggggVV (24 bytes)
+            // Data: x, y, w, h, flags, titleLen, title
+            $packedFixedPart = pack(
+                "ggggVV",
+                $data[0],
+                $data[1],
+                $data[2],
+                $data[3],
+                $data[4],
+                $data[5],
+            );
+            $this->eventStream .= $packedFixedPart;
+            $this->eventStream .= $this->packStringAligned($data[6]);
+        } elseif ($type === Events::UI_TEXT) {
+            // Header: Vx4 (8 bytes)
+            // Data: textLen, text
+            $packedFixedPart = pack("Vx4", $data[0]);
+            $this->eventStream .= $packedFixedPart;
+            $this->eventStream .= $this->packStringAligned($data[1]);
+        } elseif ($type === Events::UI_BUTTON) {
+            // Header: VggV (16 bytes)
+            // Data: id, w, h, labelLen, label
+            // We MUST only pass the first 4 elements to pack.
+            // Passing $data[4] (the label) here causes "unused argument" warning and data corruption.
+            $packedFixedPart = pack(
+                "VggV",
+                $data[0],
+                $data[1],
+                $data[2],
+                $data[3],
+            );
+
+            $this->eventStream .= $packedFixedPart;
+
+            // The label ($data[4]) is packed separately here
+            $this->eventStream .= $this->packStringAligned($data[4]);
         } else {
             // --- Fixed-Size Event Packing ---
             $payloadInfo = PackFormat::getInfo($typeValue);

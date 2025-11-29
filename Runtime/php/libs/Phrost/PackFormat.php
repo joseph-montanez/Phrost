@@ -7,7 +7,6 @@ class PackFormat
     /** @var array<int, array{format: string, size: int}> */
     private static array $cache = [];
 
-    // ... (EVENT_FORMAT_MAP remains unchanged) ...
     /** @var array<int, string> */
     private const EVENT_FORMAT_MAP = [
         Events::SPRITE_ADD->value => SpritePackFormats::PACK_SPRITE_ADD,

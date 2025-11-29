@@ -709,13 +709,13 @@ extension PhrostEngine {
                     // Set next window position/size if valid (ImGuiCond_FirstUseEver or Always)
                     if header.w > 0 && header.h > 0 {
                         ImGuiSetNextWindowSize(
-                            ImVec2(x: header.w, y: header.h), Int32(ImGuiCond_FirstUseEver.rawValue)
+                            ImVec2(x: header.w, y: header.h), Int32(ImGuiCond_Always.rawValue)
                         )
                     }
                     if header.x >= 0 && header.y >= 0 {
                         ImGuiSetNextWindowPos(
                             ImVec2(x: header.x, y: header.y),
-                            Int32(ImGuiCond_FirstUseEver.rawValue),
+                            Int32(ImGuiCond_Always.rawValue),
                             ImVec2(x: 0, y: 0))
                     }
 
