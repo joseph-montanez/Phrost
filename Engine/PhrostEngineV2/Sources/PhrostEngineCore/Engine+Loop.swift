@@ -133,8 +133,8 @@ extension PhrostEngine {
             let baseEventCount = initialEventCount + physicsEventCount
 
             if baseEventCount > 0 {
-                var count = UInt32(baseEventCount)
-                baseEvents.append(UnsafeBufferPointer(start: &count, count: 1))
+                let count = UInt32(baseEventCount)
+                baseEvents.append(value: count)
                 baseEvents.append(Data(count: 4))
                 baseEvents.append(currentEventPayloads)
                 baseEvents.append(physicsEvents)
@@ -254,7 +254,7 @@ extension PhrostEngine {
                 let phpChannelBlob = phpCommandData.subdata(in: offset..<channelEnd)
                 offset = channelEnd
 
-                if var existingBlob = self.pluginChannelData[entry.id] {
+                if let existingBlob = self.pluginChannelData[entry.id] {
                     var subOffset = 0
                     if !phpChannelBlob.isEmpty,
                         let subCount = unpack(
@@ -277,8 +277,8 @@ extension PhrostEngine {
                                     in: existingOffset..<existingBlob.count)
                                 let newTotalCount = existingCount &+ subCount
                                 var newBlob = Data()
-                                var newCount = newTotalCount
-                                newBlob.append(UnsafeBufferPointer(start: &newCount, count: 1))
+                                let newCount = newTotalCount
+                                newBlob.append(value: newCount)
                                 newBlob.append(Data(count: 4))
                                 newBlob.append(existingEvents)
                                 newBlob.append(subEvents)
@@ -346,87 +346,93 @@ extension PhrostEngine {
                 self.running = false
                 continue
             case UInt32(SDL_EVENT_WINDOW_RESIZED.rawValue):
-                var resizeEvent = PackedWindowResizeEvent(w: e.window.data1, h: e.window.data2)
-                var evt = Events.windowResize.rawValue
-                eventStream.append(UnsafeBufferPointer(start: &evt, count: 1))
-                var ts = timestamp
-                eventStream.append(UnsafeBufferPointer(start: &ts, count: 1))
+                let resizeEvent = PackedWindowResizeEvent(w: e.window.data1, h: e.window.data2)
+                let evt = Events.windowResize.rawValue
+
+                eventStream.append(value: evt)
+                eventStream.append(value: timestamp)
                 eventStream.append(Data(count: 4))
-                eventStream.append(UnsafeBufferPointer(start: &resizeEvent, count: 1))
+                eventStream.append(value: resizeEvent)
+
                 let size = MemoryLayout<PackedWindowResizeEvent>.size
                 let pad = (8 - (size % 8)) % 8
                 if pad > 0 { eventStream.append(Data(count: pad)) }
                 eventCount += 1
 
             case UInt32(SDL_EVENT_KEY_DOWN.rawValue):
-                var keyEvent = PackedKeyEvent(
+                let keyEvent = PackedKeyEvent(
                     scancode: Int32(e.key.scancode.rawValue), keycode: e.key.key, mod: e.key.mod,
                     isRepeat: e.key.repeat ? 1 : 0, _padding: 0)
-                var evt = Events.inputKeydown.rawValue
-                eventStream.append(UnsafeBufferPointer(start: &evt, count: 1))
-                var ts = timestamp
-                eventStream.append(UnsafeBufferPointer(start: &ts, count: 1))
+                let evt = Events.inputKeydown.rawValue
+
+                eventStream.append(value: evt)
+                eventStream.append(value: timestamp)
                 eventStream.append(Data(count: 4))
-                eventStream.append(UnsafeBufferPointer(start: &keyEvent, count: 1))
+                eventStream.append(value: keyEvent)
+
                 let size = MemoryLayout<PackedKeyEvent>.size
                 let pad = (8 - (size % 8)) % 8
                 if pad > 0 { eventStream.append(Data(count: pad)) }
                 eventCount += 1
 
             case UInt32(SDL_EVENT_KEY_UP.rawValue):
-                var keyEvent = PackedKeyEvent(
+                let keyEvent = PackedKeyEvent(
                     scancode: Int32(e.key.scancode.rawValue), keycode: e.key.key, mod: e.key.mod,
                     isRepeat: 0, _padding: 0)
-                var evt = Events.inputKeyup.rawValue
-                eventStream.append(UnsafeBufferPointer(start: &evt, count: 1))
-                var ts = timestamp
-                eventStream.append(UnsafeBufferPointer(start: &ts, count: 1))
+                let evt = Events.inputKeyup.rawValue
+
+                eventStream.append(value: evt)
+                eventStream.append(value: timestamp)
                 eventStream.append(Data(count: 4))
-                eventStream.append(UnsafeBufferPointer(start: &keyEvent, count: 1))
+                eventStream.append(value: keyEvent)
+
                 let size = MemoryLayout<PackedKeyEvent>.size
                 let pad = (8 - (size % 8)) % 8
                 if pad > 0 { eventStream.append(Data(count: pad)) }
                 eventCount += 1
 
             case UInt32(SDL_EVENT_MOUSE_MOTION.rawValue):
-                var motionEvent = PackedMouseMotionEvent(
+                let motionEvent = PackedMouseMotionEvent(
                     x: e.motion.x, y: e.motion.y, xrel: e.motion.xrel, yrel: e.motion.yrel)
-                var evt = Events.inputMousemotion.rawValue
-                eventStream.append(UnsafeBufferPointer(start: &evt, count: 1))
-                var ts = timestamp
-                eventStream.append(UnsafeBufferPointer(start: &ts, count: 1))
+                let evt = Events.inputMousemotion.rawValue
+
+                eventStream.append(value: evt)
+                eventStream.append(value: timestamp)
                 eventStream.append(Data(count: 4))
-                eventStream.append(UnsafeBufferPointer(start: &motionEvent, count: 1))
+                eventStream.append(value: motionEvent)
+
                 let size = MemoryLayout<PackedMouseMotionEvent>.size
                 let pad = (8 - (size % 8)) % 8
                 if pad > 0 { eventStream.append(Data(count: pad)) }
                 eventCount += 1
 
             case UInt32(SDL_EVENT_MOUSE_BUTTON_DOWN.rawValue):
-                var buttonEvent = PackedMouseButtonEvent(
+                let buttonEvent = PackedMouseButtonEvent(
                     x: e.button.x, y: e.button.y, button: e.button.button, clicks: e.button.clicks,
                     _padding: 0)
-                var evt = Events.inputMousedown.rawValue
-                eventStream.append(UnsafeBufferPointer(start: &evt, count: 1))
-                var ts = timestamp
-                eventStream.append(UnsafeBufferPointer(start: &ts, count: 1))
+                let evt = Events.inputMousedown.rawValue
+
+                eventStream.append(value: evt)
+                eventStream.append(value: timestamp)
                 eventStream.append(Data(count: 4))
-                eventStream.append(UnsafeBufferPointer(start: &buttonEvent, count: 1))
+                eventStream.append(value: buttonEvent)
+
                 let size = MemoryLayout<PackedMouseButtonEvent>.size
                 let pad = (8 - (size % 8)) % 8
                 if pad > 0 { eventStream.append(Data(count: pad)) }
                 eventCount += 1
 
             case UInt32(SDL_EVENT_MOUSE_BUTTON_UP.rawValue):
-                var buttonEvent = PackedMouseButtonEvent(
+                let buttonEvent = PackedMouseButtonEvent(
                     x: e.button.x, y: e.button.y, button: e.button.button, clicks: e.button.clicks,
                     _padding: 0)
-                var evt = Events.inputMouseup.rawValue
-                eventStream.append(UnsafeBufferPointer(start: &evt, count: 1))
-                var ts = timestamp
-                eventStream.append(UnsafeBufferPointer(start: &ts, count: 1))
+                let evt = Events.inputMouseup.rawValue
+
+                eventStream.append(value: evt)
+                eventStream.append(value: timestamp)
                 eventStream.append(Data(count: 4))
-                eventStream.append(UnsafeBufferPointer(start: &buttonEvent, count: 1))
+                eventStream.append(value: buttonEvent)
+
                 let size = MemoryLayout<PackedMouseButtonEvent>.size
                 let pad = (8 - (size % 8)) % 8
                 if pad > 0 { eventStream.append(Data(count: pad)) }

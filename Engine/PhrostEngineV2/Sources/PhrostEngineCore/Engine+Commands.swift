@@ -1,5 +1,6 @@
 import CMiniaudio
 import Foundation
+import ImGui
 import SwiftSDL
 import SwiftSDL_image
 import SwiftSDL_ttf
@@ -708,11 +709,13 @@ extension PhrostEngine {
                     // Set next window position/size if valid (ImGuiCond_FirstUseEver or Always)
                     if header.w > 0 && header.h > 0 {
                         ImGuiSetNextWindowSize(
-                            ImVec2(x: header.w, y: header.h), ImGuiCond_FirstUseEver)
+                            ImVec2(x: header.w, y: header.h), Int32(ImGuiCond_FirstUseEver.rawValue)
+                        )
                     }
                     if header.x >= 0 && header.y >= 0 {
                         ImGuiSetNextWindowPos(
-                            ImVec2(x: header.x, y: header.y), ImGuiCond_FirstUseEver,
+                            ImVec2(x: header.x, y: header.y),
+                            Int32(ImGuiCond_FirstUseEver.rawValue),
                             ImVec2(x: 0, y: 0))
                     }
 
@@ -747,7 +750,7 @@ extension PhrostEngine {
                 offset += textLen + strPadding
 
                 if let text = String(data: textData, encoding: .utf8) {
-                    ImGuiText(text)
+                    igTextUnformatted(text, nil)
                 }
                 generatedEventCount &+= 1
 
@@ -779,13 +782,13 @@ extension PhrostEngine {
                         var evtID = Events.uiElementClicked.rawValue
                         var ts: UInt64 = 0  // Timestamp 0 for immediate feedback
 
-                        generatedEvents.append(UnsafeBufferPointer(start: &evtID, count: 1))
-                        generatedEvents.append(UnsafeBufferPointer(start: &ts, count: 1))
+                        generatedEvents.append(value: evtID)
+                        generatedEvents.append(value: ts)
 
                         // Padding after Timestamp (VQx4 pattern from your existing code)
                         generatedEvents.append(Data(count: 4))
 
-                        generatedEvents.append(UnsafeBufferPointer(start: &interaction, count: 1))
+                        generatedEvents.append(value: interaction)
                         generatedEventCount &+= 1
                     }
                 }

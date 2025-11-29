@@ -15,6 +15,19 @@ Download the Visual Studio Community 2022 installer from the Microsoft website. 
 
 Project is designed with Swift 6.2 strict concurrency. https://www.swift.org/install/windows/
 
+**Enable Developer Mode**
+
+This is the permanent fix. It allows your user account to create symbolic links without needing to run as Administrator every time.
+
+1. Open Windows Settings.
+
+2. Go to Privacy & security (or Update & Security on Windows 10) > For developers.
+
+3. Toggle Developer Mode to On.
+
+Confirm the prompt.
+
+
 **Download SDL3 Headers and Libraries**
 
     mkdir .\Engine\deps

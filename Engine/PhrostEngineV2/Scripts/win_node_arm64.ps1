@@ -78,7 +78,7 @@ $PHROST_RELEASE_DIR = Join-Path $PROJECT_ROOT "Release"
 $PHROST_RUNTIME_DIR = Join-Path $PROJECT_ROOT "Runtime"
 $PHROST_GAME_DIR = Join-Path $PHROST_RELEASE_DIR "game"
 $PHROST_ENGINE_DIR = Join-Path $PHROST_RELEASE_DIR "engine"
-$BUILD_SOURCE_DIR = (Join-Path $SCRIPT_DIR "..\.build\release")
+$BUILD_SOURCE_DIR = (Join-Path $SCRIPT_DIR "..\.build\aarch64-unknown-windows-msvc\release")
 
 Write-Host "Release Dir:  $PHROST_RELEASE_DIR"
 Write-Host "Engine Dir:   $PHROST_ENGINE_DIR"
