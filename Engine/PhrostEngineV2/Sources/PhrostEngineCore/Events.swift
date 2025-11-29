@@ -75,4 +75,13 @@ public enum Events: UInt32 {
 
     case scriptSubscribe = 3000
     case scriptUnsubscribe = 3001
+
+    // --- UI (ImGui) ---
+    case uiBeginWindow = 4000
+    case uiEndWindow = 4001
+    case uiText = 4002
+    case uiButton = 4003
+
+    // --- UI Feedback (Swift -> PHP) ---
+    case uiElementClicked = 4050
 }

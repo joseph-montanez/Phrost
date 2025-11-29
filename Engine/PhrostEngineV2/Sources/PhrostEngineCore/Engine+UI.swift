@@ -71,7 +71,7 @@ extension PhrostEngine {
 
                     // Indices: FIX - Use ONLY cmd.IdxOffset
                     let idxStride = MemoryLayout<ImDrawIdx>.stride
-                    let idxByteOffset = Int(cmd.IdxOffset) * idxStride // <-- FIX HERE
+                    let idxByteOffset = Int(cmd.IdxOffset) * idxStride  // <-- FIX HERE
                     let idxPtr = idxBufferRaw.advanced(by: idxByteOffset)
 
                     let totalVtx = Int(cmdList.pointee.VtxBuffer.Size)
@@ -192,5 +192,23 @@ extension PhrostEngine {
         default:
             return false
         }
+    }
+
+    internal func beginFrame(deltaSec: Double) {
+        // Update Display Size (Handle resizing dynamically)
+        SDL_GetWindowSize(window, &windowWidth, &windowHeight)
+        SDL_GetWindowSizeInPixels(window, &pixelWidth, &pixelHeight)
+
+        // Calculate scale (Retina/High-DPI support)
+        scaleX = (windowWidth > 0) ? Float(pixelWidth) / Float(windowWidth) : 1.0
+        scaleY = (windowHeight > 0) ? Float(pixelHeight) / Float(windowHeight) : 1.0
+
+        io.pointee.DisplaySize = ImVec2(x: Float(windowWidth), y: Float(windowHeight))
+        io.pointee.DisplayFramebufferScale = ImVec2(x: scaleX, y: scaleY)
+        io.pointee.DeltaTime = Float(deltaSec)
+        io.pointee.FontGlobalScale = scaleX  // Optional, scales text
+
+        // Start the ImGui Frame
+        ImGuiNewFrame()
     }
 }

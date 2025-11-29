@@ -104,6 +104,12 @@ class PackFormat
             ScriptPackFormats::PACK_SCRIPT_SUBSCRIBE,
         Events::SCRIPT_UNSUBSCRIBE->value =>
             ScriptPackFormats::PACK_SCRIPT_UNSUBSCRIBE,
+        Events::UI_BEGIN_WINDOW->value => UiPackFormats::PACK_UI_BEGIN_WINDOW,
+        Events::UI_END_WINDOW->value => UiPackFormats::PACK_UI_END_WINDOW,
+        Events::UI_TEXT->value => UiPackFormats::PACK_UI_TEXT,
+        Events::UI_BUTTON->value => UiPackFormats::PACK_UI_BUTTON,
+        Events::UI_ELEMENT_CLICKED->value =>
+            UiPackFormats::PACK_UI_ELEMENT_CLICKED,
     ];
 
     // ... (getInfo implementation remains unchanged) ...
@@ -162,6 +168,9 @@ class PackFormat
                         Events::TEXT_SET_STRING->value,
                         Events::AUDIO_LOAD->value,
                         Events::GEOM_ADD_PACKED->value,
+                        Events::UI_BEGIN_WINDOW->value,
+                        Events::UI_TEXT->value,
+                        Events::UI_BUTTON->value,
                     ];
                     if (in_array($eventTypeValue, $dynamicEvents)) {
                         break;

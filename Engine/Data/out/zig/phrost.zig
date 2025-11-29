@@ -75,6 +75,12 @@ pub const Events = enum(u32) {
 
     scriptSubscribe = 3000,
     scriptUnsubscribe = 3001,
+
+    uiBeginWindow = 4000,
+    uiEndWindow = 4001,
+    uiText = 4002,
+    uiButton = 4003,
+    uiElementClicked = 4500,
 };
 
 pub const PackedAudioLoadEvent = extern struct {
@@ -320,22 +326,6 @@ pub const PackedPhysicsSyncTransformEvent = extern struct {
     _padding: [7]u8, // Aligns struct to 64-bit boundary.
 };
 
-pub const PackedPhysicsAddBodyEvent = extern struct {
-    id1: i64,
-    id2: i64,
-    positionX: f64,
-    positionY: f64,
-    bodyType: u8,
-    shapeType: u8,
-    lockRotation: u8,
-    _padding: [5]u8,
-    mass: f64,
-    friction: f64,
-    elasticity: f64,
-    width: f64,
-    height: f64,
-};
-
 pub const PackedPluginEventStackingEvent = extern struct {
     eventId: u8, // 1 to enable stacking, 0 to disable.
     _padding: u8, // Padding for alignment.
@@ -502,6 +492,36 @@ pub const PackedTextureLoadHeaderEvent = extern struct {
     _padding: u32, // Padding for alignment.
 };
 
+pub const PackedUIBeginWindowHeaderEvent = extern struct {
+    x: f32, // Window X position (set to -1 for default/auto).
+    y: f32, // Window Y position (set to -1 for default/auto).
+    w: f32, // Window width (0 for auto).
+    h: f32, // Window height (0 for auto).
+    flags: u32, // ImGui Window flags (e.g., NoResize, NoMove).
+    titleLength: u32, // Length of the window title string that follows.
+};
+
+pub const PackedUIButtonHeaderEvent = extern struct {
+    id: u32, // Unique ID for this button to track clicks.
+    w: f32, // Button width (0 for auto).
+    h: f32, // Button height (0 for auto).
+    labelLength: u32, // Length of the label string that follows.
+};
+
+pub const PackedUIEndWindowEvent = extern struct {
+    _unused: u8, // Padding to ensure non-zero struct size.
+};
+
+pub const PackedUIInteractionEvent = extern struct {
+    elementId: u32, // The ID of the element that was clicked.
+    interactionType: u32, // Type of interaction (0 = Click, etc).
+};
+
+pub const PackedUITextHeaderEvent = extern struct {
+    textLength: u32, // Length of the text string that follows.
+    _padding: u32, // Padding for alignment.
+};
+
 pub const PackedWindowFlagsEvent = extern struct {
     flags: u64, // Bitmask of window flags.
 };
@@ -597,6 +617,13 @@ pub const event_payload_list = [_]KVPair{
     // Script Events
     .{ "scriptSubscribe", @sizeOf(PackedScriptSubscribeEvent) },
     .{ "scriptUnsubscribe", @sizeOf(PackedScriptUnsubscribeEvent) },
+
+    // Ui Events
+    .{ "uiBeginWindow", @sizeOf(PackedUIBeginWindowHeaderEvent) },
+    .{ "uiEndWindow", @sizeOf(PackedUIEndWindowEvent) },
+    .{ "uiText", @sizeOf(PackedUITextHeaderEvent) },
+    .{ "uiButton", @sizeOf(PackedUIButtonHeaderEvent) },
+    .{ "uiElementClicked", @sizeOf(PackedUIInteractionEvent) },
 };
 
 pub const event_payload_sizes = std.StaticStringMap(u32).initComptime(event_payload_list);
@@ -670,8 +697,7 @@ pub const CommandPacker = struct {
 
     pub fn packTextAdd(
         self: *CommandPacker,
-        id1: i64,
-        id2: i64,
+        id1: i64, id2: i64,
         pos: [3]f64,
         color: [4]u8,
         font_size: f32,

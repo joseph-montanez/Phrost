@@ -422,6 +422,36 @@ import Foundation
     public var _padding: UInt32
 }
 
+@frozen public struct PackedUIBeginWindowHeaderEvent: Sendable {
+    public var x: Float
+    public var y: Float
+    public var w: Float
+    public var h: Float
+    public var flags: UInt32
+    public var titleLength: UInt32
+}
+
+@frozen public struct PackedUIButtonHeaderEvent: Sendable {
+    public var id: UInt32
+    public var w: Float
+    public var h: Float
+    public var labelLength: UInt32
+}
+
+@frozen public struct PackedUIEndWindowEvent: Sendable {
+    public var _unused: UInt8
+}
+
+@frozen public struct PackedUIInteractionEvent: Sendable {
+    public var elementId: UInt32
+    public var interactionType: UInt32
+}
+
+@frozen public struct PackedUITextHeaderEvent: Sendable {
+    public var textLength: UInt32
+    public var _padding: UInt32
+}
+
 @frozen public struct PackedWindowFlagsEvent {
     public var flags: UInt64
 }

@@ -132,5 +132,8 @@ function getCategory(int $id): string
     if ($id >= 3000 && $id < 4000) {
         return "script";
     }
+    if ($id >= 4000 && $id < 5000) {
+        return "ui";
+    }
     return "unknown";
 }

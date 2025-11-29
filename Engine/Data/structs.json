@@ -1607,6 +1607,126 @@
           "comment": "Padding for alignment."
         }
       ]
+    },
+    {
+      "name": "PackedUIBeginWindowHeaderEvent",
+      "eventId": 4000,
+      "enumName": "UI_BEGIN_WINDOW",
+      "isDynamic": true,
+      "comment": "Header for starting an ImGui window. Variable data (title string) follows.",
+      "members": [
+        {
+          "name": "x",
+          "type": "f32",
+          "comment": "Window X position (set to -1 for default/auto)."
+        },
+        {
+          "name": "y",
+          "type": "f32",
+          "comment": "Window Y position (set to -1 for default/auto)."
+        },
+        {
+          "name": "w",
+          "type": "f32",
+          "comment": "Window width (0 for auto)."
+        },
+        {
+          "name": "h",
+          "type": "f32",
+          "comment": "Window height (0 for auto)."
+        },
+        {
+          "name": "flags",
+          "type": "u32",
+          "comment": "ImGui Window flags (e.g., NoResize, NoMove)."
+        },
+        {
+          "name": "titleLength",
+          "type": "u32",
+          "comment": "Length of the window title string that follows."
+        }
+      ]
+    },
+    {
+      "name": "PackedUIEndWindowEvent",
+      "eventId": 4001,
+      "enumName": "UI_END_WINDOW",
+      "isDynamic": false,
+      "comment": "Command to close/end the current ImGui window scope.",
+      "members": [
+        {
+          "name": "_unused",
+          "type": "u8",
+          "comment": "Padding to ensure non-zero struct size."
+        }
+      ]
+    },
+    {
+      "name": "PackedUITextHeaderEvent",
+      "eventId": 4002,
+      "enumName": "UI_TEXT",
+      "isDynamic": true,
+      "comment": "Header for adding text to UI. Variable data (text string) follows.",
+      "members": [
+        {
+          "name": "textLength",
+          "type": "u32",
+          "comment": "Length of the text string that follows."
+        },
+        {
+          "name": "_padding",
+          "type": "u32",
+          "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
+      "name": "PackedUIButtonHeaderEvent",
+      "eventId": 4003,
+      "enumName": "UI_BUTTON",
+      "isDynamic": true,
+      "comment": "Header for adding a button. Variable data (label string) follows.",
+      "members": [
+        {
+          "name": "id",
+          "type": "u32",
+          "comment": "Unique ID for this button to track clicks."
+        },
+        {
+          "name": "w",
+          "type": "f32",
+          "comment": "Button width (0 for auto)."
+        },
+        {
+          "name": "h",
+          "type": "f32",
+          "comment": "Button height (0 for auto)."
+        },
+        {
+          "name": "labelLength",
+          "type": "u32",
+          "comment": "Length of the label string that follows."
+        }
+      ]
+    },
+    {
+      "name": "PackedUIInteractionEvent",
+      "eventId": 4500,
+      "enumName": "UI_ELEMENT_CLICKED",
+      "isDynamic": false,
+      "comment": "Feedback sent FROM engine TO client when a UI element is interacted with.",
+      "members": [
+        {
+          "name": "elementId",
+          "type": "u32",
+          "comment": "The ID of the element that was clicked."
+        },
+        {
+          "name": "interactionType",
+          "type": "u32",
+          "comment": "Type of interaction (0 = Click, etc)."
+        }
+      ]
     }
   ]
 }

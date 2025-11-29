@@ -84,6 +84,12 @@ typedef enum {
 
     EVENT_SCRIPT_SUBSCRIBE = 3000,
     EVENT_SCRIPT_UNSUBSCRIBE = 3001,
+
+    EVENT_UI_BEGIN_WINDOW = 4000,
+    EVENT_UI_END_WINDOW = 4001,
+    EVENT_UI_TEXT = 4002,
+    EVENT_UI_BUTTON = 4003,
+    EVENT_UI_ELEMENT_CLICKED = 4500,
 } PhrostEventID;
 
 // --- Packed Struct Definitions ---
@@ -554,6 +560,41 @@ typedef struct {
     uint32_t filenameLength; // Length of the texture filename that follows this header.
     uint32_t _padding; // Padding for alignment.
 } PackedTextureLoadHeaderEvent;
+
+// Header for starting an ImGui window. Variable data (title string) follows.
+typedef struct {
+    float x; // Window X position (set to -1 for default/auto).
+    float y; // Window Y position (set to -1 for default/auto).
+    float w; // Window width (0 for auto).
+    float h; // Window height (0 for auto).
+    uint32_t flags; // ImGui Window flags (e.g., NoResize, NoMove).
+    uint32_t titleLength; // Length of the window title string that follows.
+} PackedUIBeginWindowHeaderEvent;
+
+// Header for adding a button. Variable data (label string) follows.
+typedef struct {
+    uint32_t id; // Unique ID for this button to track clicks.
+    float w; // Button width (0 for auto).
+    float h; // Button height (0 for auto).
+    uint32_t labelLength; // Length of the label string that follows.
+} PackedUIButtonHeaderEvent;
+
+// Command to close/end the current ImGui window scope.
+typedef struct {
+    uint8_t _unused; // Padding to ensure non-zero struct size.
+} PackedUIEndWindowEvent;
+
+// Feedback sent FROM engine TO client when a UI element is interacted with.
+typedef struct {
+    uint32_t elementId; // The ID of the element that was clicked.
+    uint32_t interactionType; // Type of interaction (0 = Click, etc).
+} PackedUIInteractionEvent;
+
+// Header for adding text to UI. Variable data (text string) follows.
+typedef struct {
+    uint32_t textLength; // Length of the text string that follows.
+    uint32_t _padding; // Padding for alignment.
+} PackedUITextHeaderEvent;
 
 // Payload for setting window flags (e.g., fullscreen, borderless).
 typedef struct {

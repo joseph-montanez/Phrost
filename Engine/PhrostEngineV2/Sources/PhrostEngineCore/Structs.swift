@@ -503,3 +503,42 @@ import Foundation
         }
     }
 }
+
+// ... existing structs ...
+
+// Header for starting a window.
+// Followed by `titleLength` bytes of string data + padding.
+@frozen public struct PackedUIBeginWindowHeaderEvent: Sendable {
+    public var x: Float
+    public var y: Float
+    public var w: Float
+    public var h: Float
+    public var flags: UInt32
+    public var titleLength: UInt32
+}
+
+@frozen public struct PackedUIEndWindowEvent: Sendable {
+    public var _unused: UInt8  // Helper to ensure structure size > 0
+}
+
+// Header for a button.
+// Followed by `labelLength` bytes of string data + padding.
+@frozen public struct PackedUIButtonHeaderEvent: Sendable {
+    public var id: UInt32  // ID to send back to PHP if clicked
+    public var w: Float
+    public var h: Float
+    public var labelLength: UInt32
+}
+
+// Header for text.
+// Followed by `textLength` bytes of string data + padding.
+@frozen public struct PackedUITextHeaderEvent: Sendable {
+    public var textLength: UInt32
+    public var _padding: UInt32
+}
+
+// Feedback event sent to PHP when a specific ID is clicked
+@frozen public struct PackedUIInteractionEvent: Sendable {
+    public var elementId: UInt32
+    public var interactionType: UInt32  // 0 = Clicked, 1 = Hovered, etc.
+}

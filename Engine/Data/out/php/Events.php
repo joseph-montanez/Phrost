@@ -79,6 +79,12 @@ enum Events: int
 
     case SCRIPT_SUBSCRIBE = 3000;
     case SCRIPT_UNSUBSCRIBE = 3001;
+
+    case UI_BEGIN_WINDOW = 4000;
+    case UI_END_WINDOW = 4001;
+    case UI_TEXT = 4002;
+    case UI_BUTTON = 4003;
+    case UI_ELEMENT_CLICKED = 4500;
 }
 // --- End Events Enum ---
 
@@ -693,6 +699,52 @@ class ScriptPackFormats
      */
     public const PACK_SCRIPT_UNSUBSCRIBE = "VchannelNo/x4_padding";
 }
+
+class UiPackFormats
+{
+    /**
+     * Maps to Swift: `PackedUIBeginWindowHeaderEvent`
+     * (Header struct)
+     * - x: f32 (Window X position (set to -1 for default/auto).)
+     * - y: f32 (Window Y position (set to -1 for default/auto).)
+     * - w: f32 (Window width (0 for auto).)
+     * - h: f32 (Window height (0 for auto).)
+     * - flags: u32 (ImGui Window flags (e.g., NoResize, NoMove).)
+     * - titleLength: u32 (Length of the window title string that follows.)
+     */
+    public const PACK_UI_BEGIN_WINDOW = "gx/gy/gw/gh/Vflags/VtitleLength";
+
+    /**
+     * Maps to Swift: `PackedUIEndWindowEvent`
+     * - _unused: u8 (Padding to ensure non-zero struct size.)
+     */
+    public const PACK_UI_END_WINDOW = "C_unused";
+
+    /**
+     * Maps to Swift: `PackedUITextHeaderEvent`
+     * (Header struct)
+     * - textLength: u32 (Length of the text string that follows.)
+     * - _padding: u32 (Padding for alignment.)
+     */
+    public const PACK_UI_TEXT = "VtextLength/x4_padding";
+
+    /**
+     * Maps to Swift: `PackedUIButtonHeaderEvent`
+     * (Header struct)
+     * - id: u32 (Unique ID for this button to track clicks.)
+     * - w: f32 (Button width (0 for auto).)
+     * - h: f32 (Button height (0 for auto).)
+     * - labelLength: u32 (Length of the label string that follows.)
+     */
+    public const PACK_UI_BUTTON = "Vid/gw/gh/VlabelLength";
+
+    /**
+     * Maps to Swift: `PackedUIInteractionEvent`
+     * - elementId: u32 (The ID of the element that was clicked.)
+     * - interactionType: u32 (Type of interaction (0 = Click, etc).)
+     */
+    public const PACK_UI_ELEMENT_CLICKED = "VelementId/VinteractionType";
+}
 // --- End Pack Format Classes ---
 
 // --- PackFormat Class ---
@@ -766,6 +818,11 @@ class PackFormat
         Events::CAMERA_STOP_FOLLOWING->value => CameraPackFormats::PACK_CAMERA_STOP_FOLLOWING,
         Events::SCRIPT_SUBSCRIBE->value => ScriptPackFormats::PACK_SCRIPT_SUBSCRIBE,
         Events::SCRIPT_UNSUBSCRIBE->value => ScriptPackFormats::PACK_SCRIPT_UNSUBSCRIBE,
+        Events::UI_BEGIN_WINDOW->value => UiPackFormats::PACK_UI_BEGIN_WINDOW,
+        Events::UI_END_WINDOW->value => UiPackFormats::PACK_UI_END_WINDOW,
+        Events::UI_TEXT->value => UiPackFormats::PACK_UI_TEXT,
+        Events::UI_BUTTON->value => UiPackFormats::PACK_UI_BUTTON,
+        Events::UI_ELEMENT_CLICKED->value => UiPackFormats::PACK_UI_ELEMENT_CLICKED,
     ];
 
     /**

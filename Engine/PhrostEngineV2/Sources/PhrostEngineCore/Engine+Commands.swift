@@ -686,6 +686,116 @@ extension PhrostEngine {
                 self.phpSubscribedChannels.remove(event.channelNo)
                 generatedEventCount &+= 1
 
+            // --- UI ---
+            case .uiBeginWindow:
+                let caseOffsetStart = offset
+                guard caseOffsetStart + payloadSize <= commandData.count else { break }
+
+                guard
+                    let header = localUnpack(
+                        label: "UIWinHead", as: PackedUIBeginWindowHeaderEvent.self)
+                else { break }
+
+                let titleLen = Int(header.titleLength)
+                let strPadding = (8 - (titleLen % 8)) % 8
+
+                guard offset + titleLen + strPadding <= commandData.count else { break }
+
+                let titleData = commandData.subdata(in: offset..<(offset + titleLen))
+                offset += titleLen + strPadding
+
+                if let title = String(data: titleData, encoding: .utf8) {
+                    // Set next window position/size if valid (ImGuiCond_FirstUseEver or Always)
+                    if header.w > 0 && header.h > 0 {
+                        ImGuiSetNextWindowSize(
+                            ImVec2(x: header.w, y: header.h), ImGuiCond_FirstUseEver)
+                    }
+                    if header.x >= 0 && header.y >= 0 {
+                        ImGuiSetNextWindowPos(
+                            ImVec2(x: header.x, y: header.y), ImGuiCond_FirstUseEver,
+                            ImVec2(x: 0, y: 0))
+                    }
+
+                    // Swift ImGui wrapper might require a Bool pointer for the 'open' state
+                    var open = true
+                    ImGuiBegin(title, &open, Int32(header.flags))
+                }
+                generatedEventCount &+= 1
+
+            case .uiEndWindow:
+                // Simple fixed size
+                guard localUnpack(label: "UIEndWin", as: PackedUIEndWindowEvent.self) != nil else {
+                    break
+                }
+                ImGuiEnd()
+                generatedEventCount &+= 1
+
+            case .uiText:
+                let caseOffsetStart = offset
+                guard caseOffsetStart + payloadSize <= commandData.count else { break }
+
+                guard
+                    let header = localUnpack(label: "UITextHead", as: PackedUITextHeaderEvent.self)
+                else { break }
+
+                let textLen = Int(header.textLength)
+                let strPadding = (8 - (textLen % 8)) % 8
+
+                guard offset + textLen + strPadding <= commandData.count else { break }
+
+                let textData = commandData.subdata(in: offset..<(offset + textLen))
+                offset += textLen + strPadding
+
+                if let text = String(data: textData, encoding: .utf8) {
+                    ImGuiText(text)
+                }
+                generatedEventCount &+= 1
+
+            case .uiButton:
+                let caseOffsetStart = offset
+                guard caseOffsetStart + payloadSize <= commandData.count else { break }
+
+                guard
+                    let header = localUnpack(
+                        label: "UIButtonHead", as: PackedUIButtonHeaderEvent.self)
+                else { break }
+
+                let labelLen = Int(header.labelLength)
+                let strPadding = (8 - (labelLen % 8)) % 8
+
+                guard offset + labelLen + strPadding <= commandData.count else { break }
+
+                let labelData = commandData.subdata(in: offset..<(offset + labelLen))
+                offset += labelLen + strPadding
+
+                if let label = String(data: labelData, encoding: .utf8) {
+                    let size = ImVec2(x: header.w, y: header.h)  // 0,0 = autosize
+
+                    if ImGuiButton(label, size) {
+                        // --- INTERACTION DETECTED ---
+                        // We immediately pack an event to send back to PHP
+                        var interaction = PackedUIInteractionEvent(
+                            elementId: header.id, interactionType: 0)  // 0 = Click
+                        var evtID = Events.uiElementClicked.rawValue
+                        var ts: UInt64 = 0  // Timestamp 0 for immediate feedback
+
+                        generatedEvents.append(UnsafeBufferPointer(start: &evtID, count: 1))
+                        generatedEvents.append(UnsafeBufferPointer(start: &ts, count: 1))
+
+                        // Padding after Timestamp (VQx4 pattern from your existing code)
+                        generatedEvents.append(Data(count: 4))
+
+                        generatedEvents.append(UnsafeBufferPointer(start: &interaction, count: 1))
+                        generatedEventCount &+= 1
+                    }
+                }
+                // We count the *input* command processed, regardless of click
+                generatedEventCount &+= 1
+
+            case .uiElementClicked:
+                // Loop-back prevention: logic shouldn't send this to Swift, but if it does, skip payload
+                offset += payloadSize
+
             // --- INPUT (Skip) ---
             case .inputKeyup, .inputKeydown, .inputMouseup, .inputMousedown, .inputMousemotion:
                 offset += payloadSize

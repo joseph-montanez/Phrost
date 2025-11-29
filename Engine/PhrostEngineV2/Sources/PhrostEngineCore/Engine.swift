@@ -170,6 +170,12 @@ public final class PhrostEngine {
         // --- SCRIPT ---
         Events.scriptSubscribe.rawValue: MemoryLayout<PackedScriptSubscribeEvent>.size,
         Events.scriptUnsubscribe.rawValue: MemoryLayout<PackedScriptUnsubscribeEvent>.size,
+        // --- UI ---
+        Events.uiBeginWindow.rawValue: MemoryLayout<PackedUIBeginWindowHeaderEvent>.size,
+        Events.uiEndWindow.rawValue: MemoryLayout<PackedUIEndWindowEvent>.size,
+        Events.uiButton.rawValue: MemoryLayout<PackedUIButtonHeaderEvent>.size,
+        Events.uiText.rawValue: MemoryLayout<PackedUITextHeaderEvent>.size,
+        Events.uiElementClicked.rawValue: MemoryLayout<PackedUIInteractionEvent>.size,
     ]
 
     // MARK: Initialization

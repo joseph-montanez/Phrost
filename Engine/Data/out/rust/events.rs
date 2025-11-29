@@ -84,6 +84,12 @@ pub enum Events {
 
     scriptSubscribe = 3000,
     scriptUnsubscribe = 3001,
+
+    uiBeginWindow = 4000,
+    uiEndWindow = 4001,
+    uiText = 4002,
+    uiButton = 4003,
+    uiElementClicked = 4500,
 }
 
 impl Events {
@@ -152,6 +158,11 @@ impl Events {
             2005 => Some(Events::cameraStopFollowing),
             3000 => Some(Events::scriptSubscribe),
             3001 => Some(Events::scriptUnsubscribe),
+            4000 => Some(Events::uiBeginWindow),
+            4001 => Some(Events::uiEndWindow),
+            4002 => Some(Events::uiText),
+            4003 => Some(Events::uiButton),
+            4500 => Some(Events::uiElementClicked),
             _ => None,
         }
     }
@@ -736,6 +747,51 @@ pub struct PackedTextureLoadHeaderEvent {
     pub _padding: u32, // Padding for alignment.
 }
 
+/// Header for starting an ImGui window. Variable data (title string) follows.
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct PackedUIBeginWindowHeaderEvent {
+    pub x: f32, // Window X position (set to -1 for default/auto).
+    pub y: f32, // Window Y position (set to -1 for default/auto).
+    pub w: f32, // Window width (0 for auto).
+    pub h: f32, // Window height (0 for auto).
+    pub flags: u32, // ImGui Window flags (e.g., NoResize, NoMove).
+    pub title_length: u32, // Length of the window title string that follows.
+}
+
+/// Header for adding a button. Variable data (label string) follows.
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct PackedUIButtonHeaderEvent {
+    pub id: u32, // Unique ID for this button to track clicks.
+    pub w: f32, // Button width (0 for auto).
+    pub h: f32, // Button height (0 for auto).
+    pub label_length: u32, // Length of the label string that follows.
+}
+
+/// Command to close/end the current ImGui window scope.
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct PackedUIEndWindowEvent {
+    pub _unused: u8, // Padding to ensure non-zero struct size.
+}
+
+/// Feedback sent FROM engine TO client when a UI element is interacted with.
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct PackedUIInteractionEvent {
+    pub element_id: u32, // The ID of the element that was clicked.
+    pub interaction_type: u32, // Type of interaction (0 = Click, etc).
+}
+
+/// Header for adding text to UI. Variable data (text string) follows.
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct PackedUITextHeaderEvent {
+    pub text_length: u32, // Length of the text string that follows.
+    pub _padding: u32, // Padding for alignment.
+}
+
 /// Payload for setting window flags (e.g., fullscreen, borderless).
 #[repr(C, packed)]
 #[derive(Debug, Copy, Clone)]
@@ -932,6 +988,66 @@ impl CommandPacker {
         };
         self.buffer.write_all(header_bytes)?;
         self.buffer.write_all(path)?;
+        self.command_count += 1;
+        Ok(())
+    }
+
+    pub fn pack_ui_begin_window(&mut self, x: f32, y: f32, w: f32, h: f32, title: &[u8]) -> std::io::Result<()> {
+        self.write_header(Events::uiBeginWindow)?;
+        let header = PackedUIBeginWindowHeaderEvent {
+            x: x,
+            y: y,
+            w: w,
+            h: h,
+            flags: 0,
+            title_length: title.len() as u32
+        };
+        let header_bytes: &[u8] = unsafe {
+            std::slice::from_raw_parts(
+                (&header as *const PackedUIBeginWindowHeaderEvent) as *const u8,
+                std::mem::size_of::<PackedUIBeginWindowHeaderEvent>(),
+            )
+        };
+        self.buffer.write_all(header_bytes)?;
+        self.buffer.write_all(title)?;
+        self.command_count += 1;
+        Ok(())
+    }
+
+    pub fn pack_ui_text(&mut self, text: &[u8]) -> std::io::Result<()> {
+        self.write_header(Events::uiText)?;
+        let header = PackedUITextHeaderEvent {
+            text_length: text.len() as u32,
+            _padding: 0
+        };
+        let header_bytes: &[u8] = unsafe {
+            std::slice::from_raw_parts(
+                (&header as *const PackedUITextHeaderEvent) as *const u8,
+                std::mem::size_of::<PackedUITextHeaderEvent>(),
+            )
+        };
+        self.buffer.write_all(header_bytes)?;
+        self.buffer.write_all(text)?;
+        self.command_count += 1;
+        Ok(())
+    }
+
+    pub fn pack_ui_button(&mut self, w: f32, h: f32, label: &[u8]) -> std::io::Result<()> {
+        self.write_header(Events::uiButton)?;
+        let header = PackedUIButtonHeaderEvent {
+            id: 0,
+            w: w,
+            h: h,
+            label_length: label.len() as u32
+        };
+        let header_bytes: &[u8] = unsafe {
+            std::slice::from_raw_parts(
+                (&header as *const PackedUIButtonHeaderEvent) as *const u8,
+                std::mem::size_of::<PackedUIButtonHeaderEvent>(),
+            )
+        };
+        self.buffer.write_all(header_bytes)?;
+        self.buffer.write_all(label)?;
         self.command_count += 1;
         Ok(())
     }

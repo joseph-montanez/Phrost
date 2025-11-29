@@ -83,6 +83,12 @@ class Events(enum.IntEnum):
 
     SCRIPT_SUBSCRIBE = 3000
     SCRIPT_UNSUBSCRIBE = 3001
+
+    UI_BEGIN_WINDOW = 4000
+    UI_END_WINDOW = 4001
+    UI_TEXT = 4002
+    UI_BUTTON = 4003
+    UI_ELEMENT_CLICKED = 4500
 # --- End Events Enum ---
 
 # --- Pack Format Classes ---
@@ -801,7 +807,61 @@ class ScriptPackFormats:
     """
     # Format: <I4x
     # Size: 8 bytes
-    PACK_SCRIPT_UNSUBSCRIBE: Tuple[str, int] = ("<I4x", 8)# --- End Pack Format Classes ---
+    PACK_SCRIPT_UNSUBSCRIBE: Tuple[str, int] = ("<I4x", 8)
+
+class UiPackFormats:
+    """
+    Maps to Swift: `PackedUIBeginWindowHeaderEvent`
+    (Header struct)
+    - x: f32 (Window X position (set to -1 for default/auto).)
+    - y: f32 (Window Y position (set to -1 for default/auto).)
+    - w: f32 (Window width (0 for auto).)
+    - h: f32 (Window height (0 for auto).)
+    - flags: u32 (ImGui Window flags (e.g., NoResize, NoMove).)
+    - titleLength: u32 (Length of the window title string that follows.)
+    """
+    # Format: <ffffII
+    # Size: 24 bytes
+    PACK_UI_BEGIN_WINDOW: Tuple[str, int] = ("<ffffII", 24)
+
+    """
+    Maps to Swift: `PackedUIEndWindowEvent`
+    - _unused: u8 (Padding to ensure non-zero struct size.)
+    """
+    # Format: <B
+    # Size: 1 bytes
+    PACK_UI_END_WINDOW: Tuple[str, int] = ("<B", 1)
+
+    """
+    Maps to Swift: `PackedUITextHeaderEvent`
+    (Header struct)
+    - textLength: u32 (Length of the text string that follows.)
+    - _padding: u32 (Padding for alignment.)
+    """
+    # Format: <I4x
+    # Size: 8 bytes
+    PACK_UI_TEXT: Tuple[str, int] = ("<I4x", 8)
+
+    """
+    Maps to Swift: `PackedUIButtonHeaderEvent`
+    (Header struct)
+    - id: u32 (Unique ID for this button to track clicks.)
+    - w: f32 (Button width (0 for auto).)
+    - h: f32 (Button height (0 for auto).)
+    - labelLength: u32 (Length of the label string that follows.)
+    """
+    # Format: <IffI
+    # Size: 16 bytes
+    PACK_UI_BUTTON: Tuple[str, int] = ("<IffI", 16)
+
+    """
+    Maps to Swift: `PackedUIInteractionEvent`
+    - elementId: u32 (The ID of the element that was clicked.)
+    - interactionType: u32 (Type of interaction (0 = Click, etc).)
+    """
+    # Format: <II
+    # Size: 8 bytes
+    PACK_UI_ELEMENT_CLICKED: Tuple[str, int] = ("<II", 8)# --- End Pack Format Classes ---
 
 # --- PackFormat Class ---
 class PackFormat:
@@ -870,6 +930,11 @@ class PackFormat:
         Events.CAMERA_STOP_FOLLOWING.value: CameraPackFormats.PACK_CAMERA_STOP_FOLLOWING,
         Events.SCRIPT_SUBSCRIBE.value: ScriptPackFormats.PACK_SCRIPT_SUBSCRIBE,
         Events.SCRIPT_UNSUBSCRIBE.value: ScriptPackFormats.PACK_SCRIPT_UNSUBSCRIBE,
+        Events.UI_BEGIN_WINDOW.value: UiPackFormats.PACK_UI_BEGIN_WINDOW,
+        Events.UI_END_WINDOW.value: UiPackFormats.PACK_UI_END_WINDOW,
+        Events.UI_TEXT.value: UiPackFormats.PACK_UI_TEXT,
+        Events.UI_BUTTON.value: UiPackFormats.PACK_UI_BUTTON,
+        Events.UI_ELEMENT_CLICKED.value: UiPackFormats.PACK_UI_ELEMENT_CLICKED,
     }
 
     # This map holds the pre-computed keys for each event
@@ -937,6 +1002,11 @@ class PackFormat:
         2005: ['_unused'],
         3000: ['channelNo'],
         3001: ['channelNo'],
+        4000: ['x', 'y', 'w', 'h', 'flags', 'titleLength'],
+        4001: ['_unused'],
+        4002: ['textLength'],
+        4003: ['id', 'w', 'h', 'labelLength'],
+        4500: ['elementId', 'interactionType'],
     }
 
 

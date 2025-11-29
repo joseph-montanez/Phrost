@@ -75,4 +75,10 @@ public enum Events: UInt32 {
 
     case scriptSubscribe = 3000
     case scriptUnsubscribe = 3001
+
+    case uiBeginWindow = 4000
+    case uiEndWindow = 4001
+    case uiText = 4002
+    case uiButton = 4003
+    case uiElementClicked = 4500
 }

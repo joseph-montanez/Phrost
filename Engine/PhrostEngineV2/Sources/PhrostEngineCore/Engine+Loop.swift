@@ -111,6 +111,8 @@ extension PhrostEngine {
 
             let (sdlEventStream, sdlEventCount) = pollEvents()
 
+            self.beginFrame(deltaSec: deltaSec)
+
             var currentEventPayloads = Data()
             let initialEventCount = sdlEventCount + self.internalEventCount
 
@@ -485,13 +487,13 @@ extension PhrostEngine {
             screenH: Double(self.windowHeight)
         )
 
-        io.pointee.DisplaySize = ImVec2(x: Float(windowWidth), y: Float(windowHeight))
-        io.pointee.DisplayFramebufferScale = ImVec2(x: scaleX, y: scaleY)
-        io.pointee.DeltaTime = Float(deltaSec)
-        io.pointee.FontGlobalScale = scaleX
-
-        ImGuiNewFrame()
+        // Finalize the ImGui frame. This compiles all the ImGuiButton/Window calls
+        // that happened during processCommands() into draw lists.
         ImGuiRender()
+
+        // Actually draw the lists to the SDL renderer
+        renderImGuiDrawData()
+
         SDL_RenderPresent(renderer)
     }
 
