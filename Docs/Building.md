@@ -19,8 +19,8 @@ Project is designed with Swift 6.2 strict concurrency. https://www.swift.org/ins
 
     mkdir .\Engine\deps
     cd .\Engine\deps
-    curl -o SDL3-x64.zip "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-09/SDL3-x64-2025-11-09.zip"
-    curl -o SDL3-arm64.zip "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-09/SDL3-arm64-2025-11-09.zip"
+    curl -o SDL3-x64.zip "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-23/SDL3-x64-2025-11-23.zip"
+    curl -o SDL3-arm64.zip "https://github.com/mmozeiko/build-sdl3/releases/download/2025-11-23/SDL3-arm64-2025-11-23.zip"
     tar -xf SDL3-x64.zip
     tar -xf SDL3-arm64.zip
     del SDL3-x64.zip
@@ -42,17 +42,17 @@ Project is designed with Swift 6.2 strict concurrency. https://www.swift.org/ins
 **Download PHP SDK**
 
     cd .\Engine\deps
-    curl -o php-x64.zip "https://windows.php.net/downloads/releases/php-8.4.14-nts-Win32-vs17-x64.zip"
-    curl -o php-x64-sdk.zip "https://windows.php.net/downloads/releases/php-devel-pack-8.4.14-nts-Win32-vs17-x64.zip"
+    curl -o php-x64.zip "https://windows.php.net/downloads/releases/php-8.5.0-nts-Win32-vs17-x64.zip"
+    curl -o php-x64-sdk.zip "https://windows.php.net/downloads/releases/php-devel-pack-8.5.0-nts-Win32-vs17-x64.zip"
     curl -o php-arm64.7z "https://github.com/hyh19962008/php-windows-arm64/releases/download/8.4.10/php-8.4.10-nts-Win32-vs17-arm64-experimental.7z"
-    mkdir php-8.4.14-nts-Win32-vs17-x64
-    mkdir php-8.4.14-nts-Win32-vs17-x64\sdk
+    mkdir php-8.5.0-nts-Win32-vs17-x64
+    mkdir php-8.5.0-nts-Win32-vs17-x64\sdk
     mkdir php-8.4.10-nts-Win32-vs17-arm64
-    tar -xf php-x64.zip -C php-8.4.14-nts-Win32-vs17-x64
-    tar -xf php-x64-sdk.zip -C php-8.4.14-nts-Win32-vs17-x64\sdk
+    tar -xf php-x64.zip -C php-8.5.0-nts-Win32-vs17-x64
+    tar -xf php-x64-sdk.zip -C php-8.5.0-nts-Win32-vs17-x64\sdk
     tar -xf php-arm64.7z -C php-8.4.10-nts-Win32-vs17-arm64
-    move .\php-8.4.14-nts-Win32-vs17-x64\sdk\php-8.4.14-devel-vs17-x64\* .\php-8.4.14-nts-Win32-vs17-x64\sdk\
-    rmdir .\php-8.4.14-nts-Win32-vs17-x64\sdk\php-8.4.14-devel-vs17-x64
+    move .\php-8.5.0-nts-Win32-vs17-x64\sdk\php-8.5.0-devel-vs17-x64\* .\php-8.5.0-nts-Win32-vs17-x64\sdk\
+    rmdir .\php-8.5.0-nts-Win32-vs17-x64\sdk\php-8.5.0-devel-vs17-x64
     del php-x64.zip
     del php-x64-sdk.zip
     del php-arm64.7z
