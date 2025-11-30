@@ -760,6 +760,7 @@ pub struct PackedUIBeginWindowHeaderEvent {
     pub id: u32, // ImGui Window Id.
     pub flags: u32, // ImGui Window flags.
     pub title_length: u32, // Length of title.
+    pub _padding: u32, // Padding to align header to 16 bytes.
 }
 
 /// Header for adding a button. Variable data (label string) follows.
@@ -1027,7 +1028,8 @@ impl CommandPacker {
         let header = PackedUIBeginWindowHeaderEvent {
             id: 0,
             flags: 0,
-            title_length: title.len() as u32
+            title_length: title.len() as u32,
+            _padding: 0
         };
         let header_bytes: &[u8] = unsafe {
             std::slice::from_raw_parts(

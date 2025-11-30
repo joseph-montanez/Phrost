@@ -1659,7 +1659,12 @@
       "members": [
         { "name": "id", "type": "u32", "comment": "ImGui Window Id." },
         { "name": "flags", "type": "u32", "comment": "ImGui Window flags." },
-        { "name": "titleLength", "type": "u32", "comment": "Length of title." }
+        { "name": "titleLength", "type": "u32", "comment": "Length of title." },
+        {
+          "name": "_padding",
+          "type": "u32",
+          "comment": "Padding to align header to 16 bytes."
+        }
       ]
     },
     {

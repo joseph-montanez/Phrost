@@ -426,6 +426,7 @@ import Foundation
     public var id: UInt32
     public var flags: UInt32
     public var titleLength: UInt32
+    public var _padding: UInt32
 }
 
 @frozen public struct PackedUIButtonHeaderEvent: Sendable {

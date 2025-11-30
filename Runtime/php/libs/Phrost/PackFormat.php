@@ -366,8 +366,8 @@ class PackFormat
 
                 $events[] = $headerData + $fixedPartData + $textData;
             } elseif ($eventType === Events::UI_BEGIN_WINDOW->value) {
-                // Header: ggggVV (24 bytes)
-                $fixedPartSize = 24;
+                // Header: Vid/Vflags/VtitleLength/x4padding (16 bytes)
+                $fixedPartSize = 16;
                 if ($offset + $fixedPartSize > $blobLength) {
                     error_log(
                         "PackFormat::unpack (UI_BEGIN_WINDOW): Not enough data for fixed part.",
@@ -375,7 +375,7 @@ class PackFormat
                     break;
                 }
                 $fixedPartData = unpack(
-                    "gx/gy/gw/gh/Vflags/VtitleLength",
+                    "Vid/Vflags/VtitleLength/x4padding",
                     substr($eventsBlob, $offset, $fixedPartSize),
                 );
                 if ($fixedPartData === false) {
@@ -387,7 +387,10 @@ class PackFormat
                 $offset += $fixedPartSize;
                 $titleLength = $fixedPartData["titleLength"];
 
-                if ($offset + $titleLength > $blobLength) {
+                // Calculate Padding for the string itself
+                $strPadding = (8 - ($titleLength % 8)) % 8;
+
+                if ($offset + $titleLength + $strPadding > $blobLength) {
                     error_log(
                         "PackFormat::unpack (UI_BEGIN_WINDOW): Not enough data for title.",
                     );
@@ -400,7 +403,8 @@ class PackFormat
                             substr($eventsBlob, $offset, $titleLength),
                         )
                         : ["title" => ""];
-                $offset += $titleLength;
+
+                $offset += $titleLength + $strPadding;
                 $events[] = $headerData + $fixedPartData + $titleData;
             } elseif ($eventType === Events::UI_TEXT->value) {
                 // Header: Vx4 (8 bytes)

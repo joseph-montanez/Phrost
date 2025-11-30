@@ -841,10 +841,11 @@ class UiPackFormats:
     - id: u32 (ImGui Window Id.)
     - flags: u32 (ImGui Window flags.)
     - titleLength: u32 (Length of title.)
+    - _padding: u32 (Padding to align header to 16 bytes.)
     """
-    # Format: <III
-    # Size: 12 bytes
-    PACK_UI_BEGIN_WINDOW: Tuple[str, int] = ("<III", 12)
+    # Format: <III4x
+    # Size: 16 bytes
+    PACK_UI_BEGIN_WINDOW: Tuple[str, int] = ("<III4x", 16)
 
     """
     Maps to Swift: `PackedUIEndWindowEvent`

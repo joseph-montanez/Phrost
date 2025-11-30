@@ -699,6 +699,10 @@ extension PhrostEngine {
                 let pos = ImVec2(x: event.x, y: event.y)
                 let pivot = ImVec2(x: event.pivotX, y: event.pivotY)
 
+                print(
+                    "UI_WIN_POS Header: cond=\(cond) X=\(pos.x) Y=\(pos.y) pivot=\(pivot.x),\(pivot.y)"
+                )
+
                 igSetNextWindowPos(pos, cond, pivot)
                 generatedEventCount &+= 1
 
@@ -710,6 +714,10 @@ extension PhrostEngine {
 
                 let cond = Int32(event.cond)
                 let size = ImVec2(x: event.w, y: event.h)
+
+                print(
+                    "UI_WIN_SIZE Header: cond=\(cond) width=\(size.x) height=\(size.y)"
+                )
 
                 igSetNextWindowSize(size, cond)
                 generatedEventCount &+= 1
@@ -780,6 +788,9 @@ extension PhrostEngine {
                 offset += textLen + strPadding
 
                 if let text = String(data: textData, encoding: .utf8) {
+                    print(
+                        "UI_TEXT Header: text=\(text) len=\(textLen)"
+                    )
                     igTextUnformatted(text, nil)
                 }
                 generatedEventCount &+= 1
@@ -802,7 +813,12 @@ extension PhrostEngine {
                 offset += labelLen + strPadding
 
                 if let label = String(data: labelData, encoding: .utf8) {
-                    let size = ImVec2(x: header.w, y: header.h)  // 0,0 = autosize
+                    print(
+                        "UI_BUTTON Header: ID=\(header.id) W=\(header.w) H=\(header.h) Len=\(header.labelLength) text=\(label)"
+                    )
+                    let size = ImVec2(x: 100, y: 20)  // 0,0 = autosize
+
+                    ImGuiPushItemWidth(100)
 
                     if ImGuiButton(label, size) {
                         // --- INTERACTION DETECTED ---
@@ -821,6 +837,8 @@ extension PhrostEngine {
                         generatedEvents.append(value: interaction)
                         generatedEventCount &+= 1
                     }
+                } else {
+                    print("UI_BUTTON Error: Could not decode label string from data.")
                 }
                 // We count the *input* command processed, regardless of click
                 generatedEventCount &+= 1

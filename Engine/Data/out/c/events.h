@@ -569,6 +569,7 @@ typedef struct {
     uint32_t id; // ImGui Window Id.
     uint32_t flags; // ImGui Window flags.
     uint32_t titleLength; // Length of title.
+    uint32_t _padding; // Padding to align header to 16 bytes.
 } PackedUIBeginWindowHeaderEvent;
 
 // Header for adding a button. Variable data (label string) follows.

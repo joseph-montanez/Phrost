@@ -729,8 +729,9 @@ class UiPackFormats
      * - id: u32 (ImGui Window Id.)
      * - flags: u32 (ImGui Window flags.)
      * - titleLength: u32 (Length of title.)
+     * - _padding: u32 (Padding to align header to 16 bytes.)
      */
-    public const PACK_UI_BEGIN_WINDOW = "Vid/Vflags/VtitleLength/a*title";
+    public const PACK_UI_BEGIN_WINDOW = "Vid/Vflags/VtitleLength/x4_padding/a*title";
 
     /**
      * Maps to Swift: `PackedUIEndWindowEvent`

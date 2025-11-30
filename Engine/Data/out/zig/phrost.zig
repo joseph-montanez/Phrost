@@ -499,6 +499,7 @@ pub const PackedUIBeginWindowHeaderEvent = extern struct {
     id: u32, // ImGui Window Id.
     flags: u32, // ImGui Window flags.
     titleLength: u32, // Length of title.
+    _padding: u32, // Padding to align header to 16 bytes.
 };
 
 pub const PackedUIButtonHeaderEvent = extern struct {
