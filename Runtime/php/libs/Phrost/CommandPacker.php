@@ -110,19 +110,17 @@ class CommandPacker
             $this->eventStream .= $packedFixedPart;
             $this->eventStream .= $this->packStringAligned($data[3]);
         } elseif ($type === Events::UI_BEGIN_WINDOW) {
-            // Header: ggggVV (24 bytes)
-            // Data: x, y, w, h, flags, titleLen, title
-            $packedFixedPart = pack(
-                "ggggVV",
-                $data[0],
-                $data[1],
-                $data[2],
-                $data[3],
-                $data[4],
-                $data[5],
-            );
+            // Header: VVV (12 bytes) -> id, flags, titleLength
+            // We pad to 16 bytes (x4) to keep alignment clean before the string starts.
+
+            // $data[0] = id
+            // $data[1] = flags
+            // $data[2] = titleLength
+            // $data[3] = title
+
+            $packedFixedPart = pack("VVVx4", $data[0], $data[1], $data[2]);
             $this->eventStream .= $packedFixedPart;
-            $this->eventStream .= $this->packStringAligned($data[6]);
+            $this->eventStream .= $this->packStringAligned($data[3]);
         } elseif ($type === Events::UI_TEXT) {
             // Header: Vx4 (8 bytes)
             // Data: textLen, text

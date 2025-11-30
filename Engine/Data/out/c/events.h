@@ -89,7 +89,10 @@ typedef enum {
     EVENT_UI_END_WINDOW = 4001,
     EVENT_UI_TEXT = 4002,
     EVENT_UI_BUTTON = 4003,
+    EVENT_UI_SET_NEXT_WINDOW_POS = 4004,
+    EVENT_UI_SET_NEXT_WINDOW_SIZE = 4005,
     EVENT_UI_ELEMENT_CLICKED = 4500,
+    EVENT_UI_WINDOW_CLOSED = 4501,
 } PhrostEventID;
 
 // --- Packed Struct Definitions ---
@@ -561,14 +564,11 @@ typedef struct {
     uint32_t _padding; // Padding for alignment.
 } PackedTextureLoadHeaderEvent;
 
-// Header for starting an ImGui window. Variable data (title string) follows.
+// Starts a window. Use SetNextWindow* events before this to control layout.
 typedef struct {
-    float x; // Window X position (set to -1 for default/auto).
-    float y; // Window Y position (set to -1 for default/auto).
-    float w; // Window width (0 for auto).
-    float h; // Window height (0 for auto).
-    uint32_t flags; // ImGui Window flags (e.g., NoResize, NoMove).
-    uint32_t titleLength; // Length of the window title string that follows.
+    uint32_t id; // ImGui Window Id.
+    uint32_t flags; // ImGui Window flags.
+    uint32_t titleLength; // Length of title.
 } PackedUIBeginWindowHeaderEvent;
 
 // Header for adding a button. Variable data (label string) follows.
@@ -590,11 +590,32 @@ typedef struct {
     uint32_t interactionType; // Type of interaction (0 = Click, etc).
 } PackedUIInteractionEvent;
 
+// Sets the position of the next window defined by UI_BEGIN_WINDOW.
+typedef struct {
+    float x; // X Position.
+    float y; // Y Position.
+    uint32_t cond; // ImGuiCond (Always=1, Once=2, FirstUseEver=4).
+    float pivotX; // Pivot X (0.0=Left, 0.5=Center, 1.0=Right).
+    float pivotY; // Pivot Y (0.0=Top, 0.5=Center, 1.0=Bottom).
+} PackedUISetNextWindowPosEvent;
+
+// Sets the size of the next window defined by UI_BEGIN_WINDOW.
+typedef struct {
+    float w; // Width.
+    float h; // Height.
+    uint32_t cond; // ImGuiCond (Always=1, Once=2, FirstUseEver=4).
+} PackedUISetNextWindowSizeEvent;
+
 // Header for adding text to UI. Variable data (text string) follows.
 typedef struct {
     uint32_t textLength; // Length of the text string that follows.
     uint32_t _padding; // Padding for alignment.
 } PackedUITextHeaderEvent;
+
+// Sent from Engine to PHP when the user closes a window (clicks X).
+typedef struct {
+    uint32_t windowId; // The ID of the window that closed.
+} PackedUIWindowClosedEvent;
 
 // Payload for setting window flags (e.g., fullscreen, borderless).
 typedef struct {

@@ -80,7 +80,10 @@ pub const Events = enum(u32) {
     uiEndWindow = 4001,
     uiText = 4002,
     uiButton = 4003,
+    uiSetNextWindowPos = 4004,
+    uiSetNextWindowSize = 4005,
     uiElementClicked = 4500,
+    uiWindowClosed = 4501,
 };
 
 pub const PackedAudioLoadEvent = extern struct {
@@ -493,12 +496,9 @@ pub const PackedTextureLoadHeaderEvent = extern struct {
 };
 
 pub const PackedUIBeginWindowHeaderEvent = extern struct {
-    x: f32, // Window X position (set to -1 for default/auto).
-    y: f32, // Window Y position (set to -1 for default/auto).
-    w: f32, // Window width (0 for auto).
-    h: f32, // Window height (0 for auto).
-    flags: u32, // ImGui Window flags (e.g., NoResize, NoMove).
-    titleLength: u32, // Length of the window title string that follows.
+    id: u32, // ImGui Window Id.
+    flags: u32, // ImGui Window flags.
+    titleLength: u32, // Length of title.
 };
 
 pub const PackedUIButtonHeaderEvent = extern struct {
@@ -517,9 +517,27 @@ pub const PackedUIInteractionEvent = extern struct {
     interactionType: u32, // Type of interaction (0 = Click, etc).
 };
 
+pub const PackedUISetNextWindowPosEvent = extern struct {
+    x: f32, // X Position.
+    y: f32, // Y Position.
+    cond: u32, // ImGuiCond (Always=1, Once=2, FirstUseEver=4).
+    pivotX: f32, // Pivot X (0.0=Left, 0.5=Center, 1.0=Right).
+    pivotY: f32, // Pivot Y (0.0=Top, 0.5=Center, 1.0=Bottom).
+};
+
+pub const PackedUISetNextWindowSizeEvent = extern struct {
+    w: f32, // Width.
+    h: f32, // Height.
+    cond: u32, // ImGuiCond (Always=1, Once=2, FirstUseEver=4).
+};
+
 pub const PackedUITextHeaderEvent = extern struct {
     textLength: u32, // Length of the text string that follows.
     _padding: u32, // Padding for alignment.
+};
+
+pub const PackedUIWindowClosedEvent = extern struct {
+    windowId: u32, // The ID of the window that closed.
 };
 
 pub const PackedWindowFlagsEvent = extern struct {
@@ -623,7 +641,10 @@ pub const event_payload_list = [_]KVPair{
     .{ "uiEndWindow", @sizeOf(PackedUIEndWindowEvent) },
     .{ "uiText", @sizeOf(PackedUITextHeaderEvent) },
     .{ "uiButton", @sizeOf(PackedUIButtonHeaderEvent) },
+    .{ "uiSetNextWindowPos", @sizeOf(PackedUISetNextWindowPosEvent) },
+    .{ "uiSetNextWindowSize", @sizeOf(PackedUISetNextWindowSizeEvent) },
     .{ "uiElementClicked", @sizeOf(PackedUIInteractionEvent) },
+    .{ "uiWindowClosed", @sizeOf(PackedUIWindowClosedEvent) },
 };
 
 pub const event_payload_sizes = std.StaticStringMap(u32).initComptime(event_payload_list);

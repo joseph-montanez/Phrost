@@ -80,5 +80,8 @@ public enum Events: UInt32 {
     case uiEndWindow = 4001
     case uiText = 4002
     case uiButton = 4003
+    case uiSetNextWindowPos = 4004
+    case uiSetNextWindowSize = 4005
     case uiElementClicked = 4500
+    case uiWindowClosed = 4501
 }

@@ -84,7 +84,10 @@ enum Events: int
     case UI_END_WINDOW = 4001;
     case UI_TEXT = 4002;
     case UI_BUTTON = 4003;
+    case UI_SET_NEXT_WINDOW_POS = 4004;
+    case UI_SET_NEXT_WINDOW_SIZE = 4005;
     case UI_ELEMENT_CLICKED = 4500;
+    case UI_WINDOW_CLOSED = 4501;
 }
 // --- End Events Enum ---
 
@@ -703,16 +706,31 @@ class ScriptPackFormats
 class UiPackFormats
 {
     /**
+     * Maps to Swift: `PackedUISetNextWindowPosEvent`
+     * - x: f32 (X Position.)
+     * - y: f32 (Y Position.)
+     * - cond: u32 (ImGuiCond (Always=1, Once=2, FirstUseEver=4).)
+     * - pivotX: f32 (Pivot X (0.0=Left, 0.5=Center, 1.0=Right).)
+     * - pivotY: f32 (Pivot Y (0.0=Top, 0.5=Center, 1.0=Bottom).)
+     */
+    public const PACK_UI_SET_NEXT_WINDOW_POS = "gx/gy/Vcond/gpivotX/gpivotY";
+
+    /**
+     * Maps to Swift: `PackedUISetNextWindowSizeEvent`
+     * - w: f32 (Width.)
+     * - h: f32 (Height.)
+     * - cond: u32 (ImGuiCond (Always=1, Once=2, FirstUseEver=4).)
+     */
+    public const PACK_UI_SET_NEXT_WINDOW_SIZE = "gw/gh/Vcond";
+
+    /**
      * Maps to Swift: `PackedUIBeginWindowHeaderEvent`
      * (Header struct)
-     * - x: f32 (Window X position (set to -1 for default/auto).)
-     * - y: f32 (Window Y position (set to -1 for default/auto).)
-     * - w: f32 (Window width (0 for auto).)
-     * - h: f32 (Window height (0 for auto).)
-     * - flags: u32 (ImGui Window flags (e.g., NoResize, NoMove).)
-     * - titleLength: u32 (Length of the window title string that follows.)
+     * - id: u32 (ImGui Window Id.)
+     * - flags: u32 (ImGui Window flags.)
+     * - titleLength: u32 (Length of title.)
      */
-    public const PACK_UI_BEGIN_WINDOW = "gx/gy/gw/gh/Vflags/VtitleLength";
+    public const PACK_UI_BEGIN_WINDOW = "Vid/Vflags/VtitleLength/a*title";
 
     /**
      * Maps to Swift: `PackedUIEndWindowEvent`
@@ -726,7 +744,7 @@ class UiPackFormats
      * - textLength: u32 (Length of the text string that follows.)
      * - _padding: u32 (Padding for alignment.)
      */
-    public const PACK_UI_TEXT = "VtextLength/x4_padding";
+    public const PACK_UI_TEXT = "VtextLength/x4_padding/a*text";
 
     /**
      * Maps to Swift: `PackedUIButtonHeaderEvent`
@@ -736,7 +754,7 @@ class UiPackFormats
      * - h: f32 (Button height (0 for auto).)
      * - labelLength: u32 (Length of the label string that follows.)
      */
-    public const PACK_UI_BUTTON = "Vid/gw/gh/VlabelLength";
+    public const PACK_UI_BUTTON = "Vid/gw/gh/VlabelLength/a*label";
 
     /**
      * Maps to Swift: `PackedUIInteractionEvent`
@@ -744,5 +762,11 @@ class UiPackFormats
      * - interactionType: u32 (Type of interaction (0 = Click, etc).)
      */
     public const PACK_UI_ELEMENT_CLICKED = "VelementId/VinteractionType";
+
+    /**
+     * Maps to Swift: `PackedUIWindowClosedEvent`
+     * - windowId: u32 (The ID of the window that closed.)
+     */
+    public const PACK_UI_WINDOW_CLOSED = "VwindowId";
 }
 // --- End Pack Format Classes ---

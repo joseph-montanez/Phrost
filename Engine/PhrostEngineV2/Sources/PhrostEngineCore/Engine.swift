@@ -176,6 +176,9 @@ public final class PhrostEngine {
         Events.uiButton.rawValue: MemoryLayout<PackedUIButtonHeaderEvent>.size,
         Events.uiText.rawValue: MemoryLayout<PackedUITextHeaderEvent>.size,
         Events.uiElementClicked.rawValue: MemoryLayout<PackedUIInteractionEvent>.size,
+        Events.uiSetNextWindowPos.rawValue: MemoryLayout<PackedUISetNextWindowPosEvent>.size,
+        Events.uiSetNextWindowSize.rawValue: MemoryLayout<PackedUISetNextWindowSizeEvent>.size,
+        Events.uiWindowClosed.rawValue: MemoryLayout<PackedUIWindowClosedEvent>.size,
     ]
 
     // MARK: Initialization

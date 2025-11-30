@@ -688,6 +688,32 @@ extension PhrostEngine {
                 generatedEventCount &+= 1
 
             // --- UI ---
+            case .uiSetNextWindowPos:
+                guard
+                    let event = localUnpack(
+                        label: "UiSetPos", as: PackedUISetNextWindowPosEvent.self)
+                else { break }
+
+                // ImGuiCond values: Always=1, Once=2, FirstUseEver=4, Appearing=8
+                let cond = Int32(event.cond)
+                let pos = ImVec2(x: event.x, y: event.y)
+                let pivot = ImVec2(x: event.pivotX, y: event.pivotY)
+
+                igSetNextWindowPos(pos, cond, pivot)
+                generatedEventCount &+= 1
+
+            case .uiSetNextWindowSize:
+                guard
+                    let event = localUnpack(
+                        label: "UiSetSize", as: PackedUISetNextWindowSizeEvent.self)
+                else { break }
+
+                let cond = Int32(event.cond)
+                let size = ImVec2(x: event.w, y: event.h)
+
+                igSetNextWindowSize(size, cond)
+                generatedEventCount &+= 1
+
             case .uiBeginWindow:
                 let caseOffsetStart = offset
                 guard caseOffsetStart + payloadSize <= commandData.count else { break }
@@ -706,22 +732,26 @@ extension PhrostEngine {
                 offset += titleLen + strPadding
 
                 if let title = String(data: titleData, encoding: .utf8) {
-                    // Set next window position/size if valid (ImGuiCond_FirstUseEver or Always)
-                    if header.w > 0 && header.h > 0 {
-                        ImGuiSetNextWindowSize(
-                            ImVec2(x: header.w, y: header.h), Int32(ImGuiCond_Always.rawValue)
-                        )
-                    }
-                    if header.x >= 0 && header.y >= 0 {
-                        ImGuiSetNextWindowPos(
-                            ImVec2(x: header.x, y: header.y),
-                            Int32(ImGuiCond_Always.rawValue),
-                            ImVec2(x: 0, y: 0))
-                    }
-
-                    // Swift ImGui wrapper might require a Bool pointer for the 'open' state
+                    // 1. We must use a mutable Bool to track the state
                     var open = true
-                    ImGuiBegin(title, &open, Int32(header.flags))
+
+                    // 2. Pass &open to igBegin
+                    igBegin(title, &open, Int32(header.flags))
+
+                    // 3. Check if the user clicked "X" (open became false)
+                    if open == false {
+                        // Create feedback event
+                        let closeEvent = PackedUIWindowClosedEvent(windowId: header.id)
+                        let evtID = Events.uiWindowClosed.rawValue
+                        let ts: UInt64 = 0
+
+                        generatedEvents.append(value: evtID)
+                        generatedEvents.append(value: ts)
+                        generatedEvents.append(Data(count: 4))  // Padding
+                        generatedEvents.append(value: closeEvent)
+
+                        generatedEventCount &+= 1
+                    }
                 }
                 generatedEventCount &+= 1
 
@@ -777,10 +807,10 @@ extension PhrostEngine {
                     if ImGuiButton(label, size) {
                         // --- INTERACTION DETECTED ---
                         // We immediately pack an event to send back to PHP
-                        var interaction = PackedUIInteractionEvent(
+                        let interaction = PackedUIInteractionEvent(
                             elementId: header.id, interactionType: 0)  // 0 = Click
-                        var evtID = Events.uiElementClicked.rawValue
-                        var ts: UInt64 = 0  // Timestamp 0 for immediate feedback
+                        let evtID = Events.uiElementClicked.rawValue
+                        let ts: UInt64 = 0  // Timestamp 0 for immediate feedback
 
                         generatedEvents.append(value: evtID)
                         generatedEvents.append(value: ts)
@@ -795,8 +825,8 @@ extension PhrostEngine {
                 // We count the *input* command processed, regardless of click
                 generatedEventCount &+= 1
 
-            case .uiElementClicked:
-                // Loop-back prevention: logic shouldn't send this to Swift, but if it does, skip payload
+            // --- Feedback Events (Skip) ---
+            case .uiElementClicked, .uiWindowClosed:
                 offset += payloadSize
 
             // --- INPUT (Skip) ---

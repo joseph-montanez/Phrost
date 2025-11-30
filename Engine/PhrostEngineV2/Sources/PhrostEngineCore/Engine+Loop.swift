@@ -50,7 +50,6 @@ extension PhrostEngine {
                 let txtPad = (8 - (txtLen % 8)) % 8
                 offset += fpLen + fpPad + txtLen + txtPad
             } else if event == .textSetString {
-                // ... existing textSetString logic ...
                 offset += payloadSize
                 let header = data.withUnsafeBytes {
                     $0.loadSafe(fromByteOffset: startOffset + 16, as: PackedTextSetStringEvent.self)
@@ -59,7 +58,6 @@ extension PhrostEngine {
                 let txtPad = (8 - (txtLen % 8)) % 8
                 offset += txtLen + txtPad
             } else if event == .spriteTextureLoad {
-                // ... existing textureLoad logic ...
                 offset += payloadSize
                 let header = data.withUnsafeBytes {
                     $0.loadSafe(
@@ -69,7 +67,6 @@ extension PhrostEngine {
                 let fnPad = (8 - (fnLen % 8)) % 8
                 offset += fnLen + fnPad
             } else if event == .audioLoad {
-                // ... existing audioLoad logic ...
                 offset += payloadSize
                 let header = data.withUnsafeBytes {
                     $0.loadSafe(fromByteOffset: startOffset + 16, as: PackedAudioLoadEvent.self)
@@ -78,7 +75,6 @@ extension PhrostEngine {
                 let pPad = (8 - (pLen % 8)) % 8
                 offset += pLen + pPad
             } else if event == .pluginLoad {
-                // ... existing pluginLoad logic ...
                 offset += payloadSize
                 let header = data.withUnsafeBytes {
                     $0.loadSafe(

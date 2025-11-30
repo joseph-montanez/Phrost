@@ -114,9 +114,6 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
     /** @var Camera $camera */
     $camera = $world["camera"];
 
-    $BTN_RESET_ID = 100;
-    $BTN_ATTACK_ID = 101;
-
     // --- FPS Calculation ---
     if ($dt > 0) {
         $world["fps"] = 1.0 / $dt;
@@ -437,37 +434,55 @@ function Phrost_Update(int $elapsed, float $dt, string $eventsBlob = ""): string
     $camera = $world["camera"];
     $camera->packDirtyEvents($packer);
 
-    // Start a Window
-    UI::beginWindow($packer, "Debug Control", 10, 10, 200, 150);
+    // --- UI ---
+    $WIN_DEBUG_ID = 50;
+    $BTN_RESET_ID = 100;
+    $BTN_ATTACK_ID = 101;
 
-    // Add some Text
-    UI::text($packer, "FPS: " . number_format($world["smoothed_fps"], 1));
-    UI::text($packer, "Entities: " . count($world["sprites"]));
+    if ($world["showDebug"] ?? true) {
+        // Start a Window
+        // Set Window Position
+        UI::setNextWindowPos($packer, 10, 10, UI::COND_FIRST_USE_EVER);
+        // Set Window Size
+        UI::setNextWindowSize($packer, 300, 150, UI::COND_FIRST_USE_EVER);
+        // Create Window
+        UI::beginWindow($packer, $WIN_DEBUG_ID, "Debug Control")->onClose(
+            function () use (&$world) {
+                // This runs immediately if the window was closed this frame
+                $world["showDebug"] = false;
+                echo "Debug Window Closed via Fluent Syntax.\n";
+            },
+        );
 
-    // Add Buttons
-    UI::button(
-        $packer,
-        $BTN_RESET_ID,
-        "Toggle Physics Debug",
-        200,
-        30,
-    )->onClick(function () use ($world, $packer) {
-        echo "UI: Toggle Debug Clicked\n";
-        $world["physicsDebug"] = !$world["physicsDebug"];
-        PhysicsBody::setDebugMode($packer, $world["physicsDebug"]);
-    });
+        // Add some Text
+        UI::text($packer, "FPS: " . number_format($world["smoothed_fps"], 1));
+        UI::text($packer, "Entities: " . count($world["sprites"]));
 
-    UI::button($packer, $BTN_ATTACK_ID, "Player Attack", 200, 30)->onClick(
-        function () use ($playerSprite) {
-            if ($playerSprite) {
-                echo "UI: Attack Clicked\n";
-                $playerSprite->play("attack", false, true);
-            }
-        },
-    );
+        // Add Buttons
+        UI::button(
+            $packer,
+            $BTN_RESET_ID,
+            "Toggle Physics Debug",
+            200,
+            30,
+        )->onClick(function () use ($world, $packer) {
+            echo "UI: Toggle Debug Clicked\n";
+            $world["physicsDebug"] = !$world["physicsDebug"];
+            PhysicsBody::setDebugMode($packer, $world["physicsDebug"]);
+        });
 
-    // End Window
-    UI::endWindow($packer);
+        UI::button($packer, $BTN_ATTACK_ID, "Player Attack", 200, 30)->onClick(
+            function () use ($playerSprite) {
+                if ($playerSprite) {
+                    echo "UI: Attack Clicked\n";
+                    $playerSprite->play("attack", false, true);
+                }
+            },
+        );
+
+        // End Window
+        UI::endWindow($packer);
+    }
 
     // --- Finalize & Return ---
     return $packer->finalize();

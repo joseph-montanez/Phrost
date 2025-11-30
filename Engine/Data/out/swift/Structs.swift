@@ -423,10 +423,7 @@ import Foundation
 }
 
 @frozen public struct PackedUIBeginWindowHeaderEvent: Sendable {
-    public var x: Float
-    public var y: Float
-    public var w: Float
-    public var h: Float
+    public var id: UInt32
     public var flags: UInt32
     public var titleLength: UInt32
 }
@@ -447,9 +444,27 @@ import Foundation
     public var interactionType: UInt32
 }
 
+@frozen public struct PackedUISetNextWindowPosEvent: Sendable {
+    public var x: Float
+    public var y: Float
+    public var cond: UInt32
+    public var pivotX: Float
+    public var pivotY: Float
+}
+
+@frozen public struct PackedUISetNextWindowSizeEvent: Sendable {
+    public var w: Float
+    public var h: Float
+    public var cond: UInt32
+}
+
 @frozen public struct PackedUITextHeaderEvent: Sendable {
     public var textLength: UInt32
     public var _padding: UInt32
+}
+
+@frozen public struct PackedUIWindowClosedEvent: Sendable {
+    public var windowId: UInt32
 }
 
 @frozen public struct PackedWindowFlagsEvent {

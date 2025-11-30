@@ -89,7 +89,10 @@ pub enum Events {
     uiEndWindow = 4001,
     uiText = 4002,
     uiButton = 4003,
+    uiSetNextWindowPos = 4004,
+    uiSetNextWindowSize = 4005,
     uiElementClicked = 4500,
+    uiWindowClosed = 4501,
 }
 
 impl Events {
@@ -162,7 +165,10 @@ impl Events {
             4001 => Some(Events::uiEndWindow),
             4002 => Some(Events::uiText),
             4003 => Some(Events::uiButton),
+            4004 => Some(Events::uiSetNextWindowPos),
+            4005 => Some(Events::uiSetNextWindowSize),
             4500 => Some(Events::uiElementClicked),
+            4501 => Some(Events::uiWindowClosed),
             _ => None,
         }
     }
@@ -747,16 +753,13 @@ pub struct PackedTextureLoadHeaderEvent {
     pub _padding: u32, // Padding for alignment.
 }
 
-/// Header for starting an ImGui window. Variable data (title string) follows.
+/// Starts a window. Use SetNextWindow* events before this to control layout.
 #[repr(C, packed)]
 #[derive(Debug, Copy, Clone)]
 pub struct PackedUIBeginWindowHeaderEvent {
-    pub x: f32, // Window X position (set to -1 for default/auto).
-    pub y: f32, // Window Y position (set to -1 for default/auto).
-    pub w: f32, // Window width (0 for auto).
-    pub h: f32, // Window height (0 for auto).
-    pub flags: u32, // ImGui Window flags (e.g., NoResize, NoMove).
-    pub title_length: u32, // Length of the window title string that follows.
+    pub id: u32, // ImGui Window Id.
+    pub flags: u32, // ImGui Window flags.
+    pub title_length: u32, // Length of title.
 }
 
 /// Header for adding a button. Variable data (label string) follows.
@@ -784,12 +787,39 @@ pub struct PackedUIInteractionEvent {
     pub interaction_type: u32, // Type of interaction (0 = Click, etc).
 }
 
+/// Sets the position of the next window defined by UI_BEGIN_WINDOW.
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct PackedUISetNextWindowPosEvent {
+    pub x: f32, // X Position.
+    pub y: f32, // Y Position.
+    pub cond: u32, // ImGuiCond (Always=1, Once=2, FirstUseEver=4).
+    pub pivot_x: f32, // Pivot X (0.0=Left, 0.5=Center, 1.0=Right).
+    pub pivot_y: f32, // Pivot Y (0.0=Top, 0.5=Center, 1.0=Bottom).
+}
+
+/// Sets the size of the next window defined by UI_BEGIN_WINDOW.
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct PackedUISetNextWindowSizeEvent {
+    pub w: f32, // Width.
+    pub h: f32, // Height.
+    pub cond: u32, // ImGuiCond (Always=1, Once=2, FirstUseEver=4).
+}
+
 /// Header for adding text to UI. Variable data (text string) follows.
 #[repr(C, packed)]
 #[derive(Debug, Copy, Clone)]
 pub struct PackedUITextHeaderEvent {
     pub text_length: u32, // Length of the text string that follows.
     pub _padding: u32, // Padding for alignment.
+}
+
+/// Sent from Engine to PHP when the user closes a window (clicks X).
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct PackedUIWindowClosedEvent {
+    pub window_id: u32, // The ID of the window that closed.
 }
 
 /// Payload for setting window flags (e.g., fullscreen, borderless).
@@ -992,13 +1022,10 @@ impl CommandPacker {
         Ok(())
     }
 
-    pub fn pack_ui_begin_window(&mut self, x: f32, y: f32, w: f32, h: f32, title: &[u8]) -> std::io::Result<()> {
+    pub fn pack_ui_begin_window(&mut self, title: &[u8]) -> std::io::Result<()> {
         self.write_header(Events::uiBeginWindow)?;
         let header = PackedUIBeginWindowHeaderEvent {
-            x: x,
-            y: y,
-            w: w,
-            h: h,
+            id: 0,
             flags: 0,
             title_length: title.len() as u32
         };

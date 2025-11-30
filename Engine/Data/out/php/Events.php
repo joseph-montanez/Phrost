@@ -84,7 +84,10 @@ enum Events: int
     case UI_END_WINDOW = 4001;
     case UI_TEXT = 4002;
     case UI_BUTTON = 4003;
+    case UI_SET_NEXT_WINDOW_POS = 4004;
+    case UI_SET_NEXT_WINDOW_SIZE = 4005;
     case UI_ELEMENT_CLICKED = 4500;
+    case UI_WINDOW_CLOSED = 4501;
 }
 // --- End Events Enum ---
 
@@ -703,16 +706,31 @@ class ScriptPackFormats
 class UiPackFormats
 {
     /**
+     * Maps to Swift: `PackedUISetNextWindowPosEvent`
+     * - x: f32 (X Position.)
+     * - y: f32 (Y Position.)
+     * - cond: u32 (ImGuiCond (Always=1, Once=2, FirstUseEver=4).)
+     * - pivotX: f32 (Pivot X (0.0=Left, 0.5=Center, 1.0=Right).)
+     * - pivotY: f32 (Pivot Y (0.0=Top, 0.5=Center, 1.0=Bottom).)
+     */
+    public const PACK_UI_SET_NEXT_WINDOW_POS = "gx/gy/Vcond/gpivotX/gpivotY";
+
+    /**
+     * Maps to Swift: `PackedUISetNextWindowSizeEvent`
+     * - w: f32 (Width.)
+     * - h: f32 (Height.)
+     * - cond: u32 (ImGuiCond (Always=1, Once=2, FirstUseEver=4).)
+     */
+    public const PACK_UI_SET_NEXT_WINDOW_SIZE = "gw/gh/Vcond";
+
+    /**
      * Maps to Swift: `PackedUIBeginWindowHeaderEvent`
      * (Header struct)
-     * - x: f32 (Window X position (set to -1 for default/auto).)
-     * - y: f32 (Window Y position (set to -1 for default/auto).)
-     * - w: f32 (Window width (0 for auto).)
-     * - h: f32 (Window height (0 for auto).)
-     * - flags: u32 (ImGui Window flags (e.g., NoResize, NoMove).)
-     * - titleLength: u32 (Length of the window title string that follows.)
+     * - id: u32 (ImGui Window Id.)
+     * - flags: u32 (ImGui Window flags.)
+     * - titleLength: u32 (Length of title.)
      */
-    public const PACK_UI_BEGIN_WINDOW = "gx/gy/gw/gh/Vflags/VtitleLength";
+    public const PACK_UI_BEGIN_WINDOW = "Vid/Vflags/VtitleLength/a*title";
 
     /**
      * Maps to Swift: `PackedUIEndWindowEvent`
@@ -726,7 +744,7 @@ class UiPackFormats
      * - textLength: u32 (Length of the text string that follows.)
      * - _padding: u32 (Padding for alignment.)
      */
-    public const PACK_UI_TEXT = "VtextLength/x4_padding";
+    public const PACK_UI_TEXT = "VtextLength/x4_padding/a*text";
 
     /**
      * Maps to Swift: `PackedUIButtonHeaderEvent`
@@ -736,7 +754,7 @@ class UiPackFormats
      * - h: f32 (Button height (0 for auto).)
      * - labelLength: u32 (Length of the label string that follows.)
      */
-    public const PACK_UI_BUTTON = "Vid/gw/gh/VlabelLength";
+    public const PACK_UI_BUTTON = "Vid/gw/gh/VlabelLength/a*label";
 
     /**
      * Maps to Swift: `PackedUIInteractionEvent`
@@ -744,6 +762,12 @@ class UiPackFormats
      * - interactionType: u32 (Type of interaction (0 = Click, etc).)
      */
     public const PACK_UI_ELEMENT_CLICKED = "VelementId/VinteractionType";
+
+    /**
+     * Maps to Swift: `PackedUIWindowClosedEvent`
+     * - windowId: u32 (The ID of the window that closed.)
+     */
+    public const PACK_UI_WINDOW_CLOSED = "VwindowId";
 }
 // --- End Pack Format Classes ---
 
@@ -822,7 +846,10 @@ class PackFormat
         Events::UI_END_WINDOW->value => UiPackFormats::PACK_UI_END_WINDOW,
         Events::UI_TEXT->value => UiPackFormats::PACK_UI_TEXT,
         Events::UI_BUTTON->value => UiPackFormats::PACK_UI_BUTTON,
+        Events::UI_SET_NEXT_WINDOW_POS->value => UiPackFormats::PACK_UI_SET_NEXT_WINDOW_POS,
+        Events::UI_SET_NEXT_WINDOW_SIZE->value => UiPackFormats::PACK_UI_SET_NEXT_WINDOW_SIZE,
         Events::UI_ELEMENT_CLICKED->value => UiPackFormats::PACK_UI_ELEMENT_CLICKED,
+        Events::UI_WINDOW_CLOSED->value => UiPackFormats::PACK_UI_WINDOW_CLOSED,
     ];
 
     /**
@@ -840,7 +867,6 @@ class PackFormat
             return null;
         }
 
-        // --- Reverted Size Calculation Logic ---
         static $sizeMap = [
             "a" => 1, "A" => 1, "Z" => 1, "h" => 0.5, "H" => 0.5, "c" => 1,
             "C" => 1, "s" => 2, "S" => 2, "n" => 2, "v" => 2, "l" => 4,
@@ -851,22 +877,22 @@ class PackFormat
 
         $totalSize = 0;
         foreach (explode("/", $descriptiveFormat) as $part) {
-            // Match format code (letter) and optional repeater (* or digits)
             if (preg_match("/^([a-zA-Z])(\*|\d*)/", $part, $matches)) {
-                // Use ^ to match start
                 $code = $matches[1];
                 $repeater = $matches[2];
 
                 if ($repeater === "*") {
-                    // It's a variable length part, stop calculating size here
-                    // Check against a list of known dynamic events
+                    // Variable length part detected.
                     static $dynamicEvents = [
-                        Events::SPRITE_TEXTURE_LOAD->value,
+                Events::AUDIO_LOAD->value,
+                        Events::GEOM_ADD_PACKED->value,
                         Events::PLUGIN_LOAD->value,
+                        Events::SPRITE_TEXTURE_LOAD->value,
                         Events::TEXT_ADD->value,
                         Events::TEXT_SET_STRING->value,
-                        Events::AUDIO_LOAD->value,
-                        Events::GEOM_ADD_PACKED->value
+                        Events::UI_BEGIN_WINDOW->value,
+                        Events::UI_BUTTON->value,
+                        Events::UI_TEXT->value
                     ];
 
                     if (in_array($eventTypeValue, $dynamicEvents)) {
@@ -875,13 +901,13 @@ class PackFormat
                         error_log(
                             "PackFormat::getInfo: Unexpected '*' in format '{$descriptiveFormat}' for event {$eventTypeValue}. Size calculation might be wrong."
                         );
-                        break; // Stop calculation
+                        break;
                     }
                 }
 
                 $count = $repeater === "" || !ctype_digit($repeater)
-                            ? 1
-                            : (int) $repeater;
+                                    ? 1
+                                    : (int) $repeater;
                 $size = $sizeMap[$code] ?? 0;
                 if ($size === 0 && $code !== "@") {
                     error_log(
@@ -1015,6 +1041,46 @@ class PackFormat
                 $offset += $textLength;
                 $events[] = $headerData + $fixedPartData + $textData;
 
+            } elseif ($eventType === Events::UI_BEGIN_WINDOW->value) {
+                // Header: ggggVV (24 bytes)
+                $fixedPartSize = 24;
+                if ($offset + $fixedPartSize > $blobLength) { error_log("PackFormat::unpack (UI_BEGIN_WINDOW): Not enough data for fixed part."); break; }
+                $fixedPartData = unpack("gx/gy/gw/gh/Vflags/VtitleLength", substr($eventsBlob, $offset, $fixedPartSize));
+                if ($fixedPartData === false) { error_log("PackFormat::unpack (UI_BEGIN_WINDOW): Failed to unpack fixed part."); break; }
+                $offset += $fixedPartSize;
+                $titleLength = $fixedPartData["titleLength"];
+
+                if ($offset + $titleLength > $blobLength) { error_log("PackFormat::unpack (UI_BEGIN_WINDOW): Not enough data for title."); break; }
+                $titleData = ($titleLength > 0) ? unpack("a{$titleLength}title", substr($eventsBlob, $offset, $titleLength)) : ["title" => ""];
+                $offset += $titleLength;
+                $events[] = $headerData + $fixedPartData + $titleData;
+
+            } elseif ($eventType === Events::UI_TEXT->value) {
+                // Header: Vx4 (8 bytes)
+                $fixedPartSize = 8;
+                if ($offset + $fixedPartSize > $blobLength) { error_log("PackFormat::unpack (UI_TEXT): Not enough data for fixed part."); break; }
+                $fixedPartData = unpack("VtextLength/x4padding", substr($eventsBlob, $offset, $fixedPartSize));
+                $offset += $fixedPartSize;
+                $textLength = $fixedPartData["textLength"];
+
+                if ($offset + $textLength > $blobLength) { error_log("PackFormat::unpack (UI_TEXT): Not enough data for text."); break; }
+                $textData = ($textLength > 0) ? unpack("a{$textLength}text", substr($eventsBlob, $offset, $textLength)) : ["text" => ""];
+                $offset += $textLength;
+                $events[] = $headerData + $fixedPartData + $textData;
+
+            } elseif ($eventType === Events::UI_BUTTON->value) {
+                // Header: VggV (16 bytes)
+                $fixedPartSize = 16;
+                if ($offset + $fixedPartSize > $blobLength) { error_log("PackFormat::unpack (UI_BUTTON): Not enough data for fixed part."); break; }
+                $fixedPartData = unpack("Vid/gw/gh/VlabelLength", substr($eventsBlob, $offset, $fixedPartSize));
+                $offset += $fixedPartSize;
+                $labelLength = $fixedPartData["labelLength"];
+
+                if ($offset + $labelLength > $blobLength) { error_log("PackFormat::unpack (UI_BUTTON): Not enough data for label."); break; }
+                $labelData = ($labelLength > 0) ? unpack("a{$labelLength}label", substr($eventsBlob, $offset, $labelLength)) : ["label" => ""];
+                $offset += $labelLength;
+                $events[] = $headerData + $fixedPartData + $labelData;
+
             } elseif ($eventEnumValue !== null) {
                 // Handle other known fixed-size events
                 $payloadInfo = self::getInfo($eventType);
@@ -1084,67 +1150,55 @@ class CommandPacker
     private function packEvent(Events $type, array $data): void
     {
         $typeValue = $type->value;
-        $this->eventStream .= pack("VQ", $typeValue, 0); // 12 bytes header (type + timestamp)
+        $this->eventStream .= pack("VQ", $typeValue, 0);
 
         if ($type === Events::SPRITE_TEXTURE_LOAD) {
-            if (count($data) !== 4) { error_log("CommandPacker (TEXTURE_LOAD): Incorrect data count, expected 4."); return; }
-            $packedFixedPart = pack("qqVx4", $data[0], $data[1], $data[2]);
-            $this->eventStream .= $packedFixedPart;
-            $this->eventStream .= $data[3]; // Append filename string
-
+            if (count($data) !== 4) { error_log("CommandPacker: Data count mismatch for SPRITE_TEXTURE_LOAD"); return; }
+            $this->eventStream .= pack("qqVx4", $data[0], $data[1], $data[2]);
+            $this->eventStream .= $data[3];
         } elseif ($type === Events::PLUGIN_LOAD) {
-             if (count($data) !== 2) { error_log("CommandPacker (PLUGIN_LOAD): Incorrect data count, expected 2."); return; }
-            $packedFixedPart = pack("V", $data[0]);
-            $this->eventStream .= $packedFixedPart;
-            $this->eventStream .= $data[1]; // Append path string
-
+            if (count($data) !== 2) { error_log("CommandPacker: Data count mismatch for PLUGIN_LOAD"); return; }
+            $this->eventStream .= pack("V", $data[0]);
+            $this->eventStream .= $data[1];
         } elseif ($type === Events::AUDIO_LOAD) {
-             if (count($data) !== 2) { error_log("CommandPacker (AUDIO_LOAD): Incorrect data count, expected 2."); return; }
-            $packedFixedPart = pack("V", $data[0]);
-            $this->eventStream .= $packedFixedPart;
-            $this->eventStream .= $data[1]; // Append path string
-
+            if (count($data) !== 2) { error_log("CommandPacker: Data count mismatch for AUDIO_LOAD"); return; }
+            $this->eventStream .= pack("V", $data[0]);
+            $this->eventStream .= $data[1];
         } elseif ($type === Events::TEXT_ADD) {
-             if (count($data) !== 14) { error_log("CommandPacker (TEXT_ADD): Incorrect data count, expected 14."); return; }
-             // Corrected format: e = f64, g = f32
-            $packedFixedPart = pack("qqeeeCCCCx4gVVx4",
-                $data[0], $data[1], $data[2], $data[3], $data[4], // id1, id2, posXYZ (e)
-                $data[5], $data[6], $data[7], $data[8],             // rgba (C)
-                $data[9], $data[10], $data[11]                      // fontSize(g), fontPathLength(V), textLength(V)
+            // qqeeeCCCCx4gVVx4 + str + str
+            $packedFixed = pack("qqeeeCCCCx4gVVx4",
+                $data[0], $data[1], $data[2], $data[3], $data[4],
+                $data[5], $data[6], $data[7], $data[8],
+                $data[9], $data[10], $data[11]
             );
-            $this->eventStream .= $packedFixedPart;
-            $this->eventStream .= $data[12]; // Append fontPath
-            $this->eventStream .= $data[13]; // Append text
-
+            $this->eventStream .= $packedFixed;
+            $this->eventStream .= $data[12];
+            $this->eventStream .= $data[13];
         } elseif ($type === Events::TEXT_SET_STRING) {
-             if (count($data) !== 4) { error_log("CommandPacker (TEXT_SET_STRING): Incorrect data count, expected 4."); return; }
-            $packedFixedPart = pack("qqVx4", $data[0], $data[1], $data[2]);
-            $this->eventStream .= $packedFixedPart;
-            $this->eventStream .= $data[3]; // Append text string
-
+            $this->eventStream .= pack("qqVx4", $data[0], $data[1], $data[2]);
+            $this->eventStream .= $data[3];
+        } elseif ($type === Events::UI_BEGIN_WINDOW) {
+            // NEW: Dynamic UI Window
+            // Format: ggggVV + title
+            $this->eventStream .= pack("ggggVV", $data[0], $data[1], $data[2], $data[3], $data[4], $data[5]);
+            $this->eventStream .= $data[6];
+        } elseif ($type === Events::UI_TEXT) {
+            // NEW: Dynamic UI Text
+            // Format: Vx4 + text
+            $this->eventStream .= pack("Vx4", $data[0]);
+            $this->eventStream .= $data[1];
+        } elseif ($type === Events::UI_BUTTON) {
+            // NEW: Dynamic UI Button
+            // Format: VggV + label
+            $this->eventStream .= pack("VggV", $data[0], $data[1], $data[2], $data[3]);
+            $this->eventStream .= $data[4];
         } else {
-            // --- Fixed-Size Event Packing Logic ---
+            // --- FIXED SIZE HANDLING ---
             $payloadInfo = PackFormat::getInfo($typeValue);
-            if ($payloadInfo === null) { error_log("CommandPacker ({$type->name}): Could not get payload info."); return; }
-
-            $pureFormat = self::getPureFormat($payloadInfo["format"]);
-            if (empty($pureFormat) && !empty($data)) { error_log("CommandPacker ({$type->name}): Format is empty but data was provided."); return; }
-
-            if (empty($pureFormat) && empty($data)) {
-                 // Correctly handle no-payload events like AUDIO_STOP_ALL
-            } else {
-                $numericData = array_values($data);
-                try {
-                    $packedPayload = pack($pureFormat, ...$numericData);
-                    if ($packedPayload === false) {
-                        error_log("CommandPacker ({$type->name}): pack() returned false. Format='{$pureFormat}'");
-                    } else {
-                        $this->eventStream .= $packedPayload;
-                    }
-                } catch (\ValueError $e) {
-                    error_log("CommandPacker ({$type->name}): ValueError during pack()! Format='{$pureFormat}', Error: {$e->getMessage()}");
-                } catch (\Exception $e) {
-                    error_log("CommandPacker ({$type->name}): Exception during pack()! Format='{$pureFormat}', Error: {$e->getMessage()}");
+            if ($payloadInfo) {
+                $pureFormat = self::getPureFormat($payloadInfo["format"]);
+                if (!empty($pureFormat)) {
+                     $this->eventStream .= pack($pureFormat, ...array_values($data));
                 }
             }
         }
@@ -1179,16 +1233,6 @@ class CommandPacker
         return pack("V", $this->commandCount) . $this->eventStream;
     }
 
-    public function getBufferCount(): int
-    {
-        return count($this->eventBuffer);
-    }
-
-    public function getTotalEventCount(): int
-    {
-        return $this->commandCount + count($this->eventBuffer);
-    }
-
     private static function getPureFormat(string $descriptiveFormat): string
     {
         if (isset(self::$pureFormatCache[$descriptiveFormat])) {
@@ -1199,9 +1243,7 @@ class CommandPacker
             if (preg_match("/^([a-zA-Z])(\*|\d*)/", $part, $matches)) {
                 $code = $matches[1];
                 $count = $matches[2];
-                if ($count === '*') {
-                    break; // Stop at variable part
-                }
+                if ($count === '*') { break; }
                 $pure .= $code . $count;
             }
         }

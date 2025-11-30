@@ -15,7 +15,9 @@
       "email": "sutabi@gmail.com"
     }
   ],
-  "require": {},
+  "require": {
+    "php": "^8.4"
+  },
   "scripts": {
     "run-engine": "../PhrostBinary"
   }

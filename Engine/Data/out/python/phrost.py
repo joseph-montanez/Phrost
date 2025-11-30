@@ -88,7 +88,10 @@ class Events(enum.IntEnum):
     UI_END_WINDOW = 4001
     UI_TEXT = 4002
     UI_BUTTON = 4003
+    UI_SET_NEXT_WINDOW_POS = 4004
+    UI_SET_NEXT_WINDOW_SIZE = 4005
     UI_ELEMENT_CLICKED = 4500
+    UI_WINDOW_CLOSED = 4501
 # --- End Events Enum ---
 
 # --- Pack Format Classes ---
@@ -811,18 +814,37 @@ class ScriptPackFormats:
 
 class UiPackFormats:
     """
+    Maps to Swift: `PackedUISetNextWindowPosEvent`
+    - x: f32 (X Position.)
+    - y: f32 (Y Position.)
+    - cond: u32 (ImGuiCond (Always=1, Once=2, FirstUseEver=4).)
+    - pivotX: f32 (Pivot X (0.0=Left, 0.5=Center, 1.0=Right).)
+    - pivotY: f32 (Pivot Y (0.0=Top, 0.5=Center, 1.0=Bottom).)
+    """
+    # Format: <ffIff
+    # Size: 20 bytes
+    PACK_UI_SET_NEXT_WINDOW_POS: Tuple[str, int] = ("<ffIff", 20)
+
+    """
+    Maps to Swift: `PackedUISetNextWindowSizeEvent`
+    - w: f32 (Width.)
+    - h: f32 (Height.)
+    - cond: u32 (ImGuiCond (Always=1, Once=2, FirstUseEver=4).)
+    """
+    # Format: <ffI
+    # Size: 12 bytes
+    PACK_UI_SET_NEXT_WINDOW_SIZE: Tuple[str, int] = ("<ffI", 12)
+
+    """
     Maps to Swift: `PackedUIBeginWindowHeaderEvent`
     (Header struct)
-    - x: f32 (Window X position (set to -1 for default/auto).)
-    - y: f32 (Window Y position (set to -1 for default/auto).)
-    - w: f32 (Window width (0 for auto).)
-    - h: f32 (Window height (0 for auto).)
-    - flags: u32 (ImGui Window flags (e.g., NoResize, NoMove).)
-    - titleLength: u32 (Length of the window title string that follows.)
+    - id: u32 (ImGui Window Id.)
+    - flags: u32 (ImGui Window flags.)
+    - titleLength: u32 (Length of title.)
     """
-    # Format: <ffffII
-    # Size: 24 bytes
-    PACK_UI_BEGIN_WINDOW: Tuple[str, int] = ("<ffffII", 24)
+    # Format: <III
+    # Size: 12 bytes
+    PACK_UI_BEGIN_WINDOW: Tuple[str, int] = ("<III", 12)
 
     """
     Maps to Swift: `PackedUIEndWindowEvent`
@@ -861,7 +883,15 @@ class UiPackFormats:
     """
     # Format: <II
     # Size: 8 bytes
-    PACK_UI_ELEMENT_CLICKED: Tuple[str, int] = ("<II", 8)# --- End Pack Format Classes ---
+    PACK_UI_ELEMENT_CLICKED: Tuple[str, int] = ("<II", 8)
+
+    """
+    Maps to Swift: `PackedUIWindowClosedEvent`
+    - windowId: u32 (The ID of the window that closed.)
+    """
+    # Format: <I
+    # Size: 4 bytes
+    PACK_UI_WINDOW_CLOSED: Tuple[str, int] = ("<I", 4)# --- End Pack Format Classes ---
 
 # --- PackFormat Class ---
 class PackFormat:
@@ -934,7 +964,10 @@ class PackFormat:
         Events.UI_END_WINDOW.value: UiPackFormats.PACK_UI_END_WINDOW,
         Events.UI_TEXT.value: UiPackFormats.PACK_UI_TEXT,
         Events.UI_BUTTON.value: UiPackFormats.PACK_UI_BUTTON,
+        Events.UI_SET_NEXT_WINDOW_POS.value: UiPackFormats.PACK_UI_SET_NEXT_WINDOW_POS,
+        Events.UI_SET_NEXT_WINDOW_SIZE.value: UiPackFormats.PACK_UI_SET_NEXT_WINDOW_SIZE,
         Events.UI_ELEMENT_CLICKED.value: UiPackFormats.PACK_UI_ELEMENT_CLICKED,
+        Events.UI_WINDOW_CLOSED.value: UiPackFormats.PACK_UI_WINDOW_CLOSED,
     }
 
     # This map holds the pre-computed keys for each event
@@ -1002,11 +1035,14 @@ class PackFormat:
         2005: ['_unused'],
         3000: ['channelNo'],
         3001: ['channelNo'],
-        4000: ['x', 'y', 'w', 'h', 'flags', 'titleLength'],
+        4004: ['x', 'y', 'cond', 'pivotX', 'pivotY'],
+        4005: ['w', 'h', 'cond'],
+        4000: ['id', 'flags', 'titleLength'],
         4001: ['_unused'],
         4002: ['textLength'],
         4003: ['id', 'w', 'h', 'labelLength'],
         4500: ['elementId', 'interactionType'],
+        4501: ['windowId'],
     }
 
 

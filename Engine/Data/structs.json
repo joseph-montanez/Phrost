@@ -1609,42 +1609,57 @@
       ]
     },
     {
+      "name": "PackedUISetNextWindowPosEvent",
+      "eventId": 4004,
+      "enumName": "UI_SET_NEXT_WINDOW_POS",
+      "isDynamic": false,
+      "comment": "Sets the position of the next window defined by UI_BEGIN_WINDOW.",
+      "members": [
+        { "name": "x", "type": "f32", "comment": "X Position." },
+        { "name": "y", "type": "f32", "comment": "Y Position." },
+        {
+          "name": "cond",
+          "type": "u32",
+          "comment": "ImGuiCond (Always=1, Once=2, FirstUseEver=4)."
+        },
+        {
+          "name": "pivotX",
+          "type": "f32",
+          "comment": "Pivot X (0.0=Left, 0.5=Center, 1.0=Right)."
+        },
+        {
+          "name": "pivotY",
+          "type": "f32",
+          "comment": "Pivot Y (0.0=Top, 0.5=Center, 1.0=Bottom)."
+        }
+      ]
+    },
+    {
+      "name": "PackedUISetNextWindowSizeEvent",
+      "eventId": 4005,
+      "enumName": "UI_SET_NEXT_WINDOW_SIZE",
+      "isDynamic": false,
+      "comment": "Sets the size of the next window defined by UI_BEGIN_WINDOW.",
+      "members": [
+        { "name": "w", "type": "f32", "comment": "Width." },
+        { "name": "h", "type": "f32", "comment": "Height." },
+        {
+          "name": "cond",
+          "type": "u32",
+          "comment": "ImGuiCond (Always=1, Once=2, FirstUseEver=4)."
+        }
+      ]
+    },
+    {
       "name": "PackedUIBeginWindowHeaderEvent",
       "eventId": 4000,
       "enumName": "UI_BEGIN_WINDOW",
       "isDynamic": true,
-      "comment": "Header for starting an ImGui window. Variable data (title string) follows.",
+      "comment": "Starts a window. Use SetNextWindow* events before this to control layout.",
       "members": [
-        {
-          "name": "x",
-          "type": "f32",
-          "comment": "Window X position (set to -1 for default/auto)."
-        },
-        {
-          "name": "y",
-          "type": "f32",
-          "comment": "Window Y position (set to -1 for default/auto)."
-        },
-        {
-          "name": "w",
-          "type": "f32",
-          "comment": "Window width (0 for auto)."
-        },
-        {
-          "name": "h",
-          "type": "f32",
-          "comment": "Window height (0 for auto)."
-        },
-        {
-          "name": "flags",
-          "type": "u32",
-          "comment": "ImGui Window flags (e.g., NoResize, NoMove)."
-        },
-        {
-          "name": "titleLength",
-          "type": "u32",
-          "comment": "Length of the window title string that follows."
-        }
+        { "name": "id", "type": "u32", "comment": "ImGui Window Id." },
+        { "name": "flags", "type": "u32", "comment": "ImGui Window flags." },
+        { "name": "titleLength", "type": "u32", "comment": "Length of title." }
       ]
     },
     {
@@ -1725,6 +1740,20 @@
           "name": "interactionType",
           "type": "u32",
           "comment": "Type of interaction (0 = Click, etc)."
+        }
+      ]
+    },
+    {
+      "name": "PackedUIWindowClosedEvent",
+      "eventId": 4501,
+      "enumName": "UI_WINDOW_CLOSED",
+      "isDynamic": false,
+      "comment": "Sent from Engine to PHP when the user closes a window (clicks X).",
+      "members": [
+        {
+          "name": "windowId",
+          "type": "u32",
+          "comment": "The ID of the window that closed."
         }
       ]
     }

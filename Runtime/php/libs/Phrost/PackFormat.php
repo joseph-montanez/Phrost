@@ -11,7 +11,6 @@ class PackFormat
     private const EVENT_FORMAT_MAP = [
         Events::SPRITE_ADD->value => SpritePackFormats::PACK_SPRITE_ADD,
         Events::SPRITE_REMOVE->value => SpritePackFormats::PACK_SPRITE_REMOVE,
-        // ... include all your existing map entries here ...
         Events::SPRITE_MOVE->value => SpritePackFormats::PACK_SPRITE_MOVE,
         Events::SPRITE_SCALE->value => SpritePackFormats::PACK_SPRITE_SCALE,
         Events::SPRITE_RESIZE->value => SpritePackFormats::PACK_SPRITE_RESIZE,
@@ -107,16 +106,25 @@ class PackFormat
         Events::UI_END_WINDOW->value => UiPackFormats::PACK_UI_END_WINDOW,
         Events::UI_TEXT->value => UiPackFormats::PACK_UI_TEXT,
         Events::UI_BUTTON->value => UiPackFormats::PACK_UI_BUTTON,
+        Events::UI_SET_NEXT_WINDOW_POS->value =>
+            UiPackFormats::PACK_UI_SET_NEXT_WINDOW_POS,
+        Events::UI_SET_NEXT_WINDOW_SIZE->value =>
+            UiPackFormats::PACK_UI_SET_NEXT_WINDOW_SIZE,
         Events::UI_ELEMENT_CLICKED->value =>
             UiPackFormats::PACK_UI_ELEMENT_CLICKED,
+        Events::UI_WINDOW_CLOSED->value => UiPackFormats::PACK_UI_WINDOW_CLOSED,
     ];
 
-    // ... (getInfo implementation remains unchanged) ...
+    /**
+     * Gets descriptive format and calculates size based on summing format codes.
+     * For variable formats ('*'), size is only for the fixed part. Includes padding codes (x).
+     */
     public static function getInfo(int $eventTypeValue): ?array
     {
         if (isset(self::$cache[$eventTypeValue])) {
             return self::$cache[$eventTypeValue];
         }
+
         $descriptiveFormat = self::EVENT_FORMAT_MAP[$eventTypeValue] ?? null;
         if ($descriptiveFormat === null) {
             return null;
@@ -161,15 +169,15 @@ class PackFormat
                 $repeater = $matches[2];
                 if ($repeater === "*") {
                     static $dynamicEvents = [
-                        Events::SPRITE_TEXTURE_LOAD->value,
-                        Events::PLUGIN_LOAD->value,
-                        Events::TEXT_ADD->value,
-                        Events::TEXT_SET_STRING->value,
                         Events::AUDIO_LOAD->value,
                         Events::GEOM_ADD_PACKED->value,
+                        Events::PLUGIN_LOAD->value,
+                        Events::SPRITE_TEXTURE_LOAD->value,
+                        Events::TEXT_ADD->value,
+                        Events::TEXT_SET_STRING->value,
                         Events::UI_BEGIN_WINDOW->value,
-                        Events::UI_TEXT->value,
                         Events::UI_BUTTON->value,
+                        Events::UI_TEXT->value,
                     ];
                     if (in_array($eventTypeValue, $dynamicEvents)) {
                         break;
@@ -357,6 +365,105 @@ class PackFormat
                 $offset += $textLength + $strPadding;
 
                 $events[] = $headerData + $fixedPartData + $textData;
+            } elseif ($eventType === Events::UI_BEGIN_WINDOW->value) {
+                // Header: ggggVV (24 bytes)
+                $fixedPartSize = 24;
+                if ($offset + $fixedPartSize > $blobLength) {
+                    error_log(
+                        "PackFormat::unpack (UI_BEGIN_WINDOW): Not enough data for fixed part.",
+                    );
+                    break;
+                }
+                $fixedPartData = unpack(
+                    "gx/gy/gw/gh/Vflags/VtitleLength",
+                    substr($eventsBlob, $offset, $fixedPartSize),
+                );
+                if ($fixedPartData === false) {
+                    error_log(
+                        "PackFormat::unpack (UI_BEGIN_WINDOW): Failed to unpack fixed part.",
+                    );
+                    break;
+                }
+                $offset += $fixedPartSize;
+                $titleLength = $fixedPartData["titleLength"];
+
+                if ($offset + $titleLength > $blobLength) {
+                    error_log(
+                        "PackFormat::unpack (UI_BEGIN_WINDOW): Not enough data for title.",
+                    );
+                    break;
+                }
+                $titleData =
+                    $titleLength > 0
+                        ? unpack(
+                            "a{$titleLength}title",
+                            substr($eventsBlob, $offset, $titleLength),
+                        )
+                        : ["title" => ""];
+                $offset += $titleLength;
+                $events[] = $headerData + $fixedPartData + $titleData;
+            } elseif ($eventType === Events::UI_TEXT->value) {
+                // Header: Vx4 (8 bytes)
+                $fixedPartSize = 8;
+                if ($offset + $fixedPartSize > $blobLength) {
+                    error_log(
+                        "PackFormat::unpack (UI_TEXT): Not enough data for fixed part.",
+                    );
+                    break;
+                }
+                $fixedPartData = unpack(
+                    "VtextLength/x4padding",
+                    substr($eventsBlob, $offset, $fixedPartSize),
+                );
+                $offset += $fixedPartSize;
+                $textLength = $fixedPartData["textLength"];
+
+                if ($offset + $textLength > $blobLength) {
+                    error_log(
+                        "PackFormat::unpack (UI_TEXT): Not enough data for text.",
+                    );
+                    break;
+                }
+                $textData =
+                    $textLength > 0
+                        ? unpack(
+                            "a{$textLength}text",
+                            substr($eventsBlob, $offset, $textLength),
+                        )
+                        : ["text" => ""];
+                $offset += $textLength;
+                $events[] = $headerData + $fixedPartData + $textData;
+            } elseif ($eventType === Events::UI_BUTTON->value) {
+                // Header: VggV (16 bytes)
+                $fixedPartSize = 16;
+                if ($offset + $fixedPartSize > $blobLength) {
+                    error_log(
+                        "PackFormat::unpack (UI_BUTTON): Not enough data for fixed part.",
+                    );
+                    break;
+                }
+                $fixedPartData = unpack(
+                    "Vid/gw/gh/VlabelLength",
+                    substr($eventsBlob, $offset, $fixedPartSize),
+                );
+                $offset += $fixedPartSize;
+                $labelLength = $fixedPartData["labelLength"];
+
+                if ($offset + $labelLength > $blobLength) {
+                    error_log(
+                        "PackFormat::unpack (UI_BUTTON): Not enough data for label.",
+                    );
+                    break;
+                }
+                $labelData =
+                    $labelLength > 0
+                        ? unpack(
+                            "a{$labelLength}label",
+                            substr($eventsBlob, $offset, $labelLength),
+                        )
+                        : ["label" => ""];
+                $offset += $labelLength;
+                $events[] = $headerData + $fixedPartData + $labelData;
             } elseif ($eventEnumValue !== null) {
                 // --- Fixed Size Handling ---
                 $payloadInfo = self::getInfo($eventType);

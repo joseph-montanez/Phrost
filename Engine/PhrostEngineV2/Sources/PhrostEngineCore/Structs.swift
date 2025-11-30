@@ -218,6 +218,11 @@ import Foundation
     public var id2: Int64
 }
 
+@frozen public struct PackedPhysicsSetDebugModeEvent: Sendable {
+    public var enabled: UInt8
+    public var _padding: (UInt8, UInt8, UInt8)
+}
+
 @frozen public struct PackedPhysicsSetPositionEvent: Sendable {
     public var id1: Int64
     public var id2: Int64
@@ -249,11 +254,6 @@ import Foundation
     public var angularVelocity: Double
     public var isSleeping: UInt8
     public var _padding: (UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8)
-}
-
-@frozen public struct PackedPhysicsSetDebugModeEvent: Sendable {
-    public var enabled: UInt8
-    public var _padding: (UInt8, UInt8, UInt8)  // Align to 4 bytes
 }
 
 @frozen public struct PackedPluginEventStackingEvent: Sendable {
@@ -422,6 +422,51 @@ import Foundation
     public var _padding: UInt32
 }
 
+@frozen public struct PackedUIBeginWindowHeaderEvent: Sendable {
+    public var id: UInt32
+    public var flags: UInt32
+    public var titleLength: UInt32
+}
+
+@frozen public struct PackedUIButtonHeaderEvent: Sendable {
+    public var id: UInt32
+    public var w: Float
+    public var h: Float
+    public var labelLength: UInt32
+}
+
+@frozen public struct PackedUIEndWindowEvent: Sendable {
+    public var _unused: UInt8
+}
+
+@frozen public struct PackedUIInteractionEvent: Sendable {
+    public var elementId: UInt32
+    public var interactionType: UInt32
+}
+
+@frozen public struct PackedUISetNextWindowPosEvent: Sendable {
+    public var x: Float
+    public var y: Float
+    public var cond: UInt32
+    public var pivotX: Float
+    public var pivotY: Float
+}
+
+@frozen public struct PackedUISetNextWindowSizeEvent: Sendable {
+    public var w: Float
+    public var h: Float
+    public var cond: UInt32
+}
+
+@frozen public struct PackedUITextHeaderEvent: Sendable {
+    public var textLength: UInt32
+    public var _padding: UInt32
+}
+
+@frozen public struct PackedUIWindowClosedEvent: Sendable {
+    public var windowId: UInt32
+}
+
 @frozen public struct PackedWindowFlagsEvent {
     public var flags: UInt64
 }
@@ -502,43 +547,4 @@ import Foundation
             }
         }
     }
-}
-
-// ... existing structs ...
-
-// Header for starting a window.
-// Followed by `titleLength` bytes of string data + padding.
-@frozen public struct PackedUIBeginWindowHeaderEvent: Sendable {
-    public var x: Float
-    public var y: Float
-    public var w: Float
-    public var h: Float
-    public var flags: UInt32
-    public var titleLength: UInt32
-}
-
-@frozen public struct PackedUIEndWindowEvent: Sendable {
-    public var _unused: UInt8  // Helper to ensure structure size > 0
-}
-
-// Header for a button.
-// Followed by `labelLength` bytes of string data + padding.
-@frozen public struct PackedUIButtonHeaderEvent: Sendable {
-    public var id: UInt32  // ID to send back to PHP if clicked
-    public var w: Float
-    public var h: Float
-    public var labelLength: UInt32
-}
-
-// Header for text.
-// Followed by `textLength` bytes of string data + padding.
-@frozen public struct PackedUITextHeaderEvent: Sendable {
-    public var textLength: UInt32
-    public var _padding: UInt32
-}
-
-// Feedback event sent to PHP when a specific ID is clicked
-@frozen public struct PackedUIInteractionEvent: Sendable {
-    public var elementId: UInt32
-    public var interactionType: UInt32  // 0 = Clicked, 1 = Hovered, etc.
 }
