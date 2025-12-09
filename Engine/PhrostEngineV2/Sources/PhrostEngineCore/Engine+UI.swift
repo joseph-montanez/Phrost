@@ -41,8 +41,6 @@ extension PhrostEngine {
                 tempColorBuffer[i] = SDL_FColor(r: r, g: g, b: b, a: a)
             }
 
-            // REMOVED: var idxBufferOffset = 0  <-- CAUSE OF BUG
-
             for cmdIdx in 0..<Int(cmdList.pointee.CmdBuffer.Size) {
                 let cmd = cmdList.pointee.CmdBuffer.Data[cmdIdx]
 
@@ -69,7 +67,7 @@ extension PhrostEngine {
                     let uvPtr = basePosPtr.advanced(by: 8)
                     let colorOffset = Int(cmd.VtxOffset)
 
-                    // Indices: FIX - Use ONLY cmd.IdxOffset
+                    // Indices
                     let idxStride = MemoryLayout<ImDrawIdx>.stride
                     let idxByteOffset = Int(cmd.IdxOffset) * idxStride  // <-- FIX HERE
                     let idxPtr = idxBufferRaw.advanced(by: idxByteOffset)
@@ -99,7 +97,6 @@ extension PhrostEngine {
                         )
                     }
                 }
-                // REMOVED: idxBufferOffset += Int(cmd.ElemCount) <-- CAUSE OF BUG
             }
         }
 

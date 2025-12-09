@@ -22,6 +22,8 @@ public enum Events: UInt32 {
     case geomAddPacked = 54
     case geomRemove = 55
     case geomSetColor = 56
+    case geomAddPolygon = 57
+    case geomAddPolygonOutline = 58
 
     case inputKeyup = 100
     case inputKeydown = 101

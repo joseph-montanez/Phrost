@@ -122,6 +122,19 @@ import Foundation
     public var y: Float
 }
 
+@frozen public struct PackedGeomAddPolygonHeaderEvent: Sendable {
+    public var id1: Int64
+    public var id2: Int64
+    public var z: Double
+    public var r: UInt8
+    public var g: UInt8
+    public var b: UInt8
+    public var a: UInt8
+    public var isScreenSpace: UInt8
+    public var _padding: (UInt8, UInt8, UInt8)
+    public var vertexCount: UInt32
+}
+
 @frozen public struct PackedGeomAddRectEvent: Sendable {
     public var id1: Int64
     public var id2: Int64

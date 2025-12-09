@@ -277,7 +277,15 @@ public final class SpriteManager: @unchecked Sendable {
 // MARK: - Geometry Manager (Primitive Rendering)
 public enum PrimitiveType: UInt32 {
     case point = 0
-    case line, rect, fillRect, points, lines, rects, fillRects
+    case line = 1
+    case rect = 2
+    case fillRect = 3
+    case points = 4
+    case lines = 5
+    case rects = 6
+    case fillRects = 7
+    case polygon = 8
+    case polygonOutline = 9
 }
 
 public final class RenderPrimitive: @unchecked Sendable {
@@ -290,6 +298,9 @@ public final class RenderPrimitive: @unchecked Sendable {
     public var points: [SDL_FPoint] = []
     public var rects: [SDL_FRect] = []
 
+    public var vertices: [SDL_Vertex] = []
+    public var indices: [Int32] = []
+
     init(
         id: SpriteID, type: PrimitiveType, z: Double,
         color: (r: UInt8, g: UInt8, b: UInt8, a: UInt8),
@@ -300,86 +311,6 @@ public final class RenderPrimitive: @unchecked Sendable {
         self.z = z
         self.color = ColorRGBA(color.0, color.1, color.2, color.3)
         self.isScreenSpace = isScreenSpace
-    }
-}
-
-public final class GeometryManager: @unchecked Sendable {
-    private var primitives: [SpriteID: RenderPrimitive] = [:]
-    private var isSortNeeded = false
-    private var renderList: [RenderPrimitive] = []
-
-    public init() {}
-
-    private func addPrimitive(_ primitive: RenderPrimitive) {
-        primitives[primitive.id] = primitive
-        renderList.append(primitive)
-        isSortNeeded = true
-    }
-
-    public func removePrimitive(id: SpriteID) {
-        if primitives.removeValue(forKey: id) != nil {
-            renderList.removeAll(where: { $0.id == id })
-            isSortNeeded = true
-        }
-    }
-
-    public func setPrimitiveColor(id: SpriteID, color: (UInt8, UInt8, UInt8, UInt8)) {
-        primitives[id]?.color = ColorRGBA(color.0, color.1, color.2, color.3)
-    }
-
-    public func addPoint(event: PackedGeomAddPointEvent) {
-        let id = SpriteID(id1: event.id1, id2: event.id2)
-        let color = (event.r, event.g, event.b, event.a)
-        let primitive = RenderPrimitive(
-            id: id, type: .point, z: event.z, color: color, isScreenSpace: event.isScreenSpace == 1)
-        primitive.points = [SDL_FPoint(x: event.x, y: event.y)]
-        addPrimitive(primitive)
-    }
-
-    public func addLine(event: PackedGeomAddLineEvent) {
-        let id = SpriteID(id1: event.id1, id2: event.id2)
-        let color = (event.r, event.g, event.b, event.a)
-        let primitive = RenderPrimitive(
-            id: id, type: .line, z: event.z, color: color, isScreenSpace: event.isScreenSpace == 1)
-        primitive.points = [
-            SDL_FPoint(x: event.x1, y: event.y1), SDL_FPoint(x: event.x2, y: event.y2),
-        ]
-        addPrimitive(primitive)
-    }
-
-    public func addRect(event: PackedGeomAddRectEvent, isFilled: Bool) {
-        let id = SpriteID(id1: event.id1, id2: event.id2)
-        let color = (event.r, event.g, event.b, event.a)
-        let type: PrimitiveType = isFilled ? .fillRect : .rect
-        let primitive = RenderPrimitive(
-            id: id, type: type, z: event.z, color: color, isScreenSpace: event.isScreenSpace == 1)
-        primitive.rects = [SDL_FRect(x: event.x, y: event.y, w: event.w, h: event.h)]
-        addPrimitive(primitive)
-    }
-
-    public func addPacked(header: PackedGeomAddPackedHeaderEvent, data: Data) {
-        guard let type = PrimitiveType(rawValue: header.primitiveType) else { return }
-        let id = SpriteID(id1: header.id1, id2: header.id2)
-        let color = (header.r, header.g, header.b, header.a)
-        let primitive = RenderPrimitive(
-            id: id, type: type, z: header.z, color: color, isScreenSpace: header.isScreenSpace == 1)
-
-        switch type {
-        case .points, .lines:
-            primitive.points = data.withUnsafeBytes { Array($0.bindMemory(to: SDL_FPoint.self)) }
-        case .rects, .fillRects:
-            primitive.rects = data.withUnsafeBytes { Array($0.bindMemory(to: SDL_FRect.self)) }
-        default: return
-        }
-        addPrimitive(primitive)
-    }
-
-    public func getPrimitivesForRendering() -> [RenderPrimitive] {
-        if isSortNeeded {
-            renderList.sort(by: { $0.z < $1.z })
-            isSortNeeded = false
-        }
-        return renderList
     }
 }
 

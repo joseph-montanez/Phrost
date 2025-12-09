@@ -32,6 +32,10 @@ class PackFormat
             SpritePackFormats::PACK_GEOM_ADD_PACKED,
         Events::GEOM_REMOVE->value => SpritePackFormats::PACK_GEOM_REMOVE,
         Events::GEOM_SET_COLOR->value => SpritePackFormats::PACK_GEOM_SET_COLOR,
+        Events::GEOM_ADD_POLYGON->value =>
+            SpritePackFormats::PACK_GEOM_ADD_POLYGON,
+        Events::GEOM_ADD_POLYGON_OUTLINE->value =>
+            SpritePackFormats::PACK_GEOM_ADD_POLYGON_OUTLINE,
         Events::INPUT_KEYUP->value => InputPackFormats::PACK_INPUT_KEYUP,
         Events::INPUT_KEYDOWN->value => InputPackFormats::PACK_INPUT_KEYDOWN,
         Events::INPUT_MOUSEUP->value => InputPackFormats::PACK_INPUT_MOUSEUP,
@@ -171,6 +175,8 @@ class PackFormat
                     static $dynamicEvents = [
                         Events::AUDIO_LOAD->value,
                         Events::GEOM_ADD_PACKED->value,
+                        Events::GEOM_ADD_POLYGON->value,
+                        Events::GEOM_ADD_POLYGON_OUTLINE->value,
                         Events::PLUGIN_LOAD->value,
                         Events::SPRITE_TEXTURE_LOAD->value,
                         Events::TEXT_ADD->value,
@@ -468,6 +474,61 @@ class PackFormat
                         : ["label" => ""];
                 $offset += $labelLength;
                 $events[] = $headerData + $fixedPartData + $labelData;
+            } elseif (
+                $eventType === Events::GEOM_ADD_POLYGON->value ||
+                $eventType === Events::GEOM_ADD_POLYGON_OUTLINE->value
+            ) {
+                // Fixed header: q(8) + q(8) + e(8) + CCCC(4) + C(1) + x3(3) + V(4) = 36 bytes
+                $fixedPartSize = 36;
+                if ($offset + $fixedPartSize > $blobLength) {
+                    error_log(
+                        "PackFormat::unpack (POLYGON): Not enough data for fixed part.",
+                    );
+                    break;
+                }
+
+                $fixedPartData = unpack(
+                    "qid1/qid2/ez/Cr/Cg/Cb/Ca/CisScreenSpace/x3/VvertexCount",
+                    substr($eventsBlob, $offset, $fixedPartSize),
+                );
+                if ($fixedPartData === false) {
+                    error_log(
+                        "PackFormat::unpack (POLYGON): Failed to unpack fixed part.",
+                    );
+                    break;
+                }
+                $offset += $fixedPartSize;
+
+                $vertexCount = $fixedPartData["vertexCount"];
+                // Each vertex = 2 floats (x, y) = 8 bytes
+                $vertexDataSize = $vertexCount * 8;
+
+                // Calculate padding for vertex data (align to 8 bytes)
+                $vertexPadding = (8 - ($vertexDataSize % 8)) % 8;
+
+                if ($offset + $vertexDataSize + $vertexPadding > $blobLength) {
+                    error_log(
+                        "PackFormat::unpack (POLYGON): Not enough data for vertices.",
+                    );
+                    break;
+                }
+
+                // Unpack all floats
+                $vertices = [];
+                if ($vertexDataSize > 0) {
+                    $floatCount = $vertexCount * 2;
+                    $vertexData = unpack(
+                        "g{$floatCount}",
+                        substr($eventsBlob, $offset, $vertexDataSize),
+                    );
+                    if ($vertexData !== false) {
+                        $vertices = array_values($vertexData);
+                    }
+                }
+                $offset += $vertexDataSize + $vertexPadding;
+
+                $fixedPartData["vertices"] = $vertices;
+                $events[] = $headerData + $fixedPartData;
             } elseif ($eventEnumValue !== null) {
                 // --- Fixed Size Handling ---
                 $payloadInfo = self::getInfo($eventType);

@@ -435,6 +435,41 @@ extension PhrostEngine {
                     color: (event.r, event.g, event.b, event.a))
                 generatedEventCount &+= 1
 
+            case .geomAddPolygon, .geomAddPolygonOutline:
+                let caseOffsetStart = offset
+                guard caseOffsetStart + payloadSize <= commandData.count else { break }
+
+                guard
+                    let header: PackedGeomAddPolygonHeaderEvent = localUnpack(
+                        label: "PolygonHeader", as: PackedGeomAddPolygonHeaderEvent.self
+                    )
+                else { break }
+
+                // Calculate vertex data size: vertexCount * 8 bytes (two floats per vertex)
+                let vertexDataSize = Int(header.vertexCount) * 8
+                let vertexPadding = (8 - (vertexDataSize % 8)) % 8
+
+                guard offset + vertexDataSize + vertexPadding <= commandData.count else { break }
+
+                let vertexData = commandData.subdata(in: offset..<(offset + vertexDataSize))
+                offset += vertexDataSize + vertexPadding
+
+                let isFilled = (eventType == .geomAddPolygon)
+
+                // FIX: Unpack header properties to match the function signature
+                geometryManager.addPolygon(
+                    id1: header.id1,
+                    id2: header.id2,
+                    z: header.z,
+                    color: (header.r, header.g, header.b, header.a),
+                    isScreenSpace: header.isScreenSpace == 1,
+                    isFilled: isFilled,
+                    vertexData: vertexData,
+                    vertexCount: Int(header.vertexCount)
+                )
+
+                generatedEventCount &+= 1
+
             // --- WINDOW ---
             case .windowTitle:
                 guard let event = localUnpack(label: "WindowTitle", as: PackedWindowTitleEvent.self)
@@ -809,15 +844,8 @@ extension PhrostEngine {
                 let labelData = commandData.subdata(in: offset..<(offset + labelLen))
                 offset += labelLen + strPadding
 
-                // Create Swift String and render button
                 if let label = String(data: labelData, encoding: .utf8) {
-                    // DIAGNOSTIC: Check ImVec2 struct size
-                    // It should be 8 bytes (two 4-byte floats)
-                    // If it's 16 bytes, the struct uses Double instead of Float
-                    print("ImVec2 size: \(MemoryLayout<ImVec2>.size) bytes (expected: 8)")
-
-                    // Try auto-size
-                    let size = ImVec2(x: 0, y: 0)
+                    let size = ImVec2(x: header.w, y: header.h)
 
                     let clicked = ImGuiButton(label, size)
 

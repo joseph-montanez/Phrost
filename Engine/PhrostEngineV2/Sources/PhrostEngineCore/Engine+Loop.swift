@@ -671,6 +671,65 @@ extension PhrostEngine {
                     for r in primitive.rects { renderTransformedRect(r, isFilled: true) }
                 }
             }
+
+        case .polygon:
+            // Filled polygon using SDL_RenderGeometry
+            if !primitive.vertices.isEmpty && !primitive.indices.isEmpty {
+                var vertices = primitive.vertices
+                var indices = primitive.indices
+
+                // Transform vertices if not screen-space
+                if !primitive.isScreenSpace {
+                    vertices = primitive.vertices.map { vtx in
+                        let screenPos = transformWorldToScreen(
+                            worldX: Double(vtx.position.x),
+                            worldY: Double(vtx.position.y),
+                            cam: cam
+                        )
+                        return SDL_Vertex(
+                            position: screenPos,
+                            color: vtx.color,
+                            tex_coord: vtx.tex_coord
+                        )
+                    }
+                }
+
+                SDL_RenderGeometry(
+                    renderer,
+                    nil,  // No texture
+                    &vertices,
+                    Int32(vertices.count),
+                    &indices,
+                    Int32(indices.count)
+                )
+            }
+
+        case .polygonOutline:
+            // Polygon outline using SDL_RenderLines
+            SDL_SetRenderDrawColor(
+                renderer,
+                primitive.color.r,
+                primitive.color.g,
+                primitive.color.b,
+                primitive.color.a
+            )
+
+            var offsetPoints: [SDL_FPoint]
+            if primitive.isScreenSpace {
+                offsetPoints = primitive.points
+            } else {
+                offsetPoints = primitive.points.map {
+                    transformWorldToScreen(
+                        worldX: Double($0.x),
+                        worldY: Double($0.y),
+                        cam: cam
+                    )
+                }
+            }
+
+            if !offsetPoints.isEmpty {
+                SDL_RenderLines(renderer, &offsetPoints, Int32(offsetPoints.count))
+            }
         }
     }
 
@@ -797,5 +856,101 @@ extension PhrostEngine {
         let zoomX = rotX * cam.camZoom
         let zoomY = rotY * cam.camZoom
         return SDL_FPoint(x: Float(zoomX + cam.screenCenterX), y: Float(zoomY + cam.screenCenterY))
+    }
+
+    internal func renderFilledPolygon(
+        _ primitive: RenderPrimitive,
+        cam: (
+            camX: Double, camY: Double, camZoom: Double, camSin: Double, camCos: Double,
+            screenCenterX: Double, screenCenterY: Double
+        )
+    ) {
+        guard !primitive.vertices.isEmpty && !primitive.indices.isEmpty else { return }
+
+        var vertices: [SDL_Vertex]
+
+        if primitive.isScreenSpace {
+            vertices = primitive.vertices
+        } else {
+            // Transform world coordinates to screen coordinates
+            vertices = primitive.vertices.map { vtx in
+                let worldX = Double(vtx.position.x)
+                let worldY = Double(vtx.position.y)
+
+                // Apply camera transform
+                let relX = worldX - cam.camX
+                let relY = worldY - cam.camY
+                let rotX = (relX * cam.camCos) - (relY * cam.camSin)
+                let rotY = (relX * cam.camSin) + (relY * cam.camCos)
+                let zoomX = rotX * cam.camZoom
+                let zoomY = rotY * cam.camZoom
+
+                let screenPos = SDL_FPoint(
+                    x: Float(zoomX + cam.screenCenterX),
+                    y: Float(zoomY + cam.screenCenterY)
+                )
+
+                return SDL_Vertex(
+                    position: screenPos,
+                    color: vtx.color,
+                    tex_coord: vtx.tex_coord
+                )
+            }
+        }
+
+        var indices = primitive.indices
+
+        SDL_RenderGeometry(
+            renderer,
+            nil,  // No texture for solid color
+            &vertices,
+            Int32(vertices.count),
+            &indices,
+            Int32(indices.count)
+        )
+    }
+
+    /// Renders a polygon outline using SDL_RenderLines
+    internal func renderPolygonOutline(
+        _ primitive: RenderPrimitive,
+        cam: (
+            camX: Double, camY: Double, camZoom: Double, camSin: Double, camCos: Double,
+            screenCenterX: Double, screenCenterY: Double
+        )
+    ) {
+        guard !primitive.points.isEmpty else { return }
+
+        SDL_SetRenderDrawColor(
+            renderer,
+            primitive.color.r,
+            primitive.color.g,
+            primitive.color.b,
+            primitive.color.a
+        )
+
+        var screenPoints: [SDL_FPoint]
+
+        if primitive.isScreenSpace {
+            screenPoints = primitive.points
+        } else {
+            screenPoints = primitive.points.map { pt in
+                let worldX = Double(pt.x)
+                let worldY = Double(pt.y)
+
+                let relX = worldX - cam.camX
+                let relY = worldY - cam.camY
+                let rotX = (relX * cam.camCos) - (relY * cam.camSin)
+                let rotY = (relX * cam.camSin) + (relY * cam.camCos)
+                let zoomX = rotX * cam.camZoom
+                let zoomY = rotY * cam.camZoom
+
+                return SDL_FPoint(
+                    x: Float(zoomX + cam.screenCenterX),
+                    y: Float(zoomY + cam.screenCenterY)
+                )
+            }
+        }
+
+        SDL_RenderLines(renderer, &screenPoints, Int32(screenPoints.count))
     }
 }
