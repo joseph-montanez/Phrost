@@ -445,4 +445,19 @@ class Sprite
     {
         $this->dirtyFlags = [];
     }
+
+    /**
+     * Removes the sprite from the engine.
+     */
+    public function remove(ChannelPacker $packer): void
+    {
+        $packer->add(Channels::RENDERER->value, Events::SPRITE_REMOVE, [
+            $this->id0,
+            $this->id1,
+        ]);
+
+        // Clear flags so we don't accidentally try to pack updates
+        // for a sprite that no longer exists in the engine.
+        $this->clearDirtyFlags();
+    }
 }

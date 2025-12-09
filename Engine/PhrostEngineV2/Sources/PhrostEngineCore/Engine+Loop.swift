@@ -35,12 +35,12 @@ extension PhrostEngine {
             }
 
             let payloadSize = eventPayloadSizes[event.rawValue] ?? 0
-
-            // (Optional debug printing removed for brevity, standard logic remains)
+            print(
+                "  [\(i)] Event: \(event) (ID=\(eventID)) at offset \(startOffset), payloadSize=\(payloadSize)"
+            )
 
             if event == .textAdd {
-                // ... existing textAdd logic ...
-                offset += payloadSize  // Placeholder to keep logic simple in this view
+                offset += payloadSize
                 let header = data.withUnsafeBytes {
                     $0.loadSafe(fromByteOffset: startOffset + 16, as: PackedTextAddEvent.self)
                 }
@@ -83,6 +83,39 @@ extension PhrostEngine {
                 let pLen = Int(header.pathLength)
                 let pPad = (8 - (pLen % 8)) % 8
                 offset += pLen + pPad
+            } else if event == .uiBeginWindow {
+                offset += payloadSize
+                let header = data.withUnsafeBytes {
+                    $0.loadSafe(
+                        fromByteOffset: startOffset + 16, as: PackedUIBeginWindowHeaderEvent.self)
+                }
+                let titleLen = Int(header.titleLength)
+                let titlePad = (8 - (titleLen % 8)) % 8
+                print(
+                    "    -> uiBeginWindow: id=\(header.id), flags=\(header.flags), titleLen=\(titleLen)"
+                )
+                offset += titleLen + titlePad
+            } else if event == .uiText {
+                offset += payloadSize
+                let header = data.withUnsafeBytes {
+                    $0.loadSafe(fromByteOffset: startOffset + 16, as: PackedUITextHeaderEvent.self)
+                }
+                let textLen = Int(header.textLength)
+                let textPad = (8 - (textLen % 8)) % 8
+                print("    -> uiText: textLen=\(textLen)")
+                offset += textLen + textPad
+            } else if event == .uiButton {
+                offset += payloadSize
+                let header = data.withUnsafeBytes {
+                    $0.loadSafe(
+                        fromByteOffset: startOffset + 16, as: PackedUIButtonHeaderEvent.self)
+                }
+                let labelLen = Int(header.labelLength)
+                let labelPad = (8 - (labelLen % 8)) % 8
+                print(
+                    "    -> uiButton: id=\(header.id), w=\(header.w), h=\(header.h), labelLen=\(labelLen)"
+                )
+                offset += labelLen + labelPad
             } else {
                 offset += payloadSize
             }
@@ -293,7 +326,7 @@ extension PhrostEngine {
             var phpGeneratedEventCount: UInt32 = 0
 
             if let rendererBlob = self.pluginChannelData[0] {
-                // debugWalkRendererBlob(rendererBlob)
+                // debugWalkRendererBlob(rendererBlob)  // Disabled - data confirmed correct
                 let (events, count) = processCommands(rendererBlob)
                 phpGeneratedEvents.append(events)
                 phpGeneratedEventCount &+= count

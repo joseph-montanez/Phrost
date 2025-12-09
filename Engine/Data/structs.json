@@ -32,11 +32,31 @@
           "type": "f64",
           "comment": "Initial Z position (depth)."
         },
-        { "name": "scaleX", "type": "f64", "comment": "Initial X scale." },
-        { "name": "scaleY", "type": "f64", "comment": "Initial Y scale." },
-        { "name": "scaleZ", "type": "f64", "comment": "Initial Z scale." },
-        { "name": "sizeW", "type": "f64", "comment": "Initial width." },
-        { "name": "sizeH", "type": "f64", "comment": "Initial height." },
+        {
+          "name": "scaleX",
+          "type": "f64",
+          "comment": "Initial X scale."
+        },
+        {
+          "name": "scaleY",
+          "type": "f64",
+          "comment": "Initial Y scale."
+        },
+        {
+          "name": "scaleZ",
+          "type": "f64",
+          "comment": "Initial Z scale."
+        },
+        {
+          "name": "sizeW",
+          "type": "f64",
+          "comment": "Initial width."
+        },
+        {
+          "name": "sizeH",
+          "type": "f64",
+          "comment": "Initial height."
+        },
         {
           "name": "rotationX",
           "type": "f64",
@@ -77,8 +97,16 @@
           "type": "u32",
           "comment": "Ensures 8-byte alignment for speeds."
         },
-        { "name": "speedX", "type": "f64", "comment": "Initial X speed." },
-        { "name": "speedY", "type": "f64", "comment": "Initial Y speed." }
+        {
+          "name": "speedX",
+          "type": "f64",
+          "comment": "Initial X speed."
+        },
+        {
+          "name": "speedY",
+          "type": "f64",
+          "comment": "Initial Y speed."
+        }
       ]
     },
     {
@@ -117,8 +145,16 @@
           "type": "i64",
           "comment": "Secondary ID of the sprite."
         },
-        { "name": "positionX", "type": "f64", "comment": "New X position." },
-        { "name": "positionY", "type": "f64", "comment": "New Y position." },
+        {
+          "name": "positionX",
+          "type": "f64",
+          "comment": "New X position."
+        },
+        {
+          "name": "positionY",
+          "type": "f64",
+          "comment": "New Y position."
+        },
         {
           "name": "positionZ",
           "type": "f64",
@@ -143,9 +179,21 @@
           "type": "i64",
           "comment": "Secondary ID of the sprite."
         },
-        { "name": "scaleX", "type": "f64", "comment": "New X scale." },
-        { "name": "scaleY", "type": "f64", "comment": "New Y scale." },
-        { "name": "scaleZ", "type": "f64", "comment": "New Z scale." }
+        {
+          "name": "scaleX",
+          "type": "f64",
+          "comment": "New X scale."
+        },
+        {
+          "name": "scaleY",
+          "type": "f64",
+          "comment": "New Y scale."
+        },
+        {
+          "name": "scaleZ",
+          "type": "f64",
+          "comment": "New Z scale."
+        }
       ]
     },
     {
@@ -165,8 +213,16 @@
           "type": "i64",
           "comment": "Secondary ID of the sprite."
         },
-        { "name": "sizeW", "type": "f64", "comment": "New width." },
-        { "name": "sizeH", "type": "f64", "comment": "New height." }
+        {
+          "name": "sizeW",
+          "type": "f64",
+          "comment": "New width."
+        },
+        {
+          "name": "sizeH",
+          "type": "f64",
+          "comment": "New height."
+        }
       ]
     },
     {
@@ -220,13 +276,21 @@
           "type": "i64",
           "comment": "Secondary ID of the sprite."
         },
-        { "name": "r", "type": "u8", "comment": "New red component (0-255)." },
+        {
+          "name": "r",
+          "type": "u8",
+          "comment": "New red component (0-255)."
+        },
         {
           "name": "g",
           "type": "u8",
           "comment": "New green component (0-255)."
         },
-        { "name": "b", "type": "u8", "comment": "New blue component (0-255)." },
+        {
+          "name": "b",
+          "type": "u8",
+          "comment": "New blue component (0-255)."
+        },
         {
           "name": "a",
           "type": "u8",
@@ -256,8 +320,16 @@
           "type": "i64",
           "comment": "Secondary ID of the sprite."
         },
-        { "name": "speedX", "type": "f64", "comment": "New X speed." },
-        { "name": "speedY", "type": "f64", "comment": "New Y speed." }
+        {
+          "name": "speedX",
+          "type": "f64",
+          "comment": "New X speed."
+        },
+        {
+          "name": "speedY",
+          "type": "f64",
+          "comment": "New Y speed."
+        }
       ]
     },
     {
@@ -272,7 +344,11 @@
           "type": "i64",
           "comment": "ID of the sprite this texture is for."
         },
-        { "name": "id2", "type": "i64", "comment": "Secondary ID." },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary ID."
+        },
         {
           "name": "filenameLength",
           "type": "u32",
@@ -326,10 +402,26 @@
           "type": "i64",
           "comment": "Secondary ID of the sprite."
         },
-        { "name": "x", "type": "f32", "comment": "Source rect X coordinate." },
-        { "name": "y", "type": "f32", "comment": "Source rect Y coordinate." },
-        { "name": "w", "type": "f32", "comment": "Source rect Width." },
-        { "name": "h", "type": "f32", "comment": "Source rect Height." }
+        {
+          "name": "x",
+          "type": "f32",
+          "comment": "Source rect X coordinate."
+        },
+        {
+          "name": "y",
+          "type": "f32",
+          "comment": "Source rect Y coordinate."
+        },
+        {
+          "name": "w",
+          "type": "f32",
+          "comment": "Source rect Width."
+        },
+        {
+          "name": "h",
+          "type": "f32",
+          "comment": "Source rect Height."
+        }
       ]
     },
     {
@@ -339,9 +431,21 @@
       "isDynamic": false,
       "comment": "Payload for adding a single geometry point.",
       "members": [
-        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
-        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
-        { "name": "z", "type": "f64", "comment": "Z position (depth)." },
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary identifier."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary identifier."
+        },
+        {
+          "name": "z",
+          "type": "f64",
+          "comment": "Z position (depth)."
+        },
         {
           "name": "r",
           "type": "u8",
@@ -373,8 +477,16 @@
           "comment": "Padding for alignment.",
           "count": 3
         },
-        { "name": "x", "type": "f32", "comment": "X coordinate." },
-        { "name": "y", "type": "f32", "comment": "Y coordinate." }
+        {
+          "name": "x",
+          "type": "f32",
+          "comment": "X coordinate."
+        },
+        {
+          "name": "y",
+          "type": "f32",
+          "comment": "Y coordinate."
+        }
       ]
     },
     {
@@ -384,9 +496,21 @@
       "isDynamic": false,
       "comment": "Payload for adding a single geometry line.",
       "members": [
-        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
-        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
-        { "name": "z", "type": "f64", "comment": "Z position (depth)." },
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary identifier."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary identifier."
+        },
+        {
+          "name": "z",
+          "type": "f64",
+          "comment": "Z position (depth)."
+        },
         {
           "name": "r",
           "type": "u8",
@@ -418,10 +542,26 @@
           "comment": "Padding for alignment.",
           "count": 3
         },
-        { "name": "x1", "type": "f32", "comment": "Start X coordinate." },
-        { "name": "y1", "type": "f32", "comment": "Start Y coordinate." },
-        { "name": "x2", "type": "f32", "comment": "End X coordinate." },
-        { "name": "y2", "type": "f32", "comment": "End Y coordinate." }
+        {
+          "name": "x1",
+          "type": "f32",
+          "comment": "Start X coordinate."
+        },
+        {
+          "name": "y1",
+          "type": "f32",
+          "comment": "Start Y coordinate."
+        },
+        {
+          "name": "x2",
+          "type": "f32",
+          "comment": "End X coordinate."
+        },
+        {
+          "name": "y2",
+          "type": "f32",
+          "comment": "End Y coordinate."
+        }
       ]
     },
     {
@@ -431,9 +571,21 @@
       "isDynamic": false,
       "comment": "Payload for adding a geometry rectangle (outline).",
       "members": [
-        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
-        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
-        { "name": "z", "type": "f64", "comment": "Z position (depth)." },
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary identifier."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary identifier."
+        },
+        {
+          "name": "z",
+          "type": "f64",
+          "comment": "Z position (depth)."
+        },
         {
           "name": "r",
           "type": "u8",
@@ -465,10 +617,26 @@
           "comment": "Padding for alignment.",
           "count": 3
         },
-        { "name": "x", "type": "f32", "comment": "Top-left X coordinate." },
-        { "name": "y", "type": "f32", "comment": "Top-left Y coordinate." },
-        { "name": "w", "type": "f32", "comment": "Width." },
-        { "name": "h", "type": "f32", "comment": "Height." }
+        {
+          "name": "x",
+          "type": "f32",
+          "comment": "Top-left X coordinate."
+        },
+        {
+          "name": "y",
+          "type": "f32",
+          "comment": "Top-left Y coordinate."
+        },
+        {
+          "name": "w",
+          "type": "f32",
+          "comment": "Width."
+        },
+        {
+          "name": "h",
+          "type": "f32",
+          "comment": "Height."
+        }
       ]
     },
     {
@@ -478,9 +646,21 @@
       "isDynamic": false,
       "comment": "Payload for adding a filled geometry rectangle. Reuses PackedGeomAddRectEvent.",
       "members": [
-        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
-        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
-        { "name": "z", "type": "f64", "comment": "Z position (depth)." },
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary identifier."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary identifier."
+        },
+        {
+          "name": "z",
+          "type": "f64",
+          "comment": "Z position (depth)."
+        },
         {
           "name": "r",
           "type": "u8",
@@ -512,10 +692,26 @@
           "comment": "Padding for alignment.",
           "count": 3
         },
-        { "name": "x", "type": "f32", "comment": "Top-left X coordinate." },
-        { "name": "y", "type": "f32", "comment": "Top-left Y coordinate." },
-        { "name": "w", "type": "f32", "comment": "Width." },
-        { "name": "h", "type": "f32", "comment": "Height." }
+        {
+          "name": "x",
+          "type": "f32",
+          "comment": "Top-left X coordinate."
+        },
+        {
+          "name": "y",
+          "type": "f32",
+          "comment": "Top-left Y coordinate."
+        },
+        {
+          "name": "w",
+          "type": "f32",
+          "comment": "Width."
+        },
+        {
+          "name": "h",
+          "type": "f32",
+          "comment": "Height."
+        }
       ]
     },
     {
@@ -525,9 +721,21 @@
       "isDynamic": true,
       "comment": "Header for adding a batch of geometry primitives. Variable data (array of points/rects) follows.",
       "members": [
-        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
-        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
-        { "name": "z", "type": "f64", "comment": "Z position (depth)." },
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary identifier."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary identifier."
+        },
+        {
+          "name": "z",
+          "type": "f64",
+          "comment": "Z position (depth)."
+        },
         {
           "name": "r",
           "type": "u8",
@@ -606,13 +814,21 @@
           "type": "i64",
           "comment": "Secondary ID of the geometry entity."
         },
-        { "name": "r", "type": "u8", "comment": "New red component (0-255)." },
+        {
+          "name": "r",
+          "type": "u8",
+          "comment": "New red component (0-255)."
+        },
         {
           "name": "g",
           "type": "u8",
           "comment": "New green component (0-255)."
         },
-        { "name": "b", "type": "u8", "comment": "New blue component (0-255)." },
+        {
+          "name": "b",
+          "type": "u8",
+          "comment": "New blue component (0-255)."
+        },
         {
           "name": "a",
           "type": "u8",
@@ -622,6 +838,126 @@
           "name": "_padding",
           "type": "u32",
           "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
+      "name": "PackedGeomAddPolygonHeaderEvent",
+      "eventId": 57,
+      "enumName": "GEOM_ADD_POLYGON",
+      "isDynamic": true,
+      "comment": "Header for adding a filled polygon. Variable data (array of float x,y vertex pairs) follows.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary identifier."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary identifier."
+        },
+        {
+          "name": "z",
+          "type": "f64",
+          "comment": "Z position (depth)."
+        },
+        {
+          "name": "r",
+          "type": "u8",
+          "comment": "Red color component (0-255)."
+        },
+        {
+          "name": "g",
+          "type": "u8",
+          "comment": "Green color component (0-255)."
+        },
+        {
+          "name": "b",
+          "type": "u8",
+          "comment": "Blue color component (0-255)."
+        },
+        {
+          "name": "a",
+          "type": "u8",
+          "comment": "Alpha color component (0-255)."
+        },
+        {
+          "name": "isScreenSpace",
+          "type": "u8",
+          "comment": "If 1, geometry is unaffected by the camera."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "comment": "Padding for alignment.",
+          "count": 3
+        },
+        {
+          "name": "vertexCount",
+          "type": "u32",
+          "comment": "Number of vertices. Variable data follows: vertexCount * 2 floats (x,y pairs)."
+        }
+      ]
+    },
+    {
+      "name": "PackedGeomAddPolygonHeaderEvent",
+      "eventId": 58,
+      "enumName": "GEOM_ADD_POLYGON_OUTLINE",
+      "isDynamic": true,
+      "comment": "Header for adding a polygon outline (stroked, not filled). Variable data (array of float x,y vertex pairs) follows. Reuses PackedGeomAddPolygonHeaderEvent.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary identifier."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary identifier."
+        },
+        {
+          "name": "z",
+          "type": "f64",
+          "comment": "Z position (depth)."
+        },
+        {
+          "name": "r",
+          "type": "u8",
+          "comment": "Red color component (0-255)."
+        },
+        {
+          "name": "g",
+          "type": "u8",
+          "comment": "Green color component (0-255)."
+        },
+        {
+          "name": "b",
+          "type": "u8",
+          "comment": "Blue color component (0-255)."
+        },
+        {
+          "name": "a",
+          "type": "u8",
+          "comment": "Alpha color component (0-255)."
+        },
+        {
+          "name": "isScreenSpace",
+          "type": "u8",
+          "comment": "If 1, geometry is unaffected by the camera."
+        },
+        {
+          "name": "_padding",
+          "type": "u8",
+          "comment": "Padding for alignment.",
+          "count": 3
+        },
+        {
+          "name": "vertexCount",
+          "type": "u32",
+          "comment": "Number of vertices. Variable data follows: vertexCount * 2 floats (x,y pairs)."
         }
       ]
     },
@@ -700,9 +1036,21 @@
       "isDynamic": false,
       "comment": "Payload for a mouse button release event.",
       "members": [
-        { "name": "x", "type": "f32", "comment": "X coordinate of the mouse." },
-        { "name": "y", "type": "f32", "comment": "Y coordinate of the mouse." },
-        { "name": "button", "type": "u8", "comment": "Mouse button index." },
+        {
+          "name": "x",
+          "type": "f32",
+          "comment": "X coordinate of the mouse."
+        },
+        {
+          "name": "y",
+          "type": "f32",
+          "comment": "Y coordinate of the mouse."
+        },
+        {
+          "name": "button",
+          "type": "u8",
+          "comment": "Mouse button index."
+        },
         {
           "name": "clicks",
           "type": "u8",
@@ -722,9 +1070,21 @@
       "isDynamic": false,
       "comment": "Payload for a mouse button press event. Reuses PackedMouseButtonEvent.",
       "members": [
-        { "name": "x", "type": "f32", "comment": "X coordinate of the mouse." },
-        { "name": "y", "type": "f32", "comment": "Y coordinate of the mouse." },
-        { "name": "button", "type": "u8", "comment": "Mouse button index." },
+        {
+          "name": "x",
+          "type": "f32",
+          "comment": "X coordinate of the mouse."
+        },
+        {
+          "name": "y",
+          "type": "f32",
+          "comment": "Y coordinate of the mouse."
+        },
+        {
+          "name": "button",
+          "type": "u8",
+          "comment": "Mouse button index."
+        },
         {
           "name": "clicks",
           "type": "u8",
@@ -744,10 +1104,26 @@
       "isDynamic": false,
       "comment": "Payload for a mouse motion event.",
       "members": [
-        { "name": "x", "type": "f32", "comment": "Absolute X coordinate." },
-        { "name": "y", "type": "f32", "comment": "Absolute Y coordinate." },
-        { "name": "xrel", "type": "f32", "comment": "Relative X motion." },
-        { "name": "yrel", "type": "f32", "comment": "Relative Y motion." }
+        {
+          "name": "x",
+          "type": "f32",
+          "comment": "Absolute X coordinate."
+        },
+        {
+          "name": "y",
+          "type": "f32",
+          "comment": "Absolute Y coordinate."
+        },
+        {
+          "name": "xrel",
+          "type": "f32",
+          "comment": "Relative X motion."
+        },
+        {
+          "name": "yrel",
+          "type": "f32",
+          "comment": "Relative Y motion."
+        }
       ]
     },
     {
@@ -771,8 +1147,16 @@
       "isDynamic": false,
       "comment": "Payload for a window resize event.",
       "members": [
-        { "name": "w", "type": "i32", "comment": "New window width." },
-        { "name": "h", "type": "i32", "comment": "New window height." }
+        {
+          "name": "w",
+          "type": "i32",
+          "comment": "New window width."
+        },
+        {
+          "name": "h",
+          "type": "i32",
+          "comment": "New window height."
+        }
       ]
     },
     {
@@ -796,8 +1180,16 @@
       "isDynamic": true,
       "comment": "Header for adding new text. Variable data (font path, text string) follows.",
       "members": [
-        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
-        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary identifier."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary identifier."
+        },
         {
           "name": "positionX",
           "type": "f64",
@@ -838,7 +1230,11 @@
           "type": "u32",
           "comment": "Padding for alignment."
         },
-        { "name": "fontSize", "type": "f32", "comment": "Font size." },
+        {
+          "name": "fontSize",
+          "type": "f32",
+          "comment": "Font size."
+        },
         {
           "name": "fontPathLength",
           "type": "u32",
@@ -849,7 +1245,11 @@
           "type": "u32",
           "comment": "Length of the initial text string that follows."
         },
-        { "name": "_padding2", "type": "u32", "comment": "Padding." }
+        {
+          "name": "_padding2",
+          "type": "u32",
+          "comment": "Padding."
+        }
       ]
     },
     {
@@ -1024,8 +1424,16 @@
       "isDynamic": false,
       "comment": "Payload for adding a new physics body to the world.",
       "members": [
-        { "name": "id1", "type": "i64", "comment": "Primary identifier." },
-        { "name": "id2", "type": "i64", "comment": "Secondary identifier." },
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary identifier."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary identifier."
+        },
         {
           "name": "positionX",
           "type": "f64",
@@ -1057,7 +1465,11 @@
           "count": 5,
           "comment": "Padding for 8-byte alignment."
         },
-        { "name": "mass", "type": "f64", "comment": "Mass of the body." },
+        {
+          "name": "mass",
+          "type": "f64",
+          "comment": "Mass of the body."
+        },
         {
           "name": "friction",
           "type": "f64",
@@ -1106,7 +1518,11 @@
       "isDynamic": false,
       "comment": "Payload to apply a continuous force to a body.",
       "members": [
-        { "name": "id1", "type": "i64", "comment": "Primary ID of the body." },
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the body."
+        },
         {
           "name": "id2",
           "type": "i64",
@@ -1131,7 +1547,11 @@
       "isDynamic": false,
       "comment": "Payload to apply an instant impulse to a body.",
       "members": [
-        { "name": "id1", "type": "i64", "comment": "Primary ID of the body." },
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the body."
+        },
         {
           "name": "id2",
           "type": "i64",
@@ -1156,14 +1576,26 @@
       "isDynamic": false,
       "comment": "Payload to set a body's linear velocity.",
       "members": [
-        { "name": "id1", "type": "i64", "comment": "Primary ID of the body." },
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the body."
+        },
         {
           "name": "id2",
           "type": "i64",
           "comment": "Secondary ID of the body."
         },
-        { "name": "velocityX", "type": "f64", "comment": "New X velocity." },
-        { "name": "velocityY", "type": "f64", "comment": "New Y velocity." }
+        {
+          "name": "velocityX",
+          "type": "f64",
+          "comment": "New X velocity."
+        },
+        {
+          "name": "velocityY",
+          "type": "f64",
+          "comment": "New Y velocity."
+        }
       ]
     },
     {
@@ -1173,14 +1605,26 @@
       "isDynamic": false,
       "comment": "Payload to teleport a body to a new position.",
       "members": [
-        { "name": "id1", "type": "i64", "comment": "Primary ID of the body." },
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the body."
+        },
         {
           "name": "id2",
           "type": "i64",
           "comment": "Secondary ID of the body."
         },
-        { "name": "positionX", "type": "f64", "comment": "New X position." },
-        { "name": "positionY", "type": "f64", "comment": "New Y position." }
+        {
+          "name": "positionX",
+          "type": "f64",
+          "comment": "New X position."
+        },
+        {
+          "name": "positionY",
+          "type": "f64",
+          "comment": "New Y position."
+        }
       ]
     },
     {
@@ -1190,7 +1634,11 @@
       "isDynamic": false,
       "comment": "Payload to set a body's rotation.",
       "members": [
-        { "name": "id1", "type": "i64", "comment": "Primary ID of the body." },
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary ID of the body."
+        },
         {
           "name": "id2",
           "type": "i64",
@@ -1615,8 +2063,16 @@
       "isDynamic": false,
       "comment": "Sets the position of the next window defined by UI_BEGIN_WINDOW.",
       "members": [
-        { "name": "x", "type": "f32", "comment": "X Position." },
-        { "name": "y", "type": "f32", "comment": "Y Position." },
+        {
+          "name": "x",
+          "type": "f32",
+          "comment": "X Position."
+        },
+        {
+          "name": "y",
+          "type": "f32",
+          "comment": "Y Position."
+        },
         {
           "name": "cond",
           "type": "u32",
@@ -1641,8 +2097,16 @@
       "isDynamic": false,
       "comment": "Sets the size of the next window defined by UI_BEGIN_WINDOW.",
       "members": [
-        { "name": "w", "type": "f32", "comment": "Width." },
-        { "name": "h", "type": "f32", "comment": "Height." },
+        {
+          "name": "w",
+          "type": "f32",
+          "comment": "Width."
+        },
+        {
+          "name": "h",
+          "type": "f32",
+          "comment": "Height."
+        },
         {
           "name": "cond",
           "type": "u32",
@@ -1657,9 +2121,21 @@
       "isDynamic": true,
       "comment": "Starts a window. Use SetNextWindow* events before this to control layout.",
       "members": [
-        { "name": "id", "type": "u32", "comment": "ImGui Window Id." },
-        { "name": "flags", "type": "u32", "comment": "ImGui Window flags." },
-        { "name": "titleLength", "type": "u32", "comment": "Length of title." },
+        {
+          "name": "id",
+          "type": "u32",
+          "comment": "ImGui Window Id."
+        },
+        {
+          "name": "flags",
+          "type": "u32",
+          "comment": "ImGui Window flags."
+        },
+        {
+          "name": "titleLength",
+          "type": "u32",
+          "comment": "Length of title."
+        },
         {
           "name": "_padding",
           "type": "u32",

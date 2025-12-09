@@ -30,6 +30,8 @@ class Events(enum.IntEnum):
     GEOM_ADD_PACKED = 54
     GEOM_REMOVE = 55
     GEOM_SET_COLOR = 56
+    GEOM_ADD_POLYGON = 57
+    GEOM_ADD_POLYGON_OUTLINE = 58
 
     INPUT_KEYUP = 100
     INPUT_KEYDOWN = 101
@@ -358,6 +360,42 @@ class SpritePackFormats:
     # Format: <qqBBBB4x
     # Size: 24 bytes
     PACK_GEOM_SET_COLOR: Tuple[str, int] = ("<qqBBBB4x", 24)
+
+    """
+    Maps to Swift: `PackedGeomAddPolygonHeaderEvent`
+    (Header struct)
+    - id1: i64 (Primary identifier.)
+    - id2: i64 (Secondary identifier.)
+    - z: f64 (Z position (depth).)
+    - r: u8 (Red color component (0-255).)
+    - g: u8 (Green color component (0-255).)
+    - b: u8 (Blue color component (0-255).)
+    - a: u8 (Alpha color component (0-255).)
+    - isScreenSpace: u8 (If 1, geometry is unaffected by the camera.)
+    - _padding: u8 (Padding for alignment.)
+    - vertexCount: u32 (Number of vertices. Variable data follows: vertexCount * 2 floats (x,y pairs).)
+    """
+    # Format: <qqdBBBBB3xI
+    # Size: 36 bytes
+    PACK_GEOM_ADD_POLYGON: Tuple[str, int] = ("<qqdBBBBB3xI", 36)
+
+    """
+    Maps to Swift: `PackedGeomAddPolygonHeaderEvent`
+    (Header struct)
+    - id1: i64 (Primary identifier.)
+    - id2: i64 (Secondary identifier.)
+    - z: f64 (Z position (depth).)
+    - r: u8 (Red color component (0-255).)
+    - g: u8 (Green color component (0-255).)
+    - b: u8 (Blue color component (0-255).)
+    - a: u8 (Alpha color component (0-255).)
+    - isScreenSpace: u8 (If 1, geometry is unaffected by the camera.)
+    - _padding: u8 (Padding for alignment.)
+    - vertexCount: u32 (Number of vertices. Variable data follows: vertexCount * 2 floats (x,y pairs).)
+    """
+    # Format: <qqdBBBBB3xI
+    # Size: 36 bytes
+    PACK_GEOM_ADD_POLYGON_OUTLINE: Tuple[str, int] = ("<qqdBBBBB3xI", 36)
 
 class InputPackFormats:
     """
@@ -916,6 +954,8 @@ class PackFormat:
         Events.GEOM_ADD_PACKED.value: SpritePackFormats.PACK_GEOM_ADD_PACKED,
         Events.GEOM_REMOVE.value: SpritePackFormats.PACK_GEOM_REMOVE,
         Events.GEOM_SET_COLOR.value: SpritePackFormats.PACK_GEOM_SET_COLOR,
+        Events.GEOM_ADD_POLYGON.value: SpritePackFormats.PACK_GEOM_ADD_POLYGON,
+        Events.GEOM_ADD_POLYGON_OUTLINE.value: SpritePackFormats.PACK_GEOM_ADD_POLYGON_OUTLINE,
         Events.INPUT_KEYUP.value: InputPackFormats.PACK_INPUT_KEYUP,
         Events.INPUT_KEYDOWN.value: InputPackFormats.PACK_INPUT_KEYDOWN,
         Events.INPUT_MOUSEUP.value: InputPackFormats.PACK_INPUT_MOUSEUP,
@@ -991,6 +1031,8 @@ class PackFormat:
         54: ['id1', 'id2', 'z', 'r', 'g', 'b', 'a', 'isScreenSpace', 'primitiveType', 'count'],
         55: ['id1', 'id2'],
         56: ['id1', 'id2', 'r', 'g', 'b', 'a'],
+        57: ['id1', 'id2', 'z', 'r', 'g', 'b', 'a', 'isScreenSpace', 'vertexCount'],
+        58: ['id1', 'id2', 'z', 'r', 'g', 'b', 'a', 'isScreenSpace', 'vertexCount'],
         100: ['scancode', 'keycode', 'mod', 'isRepeat'],
         101: ['scancode', 'keycode', 'mod', 'isRepeat'],
         102: ['x', 'y', 'button', 'clicks'],

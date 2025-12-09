@@ -206,7 +206,12 @@ extension PhrostEngine {
         io.pointee.DisplaySize = ImVec2(x: Float(windowWidth), y: Float(windowHeight))
         io.pointee.DisplayFramebufferScale = ImVec2(x: scaleX, y: scaleY)
         io.pointee.DeltaTime = Float(deltaSec)
-        io.pointee.FontGlobalScale = scaleX  // Optional, scales text
+
+        // FIX: FontGlobalScale should be 1.0, NOT scaleX
+        // DisplayFramebufferScale already handles DPI/Retina scaling for rendering.
+        // Setting FontGlobalScale to scaleX causes double-scaling on HiDPI displays
+        // or tiny fonts if scale < 1.0
+        io.pointee.FontGlobalScale = 1.0
 
         // Start the ImGui Frame
         ImGuiNewFrame()

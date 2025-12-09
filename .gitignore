@@ -45,3 +45,4 @@ Runtime/c/embed/php_errors.log
 /Runtime/c/embed/Phrost.app
 /Runtime/c/embed/.vs
 .vscode/settings.json
+Engine/PhrostEngineV2/imgui.ini

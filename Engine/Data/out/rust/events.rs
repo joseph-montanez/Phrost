@@ -31,6 +31,8 @@ pub enum Events {
     geomAddPacked = 54,
     geomRemove = 55,
     geomSetColor = 56,
+    geomAddPolygon = 57,
+    geomAddPolygonOutline = 58,
 
     inputKeyup = 100,
     inputKeydown = 101,
@@ -116,6 +118,8 @@ impl Events {
             54 => Some(Events::geomAddPacked),
             55 => Some(Events::geomRemove),
             56 => Some(Events::geomSetColor),
+            57 => Some(Events::geomAddPolygon),
+            58 => Some(Events::geomAddPolygonOutline),
             100 => Some(Events::inputKeyup),
             101 => Some(Events::inputKeydown),
             102 => Some(Events::inputMouseup),
@@ -337,6 +341,22 @@ pub struct PackedGeomAddPointEvent {
     pub _padding: [u8; 3], // Padding for alignment.
     pub x: f32, // X coordinate.
     pub y: f32, // Y coordinate.
+}
+
+/// Header for adding a filled polygon. Variable data (array of float x,y vertex pairs) follows.
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct PackedGeomAddPolygonHeaderEvent {
+    pub id1: i64, // Primary identifier.
+    pub id2: i64, // Secondary identifier.
+    pub z: f64, // Z position (depth).
+    pub r: u8, // Red color component (0-255).
+    pub g: u8, // Green color component (0-255).
+    pub b: u8, // Blue color component (0-255).
+    pub a: u8, // Alpha color component (0-255).
+    pub is_screen_space: u8, // If 1, geometry is unaffected by the camera.
+    pub _padding: [u8; 3], // Padding for alignment.
+    pub vertex_count: u32, // Number of vertices. Variable data follows: vertexCount * 2 floats (x,y pairs).
 }
 
 /// Payload for adding a geometry rectangle (outline).
@@ -930,6 +950,56 @@ impl CommandPacker {
             std::slice::from_raw_parts(
                 (&header as *const PackedGeomAddPackedHeaderEvent) as *const u8,
                 std::mem::size_of::<PackedGeomAddPackedHeaderEvent>(),
+            )
+        };
+        self.buffer.write_all(header_bytes)?;
+        self.command_count += 1;
+        Ok(())
+    }
+
+    pub fn pack_geom_add_polygon(&mut self, id1: i64, id2: i64, z: f64, r: u8, g: u8, b: u8, a: u8, is_screen_space: u8, _padding: u8) -> std::io::Result<()> {
+        self.write_header(Events::geomAddPolygon)?;
+        let header = PackedGeomAddPolygonHeaderEvent {
+            id1: id1,
+            id2: id2,
+            z: z,
+            r: r,
+            g: g,
+            b: b,
+            a: a,
+            is_screen_space: is_screen_space,
+            _padding: _padding,
+            vertex_count: 0
+        };
+        let header_bytes: &[u8] = unsafe {
+            std::slice::from_raw_parts(
+                (&header as *const PackedGeomAddPolygonHeaderEvent) as *const u8,
+                std::mem::size_of::<PackedGeomAddPolygonHeaderEvent>(),
+            )
+        };
+        self.buffer.write_all(header_bytes)?;
+        self.command_count += 1;
+        Ok(())
+    }
+
+    pub fn pack_geom_add_polygon_outline(&mut self, id1: i64, id2: i64, z: f64, r: u8, g: u8, b: u8, a: u8, is_screen_space: u8, _padding: u8) -> std::io::Result<()> {
+        self.write_header(Events::geomAddPolygonOutline)?;
+        let header = PackedGeomAddPolygonHeaderEvent {
+            id1: id1,
+            id2: id2,
+            z: z,
+            r: r,
+            g: g,
+            b: b,
+            a: a,
+            is_screen_space: is_screen_space,
+            _padding: _padding,
+            vertex_count: 0
+        };
+        let header_bytes: &[u8] = unsafe {
+            std::slice::from_raw_parts(
+                (&header as *const PackedGeomAddPolygonHeaderEvent) as *const u8,
+                std::mem::size_of::<PackedGeomAddPolygonHeaderEvent>(),
             )
         };
         self.buffer.write_all(header_bytes)?;

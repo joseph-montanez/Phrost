@@ -227,6 +227,15 @@ public final class PhrostEngine {
         self.io = ImGuiGetIO()!
         ImFontAtlas_GetTexDataAsRGBA32(
             io.pointee.Fonts, &self.pixels, &self.width, &self.height, &self.bytesPerPixel)
+
+        // DEBUG: Print font atlas dimensions
+        print(
+            "ImGui Font Atlas: \(self.width)x\(self.height) pixels, \(self.bytesPerPixel) bytes per pixel"
+        )
+        if self.pixels == nil {
+            print("WARNING: Font atlas pixels is nil!")
+        }
+
         self.fontTexture = SDL_CreateTexture(
             renderer,
             SDL_PIXELFORMAT_RGBA32,
@@ -236,6 +245,8 @@ public final class PhrostEngine {
         )
         if self.fontTexture == nil {
             print("Failed to create ImGui Font Texture: \(String(cString: SDL_GetError()))")
+        } else {
+            print("ImGui Font Texture created successfully")
         }
         SDL_UpdateTexture(self.fontTexture, nil, self.pixels, self.width * 4)
         SDL_SetTextureBlendMode(self.fontTexture, SDL_BLENDMODE_BLEND)

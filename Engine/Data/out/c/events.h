@@ -31,6 +31,8 @@ typedef enum {
     EVENT_GEOM_ADD_PACKED = 54,
     EVENT_GEOM_REMOVE = 55,
     EVENT_GEOM_SET_COLOR = 56,
+    EVENT_GEOM_ADD_POLYGON = 57,
+    EVENT_GEOM_ADD_POLYGON_OUTLINE = 58,
 
     EVENT_INPUT_KEYUP = 100,
     EVENT_INPUT_KEYDOWN = 101,
@@ -225,6 +227,20 @@ typedef struct {
     float x; // X coordinate.
     float y; // Y coordinate.
 } PackedGeomAddPointEvent;
+
+// Header for adding a filled polygon. Variable data (array of float x,y vertex pairs) follows.
+typedef struct {
+    int64_t id1; // Primary identifier.
+    int64_t id2; // Secondary identifier.
+    double z; // Z position (depth).
+    uint8_t r; // Red color component (0-255).
+    uint8_t g; // Green color component (0-255).
+    uint8_t b; // Blue color component (0-255).
+    uint8_t a; // Alpha color component (0-255).
+    uint8_t isScreenSpace; // If 1, geometry is unaffected by the camera.
+    uint8_t _padding[3]; // Padding for alignment.
+    uint32_t vertexCount; // Number of vertices. Variable data follows: vertexCount * 2 floats (x,y pairs).
+} PackedGeomAddPolygonHeaderEvent;
 
 // Payload for adding a geometry rectangle (outline).
 typedef struct {

@@ -694,14 +694,9 @@ extension PhrostEngine {
                         label: "UiSetPos", as: PackedUISetNextWindowPosEvent.self)
                 else { break }
 
-                // ImGuiCond values: Always=1, Once=2, FirstUseEver=4, Appearing=8
                 let cond = Int32(event.cond)
                 let pos = ImVec2(x: event.x, y: event.y)
                 let pivot = ImVec2(x: event.pivotX, y: event.pivotY)
-
-                print(
-                    "UI_WIN_POS Header: cond=\(cond) X=\(pos.x) Y=\(pos.y) pivot=\(pivot.x),\(pivot.y)"
-                )
 
                 igSetNextWindowPos(pos, cond, pivot)
                 generatedEventCount &+= 1
@@ -714,10 +709,6 @@ extension PhrostEngine {
 
                 let cond = Int32(event.cond)
                 let size = ImVec2(x: event.w, y: event.h)
-
-                print(
-                    "UI_WIN_SIZE Header: cond=\(cond) width=\(size.x) height=\(size.y)"
-                )
 
                 igSetNextWindowSize(size, cond)
                 generatedEventCount &+= 1
@@ -788,59 +779,64 @@ extension PhrostEngine {
                 offset += textLen + strPadding
 
                 if let text = String(data: textData, encoding: .utf8) {
-                    print(
-                        "UI_TEXT Header: text=\(text) len=\(textLen)"
-                    )
                     igTextUnformatted(text, nil)
                 }
                 generatedEventCount &+= 1
 
             case .uiButton:
                 let caseOffsetStart = offset
-                guard caseOffsetStart + payloadSize <= commandData.count else { break }
+                guard caseOffsetStart + payloadSize <= commandData.count else {
+                    print("UI_BUTTON Error: Not enough data for payload.")
+                    break
+                }
 
                 guard
                     let header = localUnpack(
                         label: "UIButtonHead", as: PackedUIButtonHeaderEvent.self)
-                else { break }
+                else {
+                    print("UI_BUTTON Error: Failed to unpack header")
+                    break
+                }
 
                 let labelLen = Int(header.labelLength)
                 let strPadding = (8 - (labelLen % 8)) % 8
 
-                guard offset + labelLen + strPadding <= commandData.count else { break }
+                guard offset + labelLen + strPadding <= commandData.count else {
+                    print("UI_BUTTON Error: Not enough data for label.")
+                    break
+                }
 
                 let labelData = commandData.subdata(in: offset..<(offset + labelLen))
                 offset += labelLen + strPadding
 
+                // Create Swift String and render button
                 if let label = String(data: labelData, encoding: .utf8) {
-                    print(
-                        "UI_BUTTON Header: ID=\(header.id) W=\(header.w) H=\(header.h) Len=\(header.labelLength) text=\(label)"
-                    )
-                    let size = ImVec2(x: 100, y: 20)  // 0,0 = autosize
+                    // DIAGNOSTIC: Check ImVec2 struct size
+                    // It should be 8 bytes (two 4-byte floats)
+                    // If it's 16 bytes, the struct uses Double instead of Float
+                    print("ImVec2 size: \(MemoryLayout<ImVec2>.size) bytes (expected: 8)")
 
-                    ImGuiPushItemWidth(100)
+                    // Try auto-size
+                    let size = ImVec2(x: 0, y: 0)
 
-                    if ImGuiButton(label, size) {
-                        // --- INTERACTION DETECTED ---
-                        // We immediately pack an event to send back to PHP
+                    let clicked = ImGuiButton(label, size)
+
+                    if clicked {
+                        print("UI_BUTTON Clicked: id=\(header.id)")
                         let interaction = PackedUIInteractionEvent(
-                            elementId: header.id, interactionType: 0)  // 0 = Click
+                            elementId: header.id, interactionType: 0)
                         let evtID = Events.uiElementClicked.rawValue
-                        let ts: UInt64 = 0  // Timestamp 0 for immediate feedback
+                        let ts: UInt64 = 0
 
                         generatedEvents.append(value: evtID)
                         generatedEvents.append(value: ts)
-
-                        // Padding after Timestamp (VQx4 pattern from your existing code)
                         generatedEvents.append(Data(count: 4))
-
                         generatedEvents.append(value: interaction)
                         generatedEventCount &+= 1
                     }
                 } else {
-                    print("UI_BUTTON Error: Could not decode label string from data.")
+                    print("UI_BUTTON Error: Failed to decode label as UTF-8")
                 }
-                // We count the *input* command processed, regardless of click
                 generatedEventCount &+= 1
 
             // --- Feedback Events (Skip) ---

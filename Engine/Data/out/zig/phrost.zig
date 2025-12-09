@@ -22,6 +22,8 @@ pub const Events = enum(u32) {
     geomAddPacked = 54,
     geomRemove = 55,
     geomSetColor = 56,
+    geomAddPolygon = 57,
+    geomAddPolygonOutline = 58,
 
     inputKeyup = 100,
     inputKeydown = 101,
@@ -193,6 +195,19 @@ pub const PackedGeomAddPointEvent = extern struct {
     _padding: [3]u8, // Padding for alignment.
     x: f32, // X coordinate.
     y: f32, // Y coordinate.
+};
+
+pub const PackedGeomAddPolygonHeaderEvent = extern struct {
+    id1: i64, // Primary identifier.
+    id2: i64, // Secondary identifier.
+    z: f64, // Z position (depth).
+    r: u8, // Red color component (0-255).
+    g: u8, // Green color component (0-255).
+    b: u8, // Blue color component (0-255).
+    a: u8, // Alpha color component (0-255).
+    isScreenSpace: u8, // If 1, geometry is unaffected by the camera.
+    _padding: [3]u8, // Padding for alignment.
+    vertexCount: u32, // Number of vertices. Variable data follows: vertexCount * 2 floats (x,y pairs).
 };
 
 pub const PackedGeomAddRectEvent = extern struct {
@@ -575,6 +590,8 @@ pub const event_payload_list = [_]KVPair{
     .{ "geomAddPacked", @sizeOf(PackedGeomAddPackedHeaderEvent) },
     .{ "geomRemove", @sizeOf(PackedGeomRemoveEvent) },
     .{ "geomSetColor", @sizeOf(PackedGeomSetColorEvent) },
+    .{ "geomAddPolygon", @sizeOf(PackedGeomAddPolygonHeaderEvent) },
+    .{ "geomAddPolygonOutline", @sizeOf(PackedGeomAddPolygonHeaderEvent) },
 
     // Input Events
     .{ "inputKeyup", @sizeOf(PackedKeyEvent) },
