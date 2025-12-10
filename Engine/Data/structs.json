@@ -962,6 +962,80 @@
       ]
     },
     {
+      "name": "PackedGeomAddRawHeaderEvent",
+      "eventId": 59,
+      "enumName": "GEOM_ADD_RAW",
+      "isDynamic": true,
+      "comment": "Adds raw geometry (vertices, colors, UVs, indices) for GPU rendering. Used for custom UI systems.",
+      "members": [
+        {
+          "name": "id1",
+          "type": "i64",
+          "comment": "Primary identifier for this geometry primitive."
+        },
+        {
+          "name": "id2",
+          "type": "i64",
+          "comment": "Secondary identifier for this geometry primitive."
+        },
+        {
+          "name": "z",
+          "type": "f64",
+          "comment": "Z-depth for render ordering."
+        },
+        {
+          "name": "textureId",
+          "type": "u64",
+          "comment": "Texture ID from spriteTextureSet (0 = no texture, solid color)."
+        },
+        {
+          "name": "clipX",
+          "type": "i32",
+          "comment": "Clip rect X (-1 to disable clipping)."
+        },
+        {
+          "name": "clipY",
+          "type": "i32",
+          "comment": "Clip rect Y."
+        },
+        {
+          "name": "clipW",
+          "type": "i32",
+          "comment": "Clip rect width."
+        },
+        {
+          "name": "clipH",
+          "type": "i32",
+          "comment": "Clip rect height."
+        },
+        {
+          "name": "vertexCount",
+          "type": "i32",
+          "comment": "Number of vertices."
+        },
+        {
+          "name": "indexCount",
+          "type": "i32",
+          "comment": "Number of indices."
+        },
+        {
+          "name": "indexSize",
+          "type": "i32",
+          "comment": "Size of each index: 2 for uint16, 4 for uint32."
+        },
+        {
+          "name": "isScreenSpace",
+          "type": "u8",
+          "comment": "1 = screen-space coords, 0 = world-space."
+        },
+        {
+          "name": "_padding",
+          "type": "u8[3]",
+          "comment": "Padding for alignment."
+        }
+      ]
+    },
+    {
       "name": "PackedKeyEvent",
       "eventId": 100,
       "enumName": "INPUT_KEYUP",

@@ -469,6 +469,65 @@ extension PhrostEngine {
                 )
 
                 generatedEventCount &+= 1
+            case .geomAddRaw:
+                guard
+                    let header = localUnpack(
+                        label: "GeomRawHeader", as: PackedGeomAddRawHeaderEvent.self)
+                else { break }
+
+                let vtxCount = Int(header.vertexCount)
+                let idxCount = Int(header.indexCount)
+                let idxSize = Int(header.indexSize)
+
+                // Calculate data sizes
+                let positionsSize = vtxCount * 2 * 4  // float x,y per vertex
+                let colorsSize = vtxCount * 4 * 4  // float r,g,b,a per vertex
+                let uvsSize = vtxCount * 2 * 4  // float u,v per vertex
+                let indicesSize = idxCount * idxSize
+
+                let totalDataSize = positionsSize + colorsSize + uvsSize + indicesSize
+                let dataPadding = (8 - (totalDataSize % 8)) % 8
+
+                guard offset + totalDataSize + dataPadding <= commandData.count else {
+                    print(
+                        "GeomAddRaw Error: Not enough data. Need \(totalDataSize), have \(commandData.count - offset)"
+                    )
+                    break
+                }
+
+                // Extract data slices
+                let positionsData = commandData.subdata(in: offset..<(offset + positionsSize))
+                let colorsData = commandData.subdata(
+                    in: (offset + positionsSize)..<(offset + positionsSize + colorsSize))
+                let uvsData = commandData.subdata(
+                    in: (offset + positionsSize + colorsSize)..<(offset + positionsSize + colorsSize
+                        + uvsSize))
+                let indicesData = commandData.subdata(
+                    in: (offset + positionsSize + colorsSize + uvsSize)..<(offset + totalDataSize))
+
+                // Resolve texture from ID
+                var texturePtr: UnsafeMutablePointer<SDL_Texture>? = nil
+                if header.textureId != 0 {
+                    // Find texture by ID in cache
+                    for (filename, id) in loadedFilenames {
+                        if id == header.textureId {
+                            texturePtr = textureCache[filename] ?? nil
+                            break
+                        }
+                    }
+                }
+
+                geometryManager.addRawGeometry(
+                    header: header,
+                    positionData: positionsData,
+                    colorData: colorsData,
+                    uvData: uvsData,
+                    indexData: indicesData,
+                    texture: texturePtr
+                )
+
+                offset += totalDataSize + dataPadding
+                generatedEventCount &+= 1
 
             // --- WINDOW ---
             case .windowTitle:

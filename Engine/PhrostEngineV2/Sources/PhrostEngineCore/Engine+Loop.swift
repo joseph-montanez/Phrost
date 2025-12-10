@@ -730,6 +730,47 @@ extension PhrostEngine {
             if !offsetPoints.isEmpty {
                 SDL_RenderLines(renderer, &offsetPoints, Int32(offsetPoints.count))
             }
+        case .rawGeometry:
+            // Set clip rect if specified
+            if var clip = primitive.clipRect {
+                SDL_SetRenderClipRect(renderer, &clip)
+            }
+
+            var vertices: [SDL_Vertex]
+
+            if primitive.isScreenSpace {
+                vertices = primitive.vertices
+            } else {
+                // Transform world coordinates to screen
+                vertices = primitive.vertices.map { vtx in
+                    let screenPos = transformWorldToScreen(
+                        worldX: Double(vtx.position.x),
+                        worldY: Double(vtx.position.y),
+                        cam: cam
+                    )
+                    return SDL_Vertex(
+                        position: screenPos,
+                        color: vtx.color,
+                        tex_coord: vtx.tex_coord
+                    )
+                }
+            }
+
+            var indices = primitive.indices
+
+            SDL_RenderGeometry(
+                renderer,
+                primitive.texture,
+                &vertices,
+                Int32(vertices.count),
+                &indices,
+                Int32(indices.count)
+            )
+
+            // Clear clip rect after rendering
+            if primitive.clipRect != nil {
+                SDL_SetRenderClipRect(renderer, nil)
+            }
         }
     }
 

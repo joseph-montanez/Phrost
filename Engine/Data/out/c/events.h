@@ -33,6 +33,7 @@ typedef enum {
     EVENT_GEOM_SET_COLOR = 56,
     EVENT_GEOM_ADD_POLYGON = 57,
     EVENT_GEOM_ADD_POLYGON_OUTLINE = 58,
+    EVENT_GEOM_ADD_RAW = 59,
 
     EVENT_INPUT_KEYUP = 100,
     EVENT_INPUT_KEYDOWN = 101,
@@ -241,6 +242,23 @@ typedef struct {
     uint8_t _padding[3]; // Padding for alignment.
     uint32_t vertexCount; // Number of vertices. Variable data follows: vertexCount * 2 floats (x,y pairs).
 } PackedGeomAddPolygonHeaderEvent;
+
+// Adds raw geometry (vertices, colors, UVs, indices) for GPU rendering. Used for custom UI systems.
+typedef struct {
+    int64_t id1; // Primary identifier for this geometry primitive.
+    int64_t id2; // Secondary identifier for this geometry primitive.
+    double z; // Z-depth for render ordering.
+    uint64_t textureId; // Texture ID from spriteTextureSet (0 = no texture, solid color).
+    int32_t clipX; // Clip rect X (-1 to disable clipping).
+    int32_t clipY; // Clip rect Y.
+    int32_t clipW; // Clip rect width.
+    int32_t clipH; // Clip rect height.
+    int32_t vertexCount; // Number of vertices.
+    int32_t indexCount; // Number of indices.
+    int32_t indexSize; // Size of each index: 2 for uint16, 4 for uint32.
+    uint8_t isScreenSpace; // 1 = screen-space coords, 0 = world-space.
+    uint8_t _padding[3]; // Padding for alignment.
+} PackedGeomAddRawHeaderEvent;
 
 // Payload for adding a geometry rectangle (outline).
 typedef struct {

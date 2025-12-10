@@ -33,6 +33,7 @@ pub enum Events {
     geomSetColor = 56,
     geomAddPolygon = 57,
     geomAddPolygonOutline = 58,
+    geomAddRaw = 59,
 
     inputKeyup = 100,
     inputKeydown = 101,
@@ -120,6 +121,7 @@ impl Events {
             56 => Some(Events::geomSetColor),
             57 => Some(Events::geomAddPolygon),
             58 => Some(Events::geomAddPolygonOutline),
+            59 => Some(Events::geomAddRaw),
             100 => Some(Events::inputKeyup),
             101 => Some(Events::inputKeydown),
             102 => Some(Events::inputMouseup),
@@ -357,6 +359,25 @@ pub struct PackedGeomAddPolygonHeaderEvent {
     pub is_screen_space: u8, // If 1, geometry is unaffected by the camera.
     pub _padding: [u8; 3], // Padding for alignment.
     pub vertex_count: u32, // Number of vertices. Variable data follows: vertexCount * 2 floats (x,y pairs).
+}
+
+/// Adds raw geometry (vertices, colors, UVs, indices) for GPU rendering. Used for custom UI systems.
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct PackedGeomAddRawHeaderEvent {
+    pub id1: i64, // Primary identifier for this geometry primitive.
+    pub id2: i64, // Secondary identifier for this geometry primitive.
+    pub z: f64, // Z-depth for render ordering.
+    pub texture_id: u64, // Texture ID from spriteTextureSet (0 = no texture, solid color).
+    pub clip_x: i32, // Clip rect X (-1 to disable clipping).
+    pub clip_y: i32, // Clip rect Y.
+    pub clip_w: i32, // Clip rect width.
+    pub clip_h: i32, // Clip rect height.
+    pub vertex_count: i32, // Number of vertices.
+    pub index_count: i32, // Number of indices.
+    pub index_size: i32, // Size of each index: 2 for uint16, 4 for uint32.
+    pub is_screen_space: u8, // 1 = screen-space coords, 0 = world-space.
+    pub _padding: [u8; 3], // Padding for alignment.
 }
 
 /// Payload for adding a geometry rectangle (outline).
@@ -1000,6 +1021,34 @@ impl CommandPacker {
             std::slice::from_raw_parts(
                 (&header as *const PackedGeomAddPolygonHeaderEvent) as *const u8,
                 std::mem::size_of::<PackedGeomAddPolygonHeaderEvent>(),
+            )
+        };
+        self.buffer.write_all(header_bytes)?;
+        self.command_count += 1;
+        Ok(())
+    }
+
+    pub fn pack_geom_add_raw(&mut self, id1: i64, id2: i64, z: f64, texture_id: u64, clip_x: i32, clip_y: i32, clip_w: i32, clip_h: i32, vertex_count: i32, index_count: i32, index_size: i32, is_screen_space: u8, _padding: u8) -> std::io::Result<()> {
+        self.write_header(Events::geomAddRaw)?;
+        let header = PackedGeomAddRawHeaderEvent {
+            id1: id1,
+            id2: id2,
+            z: z,
+            texture_id: texture_id,
+            clip_x: clip_x,
+            clip_y: clip_y,
+            clip_w: clip_w,
+            clip_h: clip_h,
+            vertex_count: vertex_count,
+            index_count: index_count,
+            index_size: index_size,
+            is_screen_space: is_screen_space,
+            _padding: _padding
+        };
+        let header_bytes: &[u8] = unsafe {
+            std::slice::from_raw_parts(
+                (&header as *const PackedGeomAddRawHeaderEvent) as *const u8,
+                std::mem::size_of::<PackedGeomAddRawHeaderEvent>(),
             )
         };
         self.buffer.write_all(header_bytes)?;

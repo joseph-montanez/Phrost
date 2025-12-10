@@ -119,6 +119,7 @@ public final class PhrostEngine {
         Events.geomSetColor.rawValue: MemoryLayout<PackedGeomSetColorEvent>.size,
         Events.geomAddPolygon.rawValue: MemoryLayout<PackedGeomAddPolygonHeaderEvent>.size,
         Events.geomAddPolygonOutline.rawValue: MemoryLayout<PackedGeomAddPolygonHeaderEvent>.size,
+        Events.geomAddRaw.rawValue: MemoryLayout<PackedGeomAddRawHeaderEvent>.size,
         // --- INPUT ---
         Events.inputKeyup.rawValue: MemoryLayout<PackedKeyEvent>.size,
         Events.inputKeydown.rawValue: MemoryLayout<PackedKeyEvent>.size,

@@ -24,6 +24,7 @@ pub const Events = enum(u32) {
     geomSetColor = 56,
     geomAddPolygon = 57,
     geomAddPolygonOutline = 58,
+    geomAddRaw = 59,
 
     inputKeyup = 100,
     inputKeydown = 101,
@@ -208,6 +209,22 @@ pub const PackedGeomAddPolygonHeaderEvent = extern struct {
     isScreenSpace: u8, // If 1, geometry is unaffected by the camera.
     _padding: [3]u8, // Padding for alignment.
     vertexCount: u32, // Number of vertices. Variable data follows: vertexCount * 2 floats (x,y pairs).
+};
+
+pub const PackedGeomAddRawHeaderEvent = extern struct {
+    id1: i64, // Primary identifier for this geometry primitive.
+    id2: i64, // Secondary identifier for this geometry primitive.
+    z: f64, // Z-depth for render ordering.
+    textureId: u64, // Texture ID from spriteTextureSet (0 = no texture, solid color).
+    clipX: i32, // Clip rect X (-1 to disable clipping).
+    clipY: i32, // Clip rect Y.
+    clipW: i32, // Clip rect width.
+    clipH: i32, // Clip rect height.
+    vertexCount: i32, // Number of vertices.
+    indexCount: i32, // Number of indices.
+    indexSize: i32, // Size of each index: 2 for uint16, 4 for uint32.
+    isScreenSpace: u8, // 1 = screen-space coords, 0 = world-space.
+    _padding: [3]u8, // Padding for alignment.
 };
 
 pub const PackedGeomAddRectEvent = extern struct {
@@ -592,6 +609,7 @@ pub const event_payload_list = [_]KVPair{
     .{ "geomSetColor", @sizeOf(PackedGeomSetColorEvent) },
     .{ "geomAddPolygon", @sizeOf(PackedGeomAddPolygonHeaderEvent) },
     .{ "geomAddPolygonOutline", @sizeOf(PackedGeomAddPolygonHeaderEvent) },
+    .{ "geomAddRaw", @sizeOf(PackedGeomAddRawHeaderEvent) },
 
     // Input Events
     .{ "inputKeyup", @sizeOf(PackedKeyEvent) },

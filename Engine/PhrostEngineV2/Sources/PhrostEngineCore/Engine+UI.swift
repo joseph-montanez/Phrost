@@ -69,7 +69,7 @@ extension PhrostEngine {
 
                     // Indices
                     let idxStride = MemoryLayout<ImDrawIdx>.stride
-                    let idxByteOffset = Int(cmd.IdxOffset) * idxStride  // <-- FIX HERE
+                    let idxByteOffset = Int(cmd.IdxOffset) * idxStride
                     let idxPtr = idxBufferRaw.advanced(by: idxByteOffset)
 
                     let totalVtx = Int(cmdList.pointee.VtxBuffer.Size)

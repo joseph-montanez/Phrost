@@ -28,6 +28,7 @@ enum Events: int
     case GEOM_SET_COLOR = 56;
     case GEOM_ADD_POLYGON = 57;
     case GEOM_ADD_POLYGON_OUTLINE = 58;
+    case GEOM_ADD_RAW = 59;
 
     case INPUT_KEYUP = 100;
     case INPUT_KEYDOWN = 101;
@@ -354,6 +355,25 @@ class SpritePackFormats
      * - vertexCount: u32 (Number of vertices. Variable data follows: vertexCount * 2 floats (x,y pairs).)
      */
     public const PACK_GEOM_ADD_POLYGON_OUTLINE = "qid1/qid2/ez/Cr/Cg/Cb/Ca/CisScreenSpace/x3_padding/VvertexCount";
+
+    /**
+     * Maps to Swift: `PackedGeomAddRawHeaderEvent`
+     * (Header struct)
+     * - id1: i64 (Primary identifier for this geometry primitive.)
+     * - id2: i64 (Secondary identifier for this geometry primitive.)
+     * - z: f64 (Z-depth for render ordering.)
+     * - textureId: u64 (Texture ID from spriteTextureSet (0 = no texture, solid color).)
+     * - clipX: i32 (Clip rect X (-1 to disable clipping).)
+     * - clipY: i32 (Clip rect Y.)
+     * - clipW: i32 (Clip rect width.)
+     * - clipH: i32 (Clip rect height.)
+     * - vertexCount: i32 (Number of vertices.)
+     * - indexCount: i32 (Number of indices.)
+     * - indexSize: i32 (Size of each index: 2 for uint16, 4 for uint32.)
+     * - isScreenSpace: u8 (1 = screen-space coords, 0 = world-space.)
+     * - _padding: u8[3] (Padding for alignment.)
+     */
+    public const PACK_GEOM_ADD_RAW = "qid1/qid2/ez/QtextureId/lclipX/lclipY/lclipW/lclipH/lvertexCount/lindexCount/lindexSize/CisScreenSpace/x3_padding";
 }
 
 class InputPackFormats
@@ -834,6 +854,7 @@ class PackFormat
         Events::GEOM_SET_COLOR->value => SpritePackFormats::PACK_GEOM_SET_COLOR,
         Events::GEOM_ADD_POLYGON->value => SpritePackFormats::PACK_GEOM_ADD_POLYGON,
         Events::GEOM_ADD_POLYGON_OUTLINE->value => SpritePackFormats::PACK_GEOM_ADD_POLYGON_OUTLINE,
+        Events::GEOM_ADD_RAW->value => SpritePackFormats::PACK_GEOM_ADD_RAW,
         Events::INPUT_KEYUP->value => InputPackFormats::PACK_INPUT_KEYUP,
         Events::INPUT_KEYDOWN->value => InputPackFormats::PACK_INPUT_KEYDOWN,
         Events::INPUT_MOUSEUP->value => InputPackFormats::PACK_INPUT_MOUSEUP,
@@ -925,6 +946,7 @@ class PackFormat
                         Events::GEOM_ADD_PACKED->value,
                         Events::GEOM_ADD_POLYGON->value,
                         Events::GEOM_ADD_POLYGON_OUTLINE->value,
+                        Events::GEOM_ADD_RAW->value,
                         Events::PLUGIN_LOAD->value,
                         Events::SPRITE_TEXTURE_LOAD->value,
                         Events::TEXT_ADD->value,

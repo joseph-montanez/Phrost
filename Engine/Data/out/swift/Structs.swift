@@ -135,6 +135,22 @@ import Foundation
     public var vertexCount: UInt32
 }
 
+@frozen public struct PackedGeomAddRawHeaderEvent: Sendable {
+    public var id1: Int64
+    public var id2: Int64
+    public var z: Double
+    public var textureId: UInt64
+    public var clipX: Int32
+    public var clipY: Int32
+    public var clipW: Int32
+    public var clipH: Int32
+    public var vertexCount: Int32
+    public var indexCount: Int32
+    public var indexSize: Int32
+    public var isScreenSpace: UInt8
+    public var _padding: (UInt8, UInt8, UInt8)
+}
+
 @frozen public struct PackedGeomAddRectEvent: Sendable {
     public var id1: Int64
     public var id2: Int64

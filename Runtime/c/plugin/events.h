@@ -31,6 +31,9 @@ typedef enum {
     EVENT_GEOM_ADD_PACKED = 54,
     EVENT_GEOM_REMOVE = 55,
     EVENT_GEOM_SET_COLOR = 56,
+    EVENT_GEOM_ADD_POLYGON = 57,
+    EVENT_GEOM_ADD_POLYGON_OUTLINE = 58,
+    EVENT_GEOM_ADD_RAW = 59,
 
     EVENT_INPUT_KEYUP = 100,
     EVENT_INPUT_KEYDOWN = 101,
@@ -84,6 +87,15 @@ typedef enum {
 
     EVENT_SCRIPT_SUBSCRIBE = 3000,
     EVENT_SCRIPT_UNSUBSCRIBE = 3001,
+
+    EVENT_UI_BEGIN_WINDOW = 4000,
+    EVENT_UI_END_WINDOW = 4001,
+    EVENT_UI_TEXT = 4002,
+    EVENT_UI_BUTTON = 4003,
+    EVENT_UI_SET_NEXT_WINDOW_POS = 4004,
+    EVENT_UI_SET_NEXT_WINDOW_SIZE = 4005,
+    EVENT_UI_ELEMENT_CLICKED = 4500,
+    EVENT_UI_WINDOW_CLOSED = 4501,
 } PhrostEventID;
 
 // --- Packed Struct Definitions ---
@@ -216,6 +228,37 @@ typedef struct {
     float x; // X coordinate.
     float y; // Y coordinate.
 } PackedGeomAddPointEvent;
+
+// Header for adding a filled polygon. Variable data (array of float x,y vertex pairs) follows.
+typedef struct {
+    int64_t id1; // Primary identifier.
+    int64_t id2; // Secondary identifier.
+    double z; // Z position (depth).
+    uint8_t r; // Red color component (0-255).
+    uint8_t g; // Green color component (0-255).
+    uint8_t b; // Blue color component (0-255).
+    uint8_t a; // Alpha color component (0-255).
+    uint8_t isScreenSpace; // If 1, geometry is unaffected by the camera.
+    uint8_t _padding[3]; // Padding for alignment.
+    uint32_t vertexCount; // Number of vertices. Variable data follows: vertexCount * 2 floats (x,y pairs).
+} PackedGeomAddPolygonHeaderEvent;
+
+// Adds raw geometry (vertices, colors, UVs, indices) for GPU rendering. Used for custom UI systems.
+typedef struct {
+    int64_t id1; // Primary identifier for this geometry primitive.
+    int64_t id2; // Secondary identifier for this geometry primitive.
+    double z; // Z-depth for render ordering.
+    uint64_t textureId; // Texture ID from spriteTextureSet (0 = no texture, solid color).
+    int32_t clipX; // Clip rect X (-1 to disable clipping).
+    int32_t clipY; // Clip rect Y.
+    int32_t clipW; // Clip rect width.
+    int32_t clipH; // Clip rect height.
+    int32_t vertexCount; // Number of vertices.
+    int32_t indexCount; // Number of indices.
+    int32_t indexSize; // Size of each index: 2 for uint16, 4 for uint32.
+    uint8_t isScreenSpace; // 1 = screen-space coords, 0 = world-space.
+    uint8_t _padding[3]; // Padding for alignment.
+} PackedGeomAddRawHeaderEvent;
 
 // Payload for adding a geometry rectangle (outline).
 typedef struct {
@@ -554,6 +597,60 @@ typedef struct {
     uint32_t filenameLength; // Length of the texture filename that follows this header.
     uint32_t _padding; // Padding for alignment.
 } PackedTextureLoadHeaderEvent;
+
+// Starts a window. Use SetNextWindow* events before this to control layout.
+typedef struct {
+    uint32_t id; // ImGui Window Id.
+    uint32_t flags; // ImGui Window flags.
+    uint32_t titleLength; // Length of title.
+    uint32_t _padding; // Padding to align header to 16 bytes.
+} PackedUIBeginWindowHeaderEvent;
+
+// Header for adding a button. Variable data (label string) follows.
+typedef struct {
+    uint32_t id; // Unique ID for this button to track clicks.
+    float w; // Button width (0 for auto).
+    float h; // Button height (0 for auto).
+    uint32_t labelLength; // Length of the label string that follows.
+} PackedUIButtonHeaderEvent;
+
+// Command to close/end the current ImGui window scope.
+typedef struct {
+    uint8_t _unused; // Padding to ensure non-zero struct size.
+} PackedUIEndWindowEvent;
+
+// Feedback sent FROM engine TO client when a UI element is interacted with.
+typedef struct {
+    uint32_t elementId; // The ID of the element that was clicked.
+    uint32_t interactionType; // Type of interaction (0 = Click, etc).
+} PackedUIInteractionEvent;
+
+// Sets the position of the next window defined by UI_BEGIN_WINDOW.
+typedef struct {
+    float x; // X Position.
+    float y; // Y Position.
+    uint32_t cond; // ImGuiCond (Always=1, Once=2, FirstUseEver=4).
+    float pivotX; // Pivot X (0.0=Left, 0.5=Center, 1.0=Right).
+    float pivotY; // Pivot Y (0.0=Top, 0.5=Center, 1.0=Bottom).
+} PackedUISetNextWindowPosEvent;
+
+// Sets the size of the next window defined by UI_BEGIN_WINDOW.
+typedef struct {
+    float w; // Width.
+    float h; // Height.
+    uint32_t cond; // ImGuiCond (Always=1, Once=2, FirstUseEver=4).
+} PackedUISetNextWindowSizeEvent;
+
+// Header for adding text to UI. Variable data (text string) follows.
+typedef struct {
+    uint32_t textLength; // Length of the text string that follows.
+    uint32_t _padding; // Padding for alignment.
+} PackedUITextHeaderEvent;
+
+// Sent from Engine to PHP when the user closes a window (clicks X).
+typedef struct {
+    uint32_t windowId; // The ID of the window that closed.
+} PackedUIWindowClosedEvent;
 
 // Payload for setting window flags (e.g., fullscreen, borderless).
 typedef struct {

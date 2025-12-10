@@ -24,6 +24,7 @@ public enum Events: UInt32 {
     case geomSetColor = 56
     case geomAddPolygon = 57
     case geomAddPolygonOutline = 58
+    case geomAddRaw = 59
 
     case inputKeyup = 100
     case inputKeydown = 101

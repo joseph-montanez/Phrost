@@ -286,6 +286,7 @@ public enum PrimitiveType: UInt32 {
     case fillRects = 7
     case polygon = 8
     case polygonOutline = 9
+    case rawGeometry = 10
 }
 
 public final class RenderPrimitive: @unchecked Sendable {
@@ -300,6 +301,9 @@ public final class RenderPrimitive: @unchecked Sendable {
 
     public var vertices: [SDL_Vertex] = []
     public var indices: [Int32] = []
+
+    public var texture: UnsafeMutablePointer<SDL_Texture>? = nil
+    public var clipRect: SDL_Rect? = nil  // nil = no clipping
 
     init(
         id: SpriteID, type: PrimitiveType, z: Double,

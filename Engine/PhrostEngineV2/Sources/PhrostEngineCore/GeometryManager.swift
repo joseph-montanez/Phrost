@@ -173,4 +173,89 @@ public final class GeometryManager: @unchecked Sendable {
 
         addPrimitive(primitive)
     }
+
+    /// Adds raw geometry primitive from vertex/index data
+    /// - Parameters:
+    ///   - header: The parsed header event
+    ///   - vertexData: Raw vertex data containing positions, colors, and UVs
+    ///   - indexData: Raw index data
+    ///   - texture: Optional SDL texture pointer
+    public func addRawGeometry(
+        header: PackedGeomAddRawHeaderEvent,
+        positionData: Data,  // float[vtxCount * 2] - x,y pairs
+        colorData: Data,  // float[vtxCount * 4] - r,g,b,a (0-1 range)
+        uvData: Data,  // float[vtxCount * 2] - u,v pairs
+        indexData: Data,
+        texture: UnsafeMutablePointer<SDL_Texture>?
+    ) {
+        let id = SpriteID(id1: header.id1, id2: header.id2)
+        let vtxCount = Int(header.vertexCount)
+        let idxCount = Int(header.indexCount)
+        let idxSize = Int(header.indexSize)
+
+        let primitive = RenderPrimitive(
+            id: id,
+            type: .rawGeometry,
+            z: header.z,
+            color: (255, 255, 255, 255),  // Colors are per-vertex
+            isScreenSpace: header.isScreenSpace == 1
+        )
+
+        // Set clip rect (clipX < 0 means no clipping)
+        if header.clipX >= 0 {
+            primitive.clipRect = SDL_Rect(
+                x: header.clipX,
+                y: header.clipY,
+                w: header.clipW,
+                h: header.clipH
+            )
+        }
+
+        primitive.texture = texture
+
+        // Parse vertex data into SDL_Vertex array
+        primitive.vertices.reserveCapacity(vtxCount)
+
+        positionData.withUnsafeBytes { posBuffer in
+            colorData.withUnsafeBytes { colBuffer in
+                uvData.withUnsafeBytes { uvBuffer in
+                    for i in 0..<vtxCount {
+                        let px = posBuffer.load(fromByteOffset: i * 8, as: Float.self)
+                        let py = posBuffer.load(fromByteOffset: i * 8 + 4, as: Float.self)
+
+                        let cr = colBuffer.load(fromByteOffset: i * 16, as: Float.self)
+                        let cg = colBuffer.load(fromByteOffset: i * 16 + 4, as: Float.self)
+                        let cb = colBuffer.load(fromByteOffset: i * 16 + 8, as: Float.self)
+                        let ca = colBuffer.load(fromByteOffset: i * 16 + 12, as: Float.self)
+
+                        let tu = uvBuffer.load(fromByteOffset: i * 8, as: Float.self)
+                        let tv = uvBuffer.load(fromByteOffset: i * 8 + 4, as: Float.self)
+
+                        let vertex = SDL_Vertex(
+                            position: SDL_FPoint(x: px, y: py),
+                            color: SDL_FColor(r: cr, g: cg, b: cb, a: ca),
+                            tex_coord: SDL_FPoint(x: tu, y: tv)
+                        )
+                        primitive.vertices.append(vertex)
+                    }
+                }
+            }
+        }
+
+        // Parse indices
+        primitive.indices.reserveCapacity(idxCount)
+        indexData.withUnsafeBytes { idxBuffer in
+            for i in 0..<idxCount {
+                let idx: Int32
+                if idxSize == 2 {
+                    idx = Int32(idxBuffer.load(fromByteOffset: i * 2, as: UInt16.self))
+                } else {
+                    idx = Int32(idxBuffer.load(fromByteOffset: i * 4, as: UInt32.self))
+                }
+                primitive.indices.append(idx)
+            }
+        }
+
+        addPrimitive(primitive)
+    }
 }
